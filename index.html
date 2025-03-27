@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Static Live Chatting</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; background: #111; color: white; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+    #messages { flex: 1; overflow-y: scroll; padding: 10px; border-bottom: 1px solid #333; }
+    #inputArea { display: flex; padding: 10px; background: #222; }
+    input, button { padding: 10px; border: none; outline: none; font-size: 16px; }
+    input { flex: 1; margin-right: 5px; border-radius: 5px; }
+    button { background: #1e90ff; color: white; border-radius: 5px; cursor: pointer; }
+    .msg { margin-bottom: 8px; }
+    .msg span { font-weight: bold; color: #1e90ff; }
+  </style>
+</head>
+<body>
+
+  <div id="messages"></div>
+
+  <div id="inputArea">
+    <input type="text" id="username" placeholder="Your name" />
+    <input type="text" id="msgInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Firebase setup -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+  <script>
+    // Your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
+      authDomain: "static-live-chatting.firebaseapp.com",
+      databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
+      projectId: "static-live-chatting",
+      storageBucket: "static-live-chatting.firebasestorage.app",
+      messagingSenderId: "578562140653",
+      appId: "1:578562140653:web:c12df07155627083e9dfe4",
+      measurementId: "G-HZ1F0B1CDS"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+
+    const msgBox = document.getElementById("msgInput");
+    const messagesDiv = document.getElementById("messages");
+
+    function sendMessage() {
+      const name = document.getElementById("username").value.trim();
+      const msg = msgBox.value.trim();
+      if (msg && name) {
+        db.ref("messages").push({
+          user: name,
+          text: msg,
+          timestamp: Date.now()
+        });
+        msgBox.value = "";
+      }
+    }
+
+    db.ref("messages").on("child_added", snapshot => {
+      const msg = snapshot.val();
+      const el = document.createElement("div");
+      el.classList.add("msg");
+      el.innerHTML = `<span>${msg.user}:</span> ${msg.text}`;
+      messagesDiv.appendChild(el);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  </script>
+
+</body>
+</html>

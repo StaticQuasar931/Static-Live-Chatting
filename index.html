@@ -3,240 +3,156 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Static Live Chatting (FBC)</title>
+  <title>Static Live Chatting – Ultra</title>
   <style>
     * { box-sizing: border-box; }
     body {
-      margin: 0; font-family: sans-serif; background: #111; color: white;
-      height: 100vh; display: flex; flex-direction: column;
+      margin: 0; font-family: sans-serif;
+      background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; height: 100vh;
+      transition: background 0.3s, color 0.3s;
     }
-    #loginScreen, #addPersonMenu {
-      position: fixed; inset: 0; background: #111; z-index: 999;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    :root {
+      --bg: #111;
+      --text: #fff;
+      --panel: #222;
+      --button: #1e90ff;
     }
-    #main { flex: 1; display: flex; height: 100vh; }
+    .light {
+      --bg: #f9f9f9;
+      --text: #111;
+      --panel: #ddd;
+      --button: #007acc;
+    }
+    input, button {
+      padding: 10px; font-size: 16px;
+      border: none; border-radius: 6px;
+    }
+    button { background: var(--button); color: white; cursor: pointer; }
+    #login, #addFriend, #settings {
+      position: fixed; inset: 0; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      background: var(--bg); z-index: 9999;
+    }
+    #app { display: flex; flex: 1; }
     #sidebar {
-      width: 250px; background: #222; padding: 10px; overflow-y: auto;
-      border-right: 1px solid #333;
+      width: 250px; background: var(--panel);
+      padding: 10px; overflow-y: auto;
     }
     #chatPanel {
       flex: 1; display: flex; flex-direction: column;
+    }
+    #topBar {
+      display: flex; justify-content: space-between;
+      padding: 10px; background: var(--panel);
     }
     #messages {
       flex: 1; padding: 10px; overflow-y: auto;
     }
     #inputArea {
-      display: flex; padding: 10px; background: #222;
+      display: flex; padding: 10px; background: var(--panel);
     }
-    input, button {
-      padding: 10px; border: none; border-radius: 5px; font-size: 16px;
-    }
-    button { background: #1e90ff; color: white; cursor: pointer; }
-    #inputArea input { flex: 1; margin-right: 5px; }
+    #inputArea input { flex: 1; margin-right: 6px; }
+    .msg span { font-weight: bold; color: var(--button); }
     .msg { margin-bottom: 10px; }
-    .msg span { color: #1e90ff; font-weight: bold; }
+    .chatItem {
+      background: #333; margin: 5px 0; padding: 8px;
+      border-radius: 5px; cursor: pointer;
+    }
+    .chatItem:hover { background: #444; }
     #emojiPicker {
-      position: absolute; bottom: 70px; right: 20px;
-      background: #222; border: 1px solid #444; padding: 10px; display: none;
-      max-width: 200px; flex-wrap: wrap;
+      position: absolute; bottom: 60px; right: 20px;
+      background: var(--panel); padding: 8px;
+      display: none; flex-wrap: wrap; max-width: 200px;
     }
-    #emojiPicker span { font-size: 20px; cursor: pointer; margin: 4px; }
-    .friendItem {
-      padding: 8px; background: #333; margin: 5px 0;
-      border-radius: 6px; cursor: pointer;
-    }
-    .friendItem:hover { background: #444; }
-    #topBar {
-      display: flex; justify-content: space-between;
-      padding: 10px; background: #222; align-items: center;
+    #emojiPicker span {
+      margin: 3px; font-size: 20px; cursor: pointer;
     }
     #staticMenu {
       position: fixed; bottom: 10px; left: 10px;
-      background: #1e90ff; padding: 10px 15px; border-radius: 10px;
+      background: var(--button); color: white;
+      padding: 10px 15px; border-radius: 10px;
       animation: twinkle 3s infinite;
-      z-index: 9999;
+      z-index: 999;
     }
     @keyframes twinkle {
-      0%,100% { box-shadow: 0 0 5px #1e90ff; }
-      50% { box-shadow: 0 0 15px #1e90ff; }
+      0%,100% { box-shadow: 0 0 5px var(--button); }
+      50% { box-shadow: 0 0 15px var(--button); }
     }
   </style>
 </head>
 <body>
 
-<div id="loginScreen">
+<div id="login">
   <h2>Static Live Chatting</h2>
-  <p style="color: orange;">⚠️ Do not chat sensitive information.</p>
-  <input type="text" id="yourName" placeholder="Enter your nickname" />
-  <button onclick="enterApp()">Start</button>
+  <p>⚠️ Do not chat sensitive info.</p>
+  <input id="username" placeholder="Your nickname" />
+  <input id="userpass" type="password" placeholder="Password (used as your chat key)" />
+  <button onclick="startChat()">Start</button>
 </div>
 
-<div id="main" style="display:none;">
+<div id="addFriend" style="display:none;">
+  <h3>Add a Friend</h3>
+  <input id="friendName" placeholder="Friend's name" />
+  <input id="friendPass" placeholder="Password (if needed)" />
+  <button onclick="confirmAddFriend()">Add</button>
+  <button onclick="closeAddFriend()">Cancel</button>
+</div>
+
+<div id="settings" style="display:none;">
+  <h3>Settings</h3>
+  <input id="newUsername" placeholder="Change username" />
+  <input id="newPassword" placeholder="New password" />
+  <select id="passwordOption">
+    <option value="future">Change only for new chats</option>
+    <option value="all">Change everywhere (old chats may break)</option>
+  </select>
+  <button onclick="applySettings()">Apply</button>
+  <button onclick="closeSettings()">Close</button>
+  <button onclick="toggleMode()">Toggle Light/Dark Mode</button>
+</div>
+
+<div id="app" style="display:none;">
   <div id="sidebar">
-    <h3>Friends</h3>
-    <div id="friendList"></div>
+    <h3>Chats</h3>
+    <div id="chatList"></div>
   </div>
   <div id="chatPanel">
     <div id="topBar">
-      <button onclick="openAddMenu()">➕ Add Person</button>
-      <div id="currentChat">No one selected</div>
+      <button onclick="openAddFriend()">➕ Add</button>
+      <span id="chatTitle">No Chat</span>
+      <button onclick="openSettings()">⚙️</button>
     </div>
     <div id="messages"></div>
     <div id="inputArea">
-      <input type="text" id="msgInput" placeholder="Type your message..." />
+      <input id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()" />
       <button onclick="toggleEmoji()">😀</button>
       <button onclick="sendMsg()">Send</button>
     </div>
+    <div id="typing" style="padding: 5px; font-size: 14px; color: gray;"></div>
   </div>
 </div>
 
-<!-- Emoji -->
 <div id="emojiPicker"></div>
 
-<!-- Add Friend -->
-<div id="addPersonMenu" style="display:none;">
-  <h3>Add Someone</h3>
-  <input type="text" id="friendName" placeholder="Their name" />
-  <input type="text" id="friendPass" placeholder="Optional password (key)" />
-  <p style="font-size: 13px; color: orange;">This password is your key to chat with them.</p>
-  <button onclick="addPerson()">Start Chat</button>
-  <button onclick="closeAddMenu()">Cancel</button>
-</div>
-
-<!-- Static Menu -->
 <div id="staticMenu">
   <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white; text-decoration:none;">More Unblocked Games by Static</a>
 </div>
 
-<!-- Firebase -->
+<!-- Firebase Setup -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
-    authDomain: "static-live-chatting.firebaseapp.com",
-    databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
-    projectId: "static-live-chatting",
-    storageBucket: "static-live-chatting.firebasestorage.app",
-    messagingSenderId: "578562140653",
-    appId: "1:578562140653:web:c12df07155627083e9dfe4"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
+  authDomain: "static-live-chatting.firebaseapp.com",
+  databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
+  projectId: "static-live-chatting",
+  storageBucket: "static-live-chatting.firebasestorage.app",
+  messagingSenderId: "578562140653",
+  appId: "1:578562140653:web:c12df07155627083e9dfe4"
+};
 
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.database(app);
-
-  let username = "";
-  let activeFriend = "";
-  let msgRef = null;
-
-  function enterApp() {
-    username = document.getElementById("yourName").value.trim();
-    if (!username) return alert("Enter your nickname");
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("main").style.display = "flex";
-    loadFriendList();
-  }
-
-  function openAddMenu() {
-    document.getElementById("addPersonMenu").style.display = "flex";
-  }
-
-  function closeAddMenu() {
-    document.getElementById("addPersonMenu").style.display = "none";
-  }
-
-  function addPerson() {
-    const friend = document.getElementById("friendName").value.trim();
-    const pass = document.getElementById("friendPass").value.trim();
-    if (!friend) return alert("Enter their name");
-    const ref = db.ref("friendChats/" + username + "/" + friend);
-    if (pass) ref.set({ password: pass });
-    else ref.set({ messages: {} });
-    closeAddMenu();
-    loadFriendList();
-  }
-
-  function loadFriendList() {
-    const listRef = db.ref("friendChats/" + username);
-    listRef.once("value", snap => {
-      const data = snap.val() || {};
-      const box = document.getElementById("friendList");
-      box.innerHTML = "";
-      Object.keys(data).forEach(name => {
-        const hasPass = data[name].password;
-        const div = document.createElement("div");
-        div.className = "friendItem";
-        div.textContent = name + (hasPass ? " 🔒" : " ✅");
-        div.onclick = () => openChat(name, hasPass);
-        box.appendChild(div);
-      });
-    });
-  }
-
-  function openChat(friend, locked) {
-    if (locked) {
-      const entered = prompt("Enter password to message " + friend);
-      db.ref("friendChats/" + username + "/" + friend + "/password").once("value", snap => {
-        if (snap.val() !== entered) return alert("Wrong password!");
-        unlockChat(friend);
-      });
-    } else {
-      unlockChat(friend);
-    }
-  }
-
-  function unlockChat(friend) {
-    activeFriend = friend;
-    document.getElementById("currentChat").innerText = friend;
-    document.getElementById("messages").innerHTML = "";
-    msgRef = db.ref("friendChats/" + username + "/" + friend + "/messages");
-
-    msgRef.off(); // clear existing listeners
-    msgRef.on("child_added", snap => {
-      const data = snap.val();
-      const time = new Date(data.timestamp).toLocaleTimeString();
-      const html = `<div class="msg"><span>${data.user}</span> (${time}): ${data.text}</div>`;
-      document.getElementById("messages").innerHTML += html;
-      saveToLocal(friend, html);
-    });
-
-    loadLocal(friend);
-  }
-
-  function sendMsg() {
-    const text = document.getElementById("msgInput").value.trim();
-    if (!text || !msgRef) return;
-    msgRef.push({ user: username, text, timestamp: Date.now() });
-    document.getElementById("msgInput").value = "";
-  }
-
-  function toggleEmoji() {
-    const box = document.getElementById("emojiPicker");
-    if (box.style.display === "flex") return box.style.display = "none";
-    const emojis = "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("");
-    box.innerHTML = "";
-    emojis.forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.onclick = () => {
-        document.getElementById("msgInput").value += e;
-        box.style.display = "none";
-      };
-      box.appendChild(span);
-    });
-    box.style.display = "flex";
-  }
-
-  function saveToLocal(friend, html) {
-    let old = localStorage.getItem("chat-" + friend) || "";
-    old += html;
-    localStorage.setItem("chat-" + friend, old);
-  }
-
-  function loadLocal(friend) {
-    const html = localStorage.getItem("chat-" + friend);
-    if (html) document.getElementById("messages").innerHTML = html;
-  }
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 </script>
-</body>
-</html>

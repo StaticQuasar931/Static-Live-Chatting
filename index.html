@@ -156,3 +156,176 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 </script>
+<script>
+let currentUser = "";
+let userPass = "";
+let currentChat = "";
+let chats = {};
+let typingRef = null;
+let typingTimeout;
+let darkMode = false;
+
+// Load preferences
+if (localStorage.getItem("mode") === "light") {
+  document.body.classList.add("light");
+  darkMode = true;
+}
+
+// Start Chat
+function startChat() {
+  currentUser = document.getElementById("username").value.trim();
+  userPass = document.getElementById("userpass").value.trim();
+  if (!currentUser) return alert("Enter a username");
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "flex";
+  loadChats();
+}
+
+// Add friend
+function openAddFriend() {
+  document.getElementById("addFriend").style.display = "flex";
+}
+function closeAddFriend() {
+  document.getElementById("addFriend").style.display = "none";
+}
+function confirmAddFriend() {
+  const name = document.getElementById("friendName").value.trim();
+  const pass = document.getElementById("friendPass").value.trim();
+  if (!name) return alert("Enter name");
+  const ref = db.ref(`chats/${currentUser}/${name}`);
+  ref.set({ password: pass || "", timestamp: Date.now() });
+  closeAddFriend();
+  loadChats();
+}
+
+// Load chats
+function loadChats() {
+  db.ref(`chats/${currentUser}`).once("value", snap => {
+    chats = snap.val() || {};
+    const list = document.getElementById("chatList");
+    list.innerHTML = "";
+
+    const sorted = Object.entries(chats).sort((a, b) => {
+      return (b[1].timestamp || 0) - (a[1].timestamp || 0);
+    });
+
+    sorted.forEach(([friend]) => {
+      const div = document.createElement("div");
+      div.className = "chatItem";
+      div.textContent = friend;
+      div.onclick = () => openChat(friend);
+      list.appendChild(div);
+    });
+  });
+}
+
+// Open chat
+function openChat(friend) {
+  currentChat = friend;
+  document.getElementById("chatTitle").innerText = friend;
+  document.getElementById("messages").innerHTML = "";
+
+  const ref = db.ref(`messages/${currentUser}-${friend}`);
+  ref.off();
+  ref.on("child_added", snap => {
+    const m = snap.val();
+    const time = new Date(m.timestamp).toLocaleTimeString();
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.innerHTML = `<span>${m.user}</span> (${time}): ${m.text}`;
+    document.getElementById("messages").appendChild(div);
+  });
+
+  setupTyping(friend);
+}
+
+// Typing indicator
+function setupTyping(friend) {
+  const typeRef = db.ref(`typing/${currentUser}-${friend}`);
+  document.getElementById("msgInput").oninput = () => {
+    typeRef.set(currentUser);
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => typeRef.set(""), 3000);
+  };
+
+  db.ref(`typing/${friend}-${currentUser}`).on("value", snap => {
+    const val = snap.val();
+    document.getElementById("typing").innerText = val ? `${val} is typing...` : "";
+  });
+}
+
+// Send message
+function sendMsg() {
+  const input = document.getElementById("msgInput");
+  const msg = input.value.trim();
+  if (!msg || !currentChat) return;
+  const ref = db.ref(`messages/${currentUser}-${currentChat}`);
+  ref.push({ user: currentUser, text: msg, timestamp: Date.now() });
+  db.ref(`chats/${currentUser}/${currentChat}/timestamp`).set(Date.now());
+  db.ref(`chats/${currentChat}/${currentUser}/timestamp`).set(Date.now());
+  input.value = "";
+}
+
+// Emoji toggle
+function toggleEmoji() {
+  const box = document.getElementById("emojiPicker");
+  box.style.display = box.style.display === "flex" ? "none" : "flex";
+  if (box.innerHTML) return;
+  const emojis = "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("");
+  emojis.forEach(e => {
+    const span = document.createElement("span");
+    span.textContent = e;
+    span.onclick = () => {
+      document.getElementById("msgInput").value += e;
+      box.style.display = "none";
+    };
+    box.appendChild(span);
+  });
+}
+
+// Settings
+function openSettings() {
+  document.getElementById("settings").style.display = "flex";
+}
+function closeSettings() {
+  document.getElementById("settings").style.display = "none";
+}
+function applySettings() {
+  const newName = document.getElementById("newUsername").value.trim();
+  const newPass = document.getElementById("newPassword").value.trim();
+  const option = document.getElementById("passwordOption").value;
+
+  if (newName) currentUser = newName;
+  if (newPass) {
+    if (option === "all") {
+      Object.keys(chats).forEach(friend => {
+        db.ref(`chats/${currentUser}/${friend}/password`).set(newPass);
+      });
+    }
+    userPass = newPass;
+  }
+  alert("Settings updated");
+  closeSettings();
+  loadChats();
+}
+
+// Theme toggle
+function toggleMode() {
+  document.body.classList.toggle("light");
+  localStorage.setItem("mode", document.body.classList.contains("light") ? "light" : "dark");
+}
+
+// Notifications (optional)
+if ("Notification" in window && Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
+
+// Enter to send
+document.addEventListener("keydown", e => {
+  if (e.target.id === "msgInput" && e.key === "Enter") sendMsg();
+  if (e.target.id === "username" && e.key === "Enter") startChat();
+  if (e.target.id === "friendName" && e.key === "Enter") confirmAddFriend();
+});
+</script>
+</body>
+</html>

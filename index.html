@@ -3,56 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Static Live Chatting</title>
+  <title>Static Live Chatting (FBC)</title>
   <style>
+    * { box-sizing: border-box; }
     body {
-      margin: 0; font-family: sans-serif; background: #111; color: #fff;
-      display: flex; flex-direction: column; height: 100vh;
+      margin: 0; font-family: sans-serif; background: #111; color: white;
+      height: 100vh; display: flex; flex-direction: column;
     }
-    #startScreen, #settingsMenu {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #111; color: white; display: flex; flex-direction: column;
-      justify-content: center; align-items: center; z-index: 999;
+    #loginScreen, #addPersonMenu {
+      position: fixed; inset: 0; background: #111; z-index: 999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    #settingsMenu { display: none; background: rgba(0,0,0,0.95); }
-    input, button, textarea {
-      margin: 6px; padding: 10px; font-size: 16px; border: none;
-      border-radius: 5px; outline: none;
-    }
-    button { background: #1e90ff; color: white; cursor: pointer; }
-    #chatContainer { display: flex; flex: 1; }
+    #main { flex: 1; display: flex; }
     #sidebar {
       width: 250px; background: #222; padding: 10px; overflow-y: auto;
       border-right: 1px solid #333;
     }
-    #chat {
+    #chatPanel {
       flex: 1; display: flex; flex-direction: column;
     }
     #messages {
-      flex: 1; overflow-y: auto; padding: 10px;
-    }
-    .msg {
-      margin-bottom: 10px;
-    }
-    .msg span {
-      font-weight: bold; color: #1e90ff;
+      flex: 1; padding: 10px; overflow-y: auto;
     }
     #inputArea {
       display: flex; padding: 10px; background: #222;
     }
-    #inputArea input {
-      flex: 1; margin-right: 5px;
+    input, button {
+      padding: 10px; border: none; border-radius: 5px; font-size: 16px;
     }
-    #emojiBtn {
-      background: #555;
-    }
+    button { background: #1e90ff; color: white; cursor: pointer; }
+    #inputArea input { flex: 1; margin-right: 5px; }
+    .msg { margin-bottom: 10px; }
+    .msg span { color: #1e90ff; font-weight: bold; }
     #emojiPicker {
-      position: absolute; bottom: 60px; right: 20px;
-      background: #222; border: 1px solid #444; padding: 10px;
-      display: none; flex-wrap: wrap; max-width: 200px;
+      position: absolute; bottom: 70px; right: 20px;
+      background: #222; border: 1px solid #444; padding: 10px; display: none;
+      max-width: 200px; flex-wrap: wrap;
     }
-    #emojiPicker span {
-      cursor: pointer; font-size: 20px; margin: 3px;
+    #emojiPicker span { font-size: 20px; cursor: pointer; margin: 4px; }
+    .friendItem {
+      padding: 8px; background: #333; margin: 5px 0;
+      border-radius: 6px; cursor: pointer;
+    }
+    .friendItem:hover { background: #444; }
+    #topBar {
+      display: flex; justify-content: space-between;
+      padding: 10px; background: #222; align-items: center;
     }
     #staticMenu {
       position: fixed; bottom: 10px; right: 10px;
@@ -60,59 +56,53 @@
       animation: twinkle 3s infinite;
     }
     @keyframes twinkle {
-      0% { box-shadow: 0 0 5px #1e90ff; }
+      0%,100% { box-shadow: 0 0 5px #1e90ff; }
       50% { box-shadow: 0 0 15px #1e90ff; }
-      100% { box-shadow: 0 0 5px #1e90ff; }
-    }
-    #settingsBtn {
-      position: absolute; top: 10px; right: 10px; font-size: 18px;
     }
   </style>
 </head>
 <body>
 
-<div id="startScreen">
+<div id="loginScreen">
   <h2>Static Live Chatting</h2>
-  <p><strong>Do NOT share passwords or sensitive info.</strong></p>
-  <input type="text" id="username" placeholder="Choose a nickname" />
-  <input type="text" id="groupName" placeholder="Group Name (public title)" />
-  <input type="password" id="groupPassword" placeholder="Group Chat Password" />
-  <button onclick="generatePassword()">Generate Password</button>
-  <p id="generatedPass" style="font-size:14px;"></p>
-  <button onclick="enterChat()">Enter Chat</button>
+  <p style="color: orange;">⚠️ Do not chat sensitive information.</p>
+  <input type="text" id="yourName" placeholder="Enter your nickname" />
+  <button onclick="enterApp()">Start</button>
 </div>
 
-<div id="chatContainer" style="display:none;">
+<div id="main" style="display:none;">
   <div id="sidebar">
-    <h3>Chat Info</h3>
-    <p><b>User:</b> <span id="sidebarUser"></span></p>
-    <p><b>Group:</b> <span id="sidebarGroup"></span></p>
-    <p><b>Pass:</b> <span id="sidebarPass"></span></p>
-    <h4>People:</h4>
-    <div id="userList"></div>
+    <h3>Friends</h3>
+    <div id="friendList"></div>
   </div>
-
-  <div id="chat">
-    <div id="settingsBtn"><button onclick="openSettings()">⚙️ Settings</button></div>
+  <div id="chatPanel">
+    <div id="topBar">
+      <button onclick="openAddMenu()">➕ Add Person</button>
+      <div id="currentChat">No one selected</div>
+    </div>
     <div id="messages"></div>
     <div id="inputArea">
-      <input type="text" id="msgInput" placeholder="Type a message..." />
-      <button id="emojiBtn" onclick="toggleEmoji()">😀</button>
-      <button onclick="sendMessage()">Send</button>
+      <input type="text" id="msgInput" placeholder="Type your message..." />
+      <button onclick="toggleEmoji()">😀</button>
+      <button onclick="sendMsg()">Send</button>
     </div>
   </div>
 </div>
 
+<!-- Emoji -->
 <div id="emojiPicker"></div>
 
-<div id="settingsMenu">
-  <h3>Settings</h3>
-  <input type="text" id="newUsername" placeholder="Change Username" />
-  <input type="password" id="newPassword" placeholder="Change Group Password" />
-  <button onclick="updateUser()">Save</button>
-  <button onclick="closeSettings()">Close</button>
+<!-- Add Friend -->
+<div id="addPersonMenu" style="display:none;">
+  <h3>Add Someone</h3>
+  <input type="text" id="friendName" placeholder="Their name" />
+  <input type="text" id="friendPass" placeholder="Optional password (key)" />
+  <p style="font-size: 13px; color: orange;">This password is your key to chat with them.</p>
+  <button onclick="addPerson()">Start Chat</button>
+  <button onclick="closeAddMenu()">Cancel</button>
 </div>
 
+<!-- Static Menu -->
 <div id="staticMenu">
   <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white; text-decoration:none;">More Unblocked Games by Static</a>
 </div>
@@ -135,101 +125,115 @@
   const db = firebase.database(app);
 
   let username = "";
-  let group = "";
-  let password = "";
-  let chatRef = null;
+  let activeFriend = "";
+  let msgRef = null;
 
-  function generatePassword() {
-    const pass = Math.random().toString(36).substring(2, 10);
-    document.getElementById("groupPassword").value = pass;
-    document.getElementById("generatedPass").innerText = "Password: " + pass;
+  function enterApp() {
+    username = document.getElementById("yourName").value.trim();
+    if (!username) return alert("Enter your nickname");
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("main").style.display = "flex";
+    loadFriendList();
   }
 
-  function enterChat() {
-    username = document.getElementById("username").value.trim();
-    group = document.getElementById("groupName").value.trim();
-    password = document.getElementById("groupPassword").value.trim();
+  function openAddMenu() {
+    document.getElementById("addPersonMenu").style.display = "flex";
+  }
 
-    if (!username || !group || !password) {
-      alert("Please fill out all fields");
-      return;
+  function closeAddMenu() {
+    document.getElementById("addPersonMenu").style.display = "none";
+  }
+
+  function addPerson() {
+    const friend = document.getElementById("friendName").value.trim();
+    const pass = document.getElementById("friendPass").value.trim();
+    if (!friend) return alert("Enter their name");
+    const ref = db.ref("friendChats/" + username + "/" + friend);
+    if (pass) ref.set({ password: pass });
+    else ref.set({ messages: {} });
+    closeAddMenu();
+    loadFriendList();
+  }
+
+  function loadFriendList() {
+    const listRef = db.ref("friendChats/" + username);
+    listRef.once("value", snap => {
+      const data = snap.val() || {};
+      const box = document.getElementById("friendList");
+      box.innerHTML = "";
+      Object.keys(data).forEach(name => {
+        const hasPass = data[name].password;
+        const div = document.createElement("div");
+        div.className = "friendItem";
+        div.textContent = name + (hasPass ? " 🔒" : " ✅");
+        div.onclick = () => openChat(name, hasPass);
+        box.appendChild(div);
+      });
+    });
+  }
+
+  function openChat(friend, locked) {
+    if (locked) {
+      const entered = prompt("Enter password to message " + friend);
+      db.ref("friendChats/" + username + "/" + friend + "/password").once("value", snap => {
+        if (snap.val() !== entered) return alert("Wrong password!");
+        unlockChat(friend);
+      });
+    } else {
+      unlockChat(friend);
     }
+  }
 
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("chatContainer").style.display = "flex";
+  function unlockChat(friend) {
+    activeFriend = friend;
+    document.getElementById("currentChat").innerText = friend;
+    document.getElementById("messages").innerHTML = "";
+    msgRef = db.ref("friendChats/" + username + "/" + friend + "/messages");
 
-    document.getElementById("sidebarUser").innerText = username;
-    document.getElementById("sidebarGroup").innerText = group;
-    document.getElementById("sidebarPass").innerText = password;
-
-    const chatID = btoa(group + "-" + password);
-    chatRef = db.ref("chats/" + chatID + "/messages");
-
-    chatRef.on("child_added", (snap) => {
+    msgRef.on("child_added", snap => {
       const data = snap.val();
-      const time = new Date(data.timestamp).toLocaleString();
-      const msgHTML = `<div class="msg"><span>${data.user}</span> (${time}): ${data.text}</div>`;
-      document.getElementById("messages").innerHTML += msgHTML;
-
-      saveToLocal(chatID, msgHTML);
+      const time = new Date(data.timestamp).toLocaleTimeString();
+      const html = `<div class="msg"><span>${data.user}</span> (${time}): ${data.text}</div>`;
+      document.getElementById("messages").innerHTML += html;
+      saveToLocal(friend, html);
     });
 
-    loadLocal(chatID);
+    loadLocal(friend);
   }
 
-  function sendMessage() {
-    const msg = document.getElementById("msgInput").value.trim();
-    if (!msg || !chatRef) return;
-    chatRef.push({ user: username, text: msg, timestamp: Date.now() });
+  function sendMsg() {
+    const text = document.getElementById("msgInput").value.trim();
+    if (!text || !msgRef) return;
+    msgRef.push({ user: username, text, timestamp: Date.now() });
     document.getElementById("msgInput").value = "";
   }
 
   function toggleEmoji() {
-    const picker = document.getElementById("emojiPicker");
-    if (picker.style.display === "flex") {
-      picker.style.display = "none";
-    } else {
-      picker.innerHTML = "";
-      const emojis = "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("");
-      emojis.forEach(e => {
-        const span = document.createElement("span");
-        span.textContent = e;
-        span.onclick = () => {
-          document.getElementById("msgInput").value += e;
-          toggleEmoji();
-        };
-        picker.appendChild(span);
-      });
-      picker.style.display = "flex";
-    }
+    const box = document.getElementById("emojiPicker");
+    if (box.style.display === "flex") return box.style.display = "none";
+    const emojis = "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("");
+    box.innerHTML = "";
+    emojis.forEach(e => {
+      const span = document.createElement("span");
+      span.textContent = e;
+      span.onclick = () => {
+        document.getElementById("msgInput").value += e;
+        box.style.display = "none";
+      };
+      box.appendChild(span);
+    });
+    box.style.display = "flex";
   }
 
-  function openSettings() {
-    document.getElementById("settingsMenu").style.display = "flex";
+  function saveToLocal(friend, html) {
+    let old = localStorage.getItem("chat-" + friend) || "";
+    old += html;
+    localStorage.setItem("chat-" + friend, old);
   }
 
-  function closeSettings() {
-    document.getElementById("settingsMenu").style.display = "none";
-  }
-
-  function updateUser() {
-    const newU = document.getElementById("newUsername").value.trim();
-    const newP = document.getElementById("newPassword").value.trim();
-    if (newU) username = newU;
-    if (newP) password = newP;
-    alert("Updated. These only apply to new messages.");
-    closeSettings();
-  }
-
-  function saveToLocal(id, html) {
-    let saved = localStorage.getItem("chat-" + id) || "";
-    saved += html;
-    localStorage.setItem("chat-" + id, saved);
-  }
-
-  function loadLocal(id) {
-    const data = localStorage.getItem("chat-" + id);
-    if (data) document.getElementById("messages").innerHTML = data;
+  function loadLocal(friend) {
+    const html = localStorage.getItem("chat-" + friend);
+    if (html) document.getElementById("messages").innerHTML = html;
   }
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Static Live Chatting – Ultra</title>
+  <title>Static Live Chatting</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -13,16 +13,10 @@
       transition: background 0.3s, color 0.3s;
     }
     :root {
-      --bg: #111;
-      --text: #fff;
-      --panel: #222;
-      --button: #1e90ff;
+      --bg: #111; --text: #fff; --panel: #222; --button: #1e90ff;
     }
     .light {
-      --bg: #f9f9f9;
-      --text: #111;
-      --panel: #ddd;
-      --button: #007acc;
+      --bg: #f9f9f9; --text: #111; --panel: #ddd; --button: #007acc;
     }
     input, button {
       padding: 10px; font-size: 16px;
@@ -34,7 +28,7 @@
       flex-direction: column; align-items: center; justify-content: center;
       background: var(--bg); z-index: 9999;
     }
-    #app { display: flex; flex: 1; }
+    #app { display: flex; flex: 1; height: 100vh; }
     #sidebar {
       width: 250px; background: var(--panel);
       padding: 10px; overflow-y: auto;
@@ -83,14 +77,22 @@
 </head>
 <body>
 
+<!-- Static Menu -->
+<div id="staticMenu">
+  <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white; text-decoration:none;">More Unblocked Games by Static</a>
+</div>
+
+<!-- Login Screen -->
 <div id="login">
   <h2>Static Live Chatting</h2>
   <p>⚠️ Do not chat sensitive info.</p>
   <input id="username" placeholder="Your nickname" />
   <input id="userpass" type="password" placeholder="Password (used as your chat key)" />
+  <p style="color: orange; font-size: 13px;">Write this down or remember it.</p>
   <button onclick="startChat()">Start</button>
 </div>
 
+<!-- Add Friend -->
 <div id="addFriend" style="display:none;">
   <h3>Add a Friend</h3>
   <input id="friendName" placeholder="Friend's name" />
@@ -99,19 +101,22 @@
   <button onclick="closeAddFriend()">Cancel</button>
 </div>
 
+<!-- Settings -->
 <div id="settings" style="display:none;">
   <h3>Settings</h3>
   <input id="newUsername" placeholder="Change username" />
   <input id="newPassword" placeholder="New password" />
   <select id="passwordOption">
-    <option value="future">Change only for new chats</option>
-    <option value="all">Change everywhere (old chats may break)</option>
+    <option value="future">Change for future chats only</option>
+    <option value="all">Change for all chats (old ones may break)</option>
   </select>
+  <label><input type="checkbox" id="lockToggle" /> Lock account on logout</label>
   <button onclick="applySettings()">Apply</button>
   <button onclick="closeSettings()">Close</button>
   <button onclick="toggleMode()">Toggle Light/Dark Mode</button>
 </div>
 
+<!-- App Layout -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <h3>Chats</h3>
@@ -125,7 +130,7 @@
     </div>
     <div id="messages"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()" />
+      <input id="msgInput" placeholder="Type a message..." />
       <button onclick="toggleEmoji()">😀</button>
       <button onclick="sendMsg()">Send</button>
     </div>
@@ -133,13 +138,10 @@
   </div>
 </div>
 
+<!-- Emoji Picker -->
 <div id="emojiPicker"></div>
 
-<div id="staticMenu">
-  <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white; text-decoration:none;">More Unblocked Games by Static</a>
-</div>
-
-<!-- Firebase Setup -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 <script>
@@ -152,36 +154,103 @@ const firebaseConfig = {
   messagingSenderId: "578562140653",
   appId: "1:578562140653:web:c12df07155627083e9dfe4"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-</script>
-<script>
-let currentUser = "";
-let userPass = "";
+
+let currentUser = localStorage.getItem("user") || "";
+let userPass = localStorage.getItem("pass") || "";
+let lockOnLogout = localStorage.getItem("lock") === "true";
 let currentChat = "";
-let chats = {};
-let typingRef = null;
-let typingTimeout;
-let darkMode = false;
 
-// Load preferences
-if (localStorage.getItem("mode") === "light") {
-  document.body.classList.add("light");
-  darkMode = true;
-}
-
-// Start Chat
-function startChat() {
-  currentUser = document.getElementById("username").value.trim();
-  userPass = document.getElementById("userpass").value.trim();
-  if (!currentUser) return alert("Enter a username");
+if (currentUser && userPass && !lockOnLogout) {
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
   loadChats();
 }
 
-// Add friend
+function startChat() {
+  currentUser = document.getElementById("username").value.trim();
+  userPass = document.getElementById("userpass").value.trim();
+  if (!currentUser || !userPass) return alert("Fill in both fields");
+  localStorage.setItem("user", currentUser);
+  localStorage.setItem("pass", userPass);
+  localStorage.setItem("lock", "false");
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "flex";
+  loadChats();
+}
+
+function loadChats() {
+  db.ref("chats/" + currentUser).once("value", snap => {
+    const chats = snap.val() || {};
+    const list = document.getElementById("chatList");
+    list.innerHTML = "";
+    Object.keys(chats).sort((a,b)=> (chats[b].timestamp||0)-(chats[a].timestamp||0)).forEach(name => {
+      const div = document.createElement("div");
+      div.className = "chatItem";
+      div.textContent = name;
+      div.onclick = () => openChat(name);
+      list.appendChild(div);
+    });
+  });
+}
+
+function openChat(name) {
+  currentChat = name;
+  document.getElementById("chatTitle").innerText = name;
+  document.getElementById("messages").innerHTML = "";
+
+  const ref = db.ref(`messages/${currentUser}-${name}`);
+  ref.off();
+  ref.on("child_added", snap => {
+    const msg = snap.val();
+    const time = new Date(msg.timestamp).toLocaleTimeString();
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.innerHTML = `<span>${msg.user}</span> (${time}): ${msg.text}`;
+    document.getElementById("messages").appendChild(div);
+  });
+
+  const typingRef = db.ref(`typing/${name}-${currentUser}`);
+  typingRef.on("value", snap => {
+    document.getElementById("typing").innerText = snap.val() ? `${snap.val()} is typing...` : "";
+  });
+
+  document.getElementById("msgInput").oninput = () => {
+    db.ref(`typing/${currentUser}-${name}`).set(currentUser);
+    setTimeout(() => db.ref(`typing/${currentUser}-${name}`).set(""), 3000);
+  };
+}
+
+function sendMsg() {
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
+  if (!text) return;
+  db.ref(`messages/${currentUser}-${currentChat}`).push({
+    user: currentUser,
+    text, timestamp: Date.now()
+  });
+  db.ref(`chats/${currentUser}/${currentChat}/timestamp`).set(Date.now());
+  db.ref(`chats/${currentChat}/${currentUser}/timestamp`).set(Date.now());
+  input.value = "";
+}
+
+function toggleEmoji() {
+  const picker = document.getElementById("emojiPicker");
+  picker.style.display = picker.style.display === "flex" ? "none" : "flex";
+  if (!picker.innerHTML) {
+    "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("").forEach(e => {
+      const span = document.createElement("span");
+      span.textContent = e;
+      span.onclick = () => {
+        document.getElementById("msgInput").value += e;
+        picker.style.display = "none";
+      };
+      picker.appendChild(span);
+    });
+  }
+}
+
 function openAddFriend() {
   document.getElementById("addFriend").style.display = "flex";
 }
@@ -192,98 +261,12 @@ function confirmAddFriend() {
   const name = document.getElementById("friendName").value.trim();
   const pass = document.getElementById("friendPass").value.trim();
   if (!name) return alert("Enter name");
-  const ref = db.ref(`chats/${currentUser}/${name}`);
-  ref.set({ password: pass || "", timestamp: Date.now() });
+  db.ref(`chats/${currentUser}/${name}`).set({ password: pass, timestamp: Date.now() });
+  db.ref(`chats/${name}/${currentUser}`).set({ password: pass, timestamp: Date.now() });
   closeAddFriend();
   loadChats();
 }
 
-// Load chats
-function loadChats() {
-  db.ref(`chats/${currentUser}`).once("value", snap => {
-    chats = snap.val() || {};
-    const list = document.getElementById("chatList");
-    list.innerHTML = "";
-
-    const sorted = Object.entries(chats).sort((a, b) => {
-      return (b[1].timestamp || 0) - (a[1].timestamp || 0);
-    });
-
-    sorted.forEach(([friend]) => {
-      const div = document.createElement("div");
-      div.className = "chatItem";
-      div.textContent = friend;
-      div.onclick = () => openChat(friend);
-      list.appendChild(div);
-    });
-  });
-}
-
-// Open chat
-function openChat(friend) {
-  currentChat = friend;
-  document.getElementById("chatTitle").innerText = friend;
-  document.getElementById("messages").innerHTML = "";
-
-  const ref = db.ref(`messages/${currentUser}-${friend}`);
-  ref.off();
-  ref.on("child_added", snap => {
-    const m = snap.val();
-    const time = new Date(m.timestamp).toLocaleTimeString();
-    const div = document.createElement("div");
-    div.className = "msg";
-    div.innerHTML = `<span>${m.user}</span> (${time}): ${m.text}`;
-    document.getElementById("messages").appendChild(div);
-  });
-
-  setupTyping(friend);
-}
-
-// Typing indicator
-function setupTyping(friend) {
-  const typeRef = db.ref(`typing/${currentUser}-${friend}`);
-  document.getElementById("msgInput").oninput = () => {
-    typeRef.set(currentUser);
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => typeRef.set(""), 3000);
-  };
-
-  db.ref(`typing/${friend}-${currentUser}`).on("value", snap => {
-    const val = snap.val();
-    document.getElementById("typing").innerText = val ? `${val} is typing...` : "";
-  });
-}
-
-// Send message
-function sendMsg() {
-  const input = document.getElementById("msgInput");
-  const msg = input.value.trim();
-  if (!msg || !currentChat) return;
-  const ref = db.ref(`messages/${currentUser}-${currentChat}`);
-  ref.push({ user: currentUser, text: msg, timestamp: Date.now() });
-  db.ref(`chats/${currentUser}/${currentChat}/timestamp`).set(Date.now());
-  db.ref(`chats/${currentChat}/${currentUser}/timestamp`).set(Date.now());
-  input.value = "";
-}
-
-// Emoji toggle
-function toggleEmoji() {
-  const box = document.getElementById("emojiPicker");
-  box.style.display = box.style.display === "flex" ? "none" : "flex";
-  if (box.innerHTML) return;
-  const emojis = "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("");
-  emojis.forEach(e => {
-    const span = document.createElement("span");
-    span.textContent = e;
-    span.onclick = () => {
-      document.getElementById("msgInput").value += e;
-      box.style.display = "none";
-    };
-    box.appendChild(span);
-  });
-}
-
-// Settings
 function openSettings() {
   document.getElementById("settings").style.display = "flex";
 }
@@ -291,40 +274,51 @@ function closeSettings() {
   document.getElementById("settings").style.display = "none";
 }
 function applySettings() {
-  const newName = document.getElementById("newUsername").value.trim();
+  const newUser = document.getElementById("newUsername").value.trim();
   const newPass = document.getElementById("newPassword").value.trim();
   const option = document.getElementById("passwordOption").value;
+  lockOnLogout = document.getElementById("lockToggle").checked;
+  localStorage.setItem("lock", lockOnLogout);
 
-  if (newName) currentUser = newName;
+  if (newUser) {
+    currentUser = newUser;
+    localStorage.setItem("user", newUser);
+  }
   if (newPass) {
+    userPass = newPass;
+    localStorage.setItem("pass", newPass);
     if (option === "all") {
-      Object.keys(chats).forEach(friend => {
-        db.ref(`chats/${currentUser}/${friend}/password`).set(newPass);
+      db.ref("chats/" + currentUser).once("value", snap => {
+        const chats = snap.val() || {};
+        Object.keys(chats).forEach(friend => {
+          db.ref(`chats/${currentUser}/${friend}/password`).set(newPass);
+        });
       });
     }
-    userPass = newPass;
   }
-  alert("Settings updated");
   closeSettings();
   loadChats();
 }
 
-// Theme toggle
 function toggleMode() {
   document.body.classList.toggle("light");
   localStorage.setItem("mode", document.body.classList.contains("light") ? "light" : "dark");
 }
 
-// Notifications (optional)
-if ("Notification" in window && Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
+// Save on leave
+window.onbeforeunload = () => {
+  localStorage.setItem("user", currentUser);
+  localStorage.setItem("pass", userPass);
+  localStorage.setItem("lock", lockOnLogout);
+};
 
-// Enter to send
+// Enter = send
 document.addEventListener("keydown", e => {
-  if (e.target.id === "msgInput" && e.key === "Enter") sendMsg();
-  if (e.target.id === "username" && e.key === "Enter") startChat();
-  if (e.target.id === "friendName" && e.key === "Enter") confirmAddFriend();
+  if (e.key === "Enter") {
+    if (document.getElementById("login").style.display !== "none") startChat();
+    else if (document.getElementById("addFriend").style.display !== "none") confirmAddFriend();
+    else sendMsg();
+  }
 });
 </script>
 </body>

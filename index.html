@@ -24,8 +24,8 @@
     button { background: var(--btn); color: white; cursor: pointer; }
     #login, #addFriend, #settings {
       position: fixed; inset: 0; background: var(--bg);
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center; z-index: 99;
+      display: flex; flex-direction: column; justify-content: center;
+      align-items: center; z-index: 99;
     }
     #app { display: flex; flex: 1; height: 100vh; }
     #sidebar {
@@ -51,14 +51,6 @@
       display: flex; padding: 10px; background: var(--panel);
     }
     #inputArea input { flex: 1; margin-right: 5px; }
-    #emojiPicker {
-      position: absolute; bottom: 70px; right: 20px;
-      display: none; flex-wrap: wrap; max-width: 200px;
-      background: var(--panel); padding: 10px;
-    }
-    #emojiPicker span {
-      font-size: 20px; margin: 3px; cursor: pointer;
-    }
     #staticMenu {
       position: fixed; bottom: 10px; left: 10px;
       background: var(--btn); padding: 10px 15px;
@@ -69,74 +61,52 @@
       0%,100% { box-shadow: 0 0 5px var(--btn); }
       50% { box-shadow: 0 0 15px var(--btn); }
     }
+    #showPassToggle {
+      background: none; color: var(--btn); border: none;
+      margin-top: 5px; font-size: 14px; cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-<!-- Static Menu -->
 <div id="staticMenu">
-  <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white; text-decoration:none;">More Unblocked Games by Static</a>
+  <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white; text-decoration:none;">
+    More Unblocked Games by Static
+  </a>
 </div>
 
-<!-- Login -->
 <div id="login">
   <h2>Static Live Chatting</h2>
   <p>⚠️ Do not chat sensitive info.</p>
   <input id="username" placeholder="Your nickname" />
-  <input id="userpass" type="password" placeholder="Password (used as your chat key)" />
-  <p style="font-size:13px; color: orange;">Write this down or remember it.</p>
-  <button onclick="startChat()">Start</button>
+  <input id="userpass" type="password" placeholder="Password (chat key)" />
+  <button id="showPassToggle" onclick="togglePassword()">👁 Show Password</button>
+  <p style="color: orange; font-size: 13px;">Write this down or remember it.</p>
+  <button onclick="startChat()">Log In</button>
 </div>
 
-<!-- Add Friend -->
-<div id="addFriend" style="display:none;">
-  <h3>Add a Friend</h3>
-  <input id="friendName" placeholder="Friend name" />
-  <input id="friendPass" placeholder="Optional password (key)" />
-  <button onclick="addFriend()">Add</button>
-  <button onclick="closeAdd()">Cancel</button>
-</div>
-
-<!-- Settings -->
-<div id="settings" style="display:none;">
-  <h3>Settings</h3>
-  <input id="newUsername" placeholder="Change username" />
-  <input id="newPassword" placeholder="New password" />
-  <select id="passwordOption">
-    <option value="future">Future chats only</option>
-    <option value="all">All chats (old ones break)</option>
-  </select>
-  <label><input type="checkbox" id="lockToggle" /> Lock account on logout</label>
-  <button onclick="saveSettings()">Save</button>
-  <button onclick="closeSettings()">Close</button>
-  <button onclick="toggleMode()">Toggle Light/Dark</button>
-</div>
-
-<!-- App -->
+<!-- App UI (Chat + Sidebar + Settings) -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <h3>Friends</h3>
     <div id="chatList"></div>
+    <button onclick="openAdd()">➕ Add</button>
   </div>
   <div id="chatPanel">
     <div id="topBar">
-      <button onclick="openAdd()">➕ Add</button>
       <div id="chatTitle">No Chat</div>
       <button onclick="openSettings()">⚙️</button>
     </div>
     <div id="messages"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Message..." />
-      <button onclick="toggleEmoji()">😀</button>
+      <input id="msgInput" placeholder="Type message..." />
       <button onclick="sendMsg()">Send</button>
     </div>
-    <div id="typing" style="padding:5px; color:gray;"></div>
+    <div id="typing" style="padding: 5px; font-size: 14px; color: gray;"></div>
   </div>
 </div>
 
-<div id="emojiPicker"></div>
-
-<!-- Firebase -->
+<!-- Firebase Setup -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 <script>
@@ -163,10 +133,15 @@ if (user && pass && !locked) {
   loadChats();
 }
 
+function togglePassword() {
+  const input = document.getElementById("userpass");
+  input.type = input.type === "password" ? "text" : "password";
+}
+
 function startChat() {
   user = document.getElementById("username").value.trim();
   pass = document.getElementById("userpass").value.trim();
-  if (!user || !pass) return alert("Enter both fields");
+  if (!user || !pass) return alert("Enter username and password");
   localStorage.setItem("user", user);
   localStorage.setItem("pass", pass);
   localStorage.setItem("locked", "false");
@@ -177,140 +152,108 @@ function startChat() {
 
 function loadChats() {
   db.ref("chats/" + user).once("value", snap => {
-    const data = snap.val() || {};
+    const chats = snap.val() || {};
     const box = document.getElementById("chatList");
     box.innerHTML = "";
-    Object.keys(data).sort((a,b)=> (data[b].timestamp||0)-(data[a].timestamp||0)).forEach(friend => {
+    Object.keys(chats).forEach(friend => {
       const div = document.createElement("div");
       div.className = "chatItem";
-      div.textContent = friend;
-      div.onclick = () => openChat(friend);
+      const label = chats[friend].name || friend;
+      div.textContent = label;
+      div.onclick = () => openChat(friend, label);
       box.appendChild(div);
     });
   });
 }
 
-function openChat(friend) {
+function openChat(friend, label) {
   chat = friend;
-  document.getElementById("chatTitle").innerText = friend;
+  document.getElementById("chatTitle").innerHTML = `${label} <small style="font-size:12px;">(was ${friend})</small>`;
   document.getElementById("messages").innerHTML = "";
+
   const ref = db.ref(`messages/${user}-${friend}`);
   ref.off();
   ref.on("child_added", snap => {
     const m = snap.val();
-    const time = new Date(m.timestamp).toLocaleTimeString();
-    const msg = `<div class="msg"><span>${m.user}</span> (${time}): ${m.text}</div>`;
-    document.getElementById("messages").innerHTML += msg;
+    if (m.text === "password_changed_notice") {
+      const warn = `<div class="msg"><span>SYSTEM</span>: User has changed their password, please input new password to keep messaging them.</div>`;
+      document.getElementById("messages").innerHTML += warn;
+    } else {
+      const time = new Date(m.timestamp).toLocaleTimeString();
+      const msg = `<div class="msg"><span>${m.user}</span> (${time}): ${m.text}</div>`;
+      document.getElementById("messages").innerHTML += msg;
+    }
   });
-  const typingRef = db.ref(`typing/${friend}-${user}`);
-  typingRef.on("value", s => {
-    document.getElementById("typing").innerText = s.val() ? `${s.val()} is typing...` : "";
-  });
+
   document.getElementById("msgInput").oninput = () => {
     db.ref(`typing/${user}-${friend}`).set(user);
     setTimeout(() => db.ref(`typing/${user}-${friend}`).set(""), 3000);
   };
+
+  db.ref(`typing/${friend}-${user}`).on("value", snap => {
+    document.getElementById("typing").innerText = snap.val() ? `${snap.val()} is typing...` : "";
+  });
 }
 
 function sendMsg() {
   const input = document.getElementById("msgInput");
-  const msg = input.value.trim();
-  if (!msg || !chat) return;
-  db.ref(`messages/${user}-${chat}`).push({ user, text: msg, timestamp: Date.now() });
-  db.ref(`chats/${user}/${chat}/timestamp`).set(Date.now());
-  db.ref(`chats/${chat}/${user}/timestamp`).set(Date.now());
+  const text = input.value.trim();
+  if (!text || !chat) return;
+  db.ref(`messages/${user}-${chat}`).push({
+    user, text, timestamp: Date.now()
+  });
   input.value = "";
 }
 
-function toggleEmoji() {
-  const ebox = document.getElementById("emojiPicker");
-  ebox.style.display = ebox.style.display === "flex" ? "none" : "flex";
-  if (!ebox.innerHTML) {
-    "😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕".split("").forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.onclick = () => {
-        document.getElementById("msgInput").value += e;
-        ebox.style.display = "none";
-      };
-      ebox.appendChild(span);
-    });
-  }
-}
-
+// Add friend screen
 function openAdd() {
-  document.getElementById("addFriend").style.display = "flex";
-}
-function closeAdd() {
-  document.getElementById("addFriend").style.display = "none";
-}
-function addFriend() {
-  const f = document.getElementById("friendName").value.trim();
-  const p = document.getElementById("friendPass").value.trim();
-  if (!f) return alert("Enter name");
-  db.ref(`chats/${user}/${f}`).set({ password: p, timestamp: Date.now() });
-  db.ref(`chats/${f}/${user}`).set({ password: p, timestamp: Date.now() });
-  closeAdd();
+  const name = prompt("Friend's name:");
+  if (!name) return;
+  const p = prompt("Optional password:");
+  db.ref(`chats/${user}/${name}`).set({ password: p || "", name });
+  db.ref(`chats/${name}/${user}`).set({ password: p || "", name: user });
   loadChats();
 }
 
+// Settings
 function openSettings() {
-  document.getElementById("settings").style.display = "flex";
-}
-function closeSettings() {
-  document.getElementById("settings").style.display = "none";
-}
-function saveSettings() {
-  const newU = document.getElementById("newUsername").value.trim();
-  const newP = document.getElementById("newPassword").value.trim();
-  const opt = document.getElementById("passwordOption").value;
-  locked = document.getElementById("lockToggle").checked;
-  localStorage.setItem("locked", locked);
-
-  if (newU) {
-    user = newU;
+  const newName = prompt("Change your name:");
+  if (newName) {
+    user = newName;
     localStorage.setItem("user", user);
+    alert("Name changed. This won't affect old chat messages.");
   }
-  if (newP) {
-    pass = newP;
-    localStorage.setItem("pass", pass);
-    if (opt === "all") {
+
+  const changePassword = confirm("Change your password?");
+  if (changePassword) {
+    const newPass = prompt("New password:");
+    const applyAll = confirm("Apply to all chats?\n\n⚠️ This will expose your new password to friends.");
+    pass = newPass;
+    localStorage.setItem("pass", newPass);
+    if (applyAll) {
       db.ref("chats/" + user).once("value", snap => {
         const data = snap.val() || {};
         Object.keys(data).forEach(friend => {
-          db.ref(`chats/${user}/${friend}/password`).set(newP);
+          db.ref(`chats/${user}/${friend}/password`).set(newPass);
+          db.ref(`messages/${friend}-${user}`).push({
+            user: "SYSTEM",
+            text: "password_changed_notice",
+            timestamp: Date.now()
+          });
         });
       });
     }
   }
-  closeSettings();
-  loadChats();
-}
 
-function toggleMode() {
-  document.body.classList.toggle("light");
-  localStorage.setItem("mode", document.body.classList.contains("light") ? "light" : "dark");
+  const lock = confirm("Enable lock on logout?");
+  localStorage.setItem("locked", lock);
 }
-
-window.onload = () => {
-  if (localStorage.getItem("mode") === "light") {
-    document.body.classList.add("light");
-  }
-};
 
 window.onbeforeunload = () => {
   localStorage.setItem("user", user);
   localStorage.setItem("pass", pass);
-  localStorage.setItem("locked", locked);
 };
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    if (document.getElementById("login").style.display !== "none") startChat();
-    else if (document.getElementById("addFriend").style.display !== "none") addFriend();
-    else sendMsg();
-  }
-});
 </script>
+
 </body>
 </html>

@@ -14,7 +14,7 @@
       flex-direction: column;
       height: 100vh;
     }
-    #login, #settings, #groupCreate {
+    #login, #settings {
       position: fixed;
       inset: 0;
       background: #111;
@@ -120,6 +120,7 @@
     <div id="chatList"></div>
     <hr/>
     <button onclick="openGroup()">➕ Create Group</button>
+    <button onclick="addFriendChat()">👤 Add Friend Chat</button>
   </div>
   <div id="chatPanel">
     <div id="topBar">
@@ -136,7 +137,13 @@
   </div>
 </div>
 
-<!-- Firebase CDN Setup -->
+<div id="settings" style="display:none;">
+  <h2>Settings</h2>
+  <p><strong>Username:</strong> <span id="currentUsername"></span></p>
+  <p><strong>Password:</strong> <span id="currentPassword"></span></p>
+  <button onclick="closeSettings()">Close</button>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
@@ -152,8 +159,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let user = localStorage.getItem("user");
-let pass = localStorage.getItem("pass");
+let user = localStorage.getItem("user") || "";
+let pass = localStorage.getItem("pass") || "";
 let currentChat = "";
 let currentType = "private";
 
@@ -185,16 +192,18 @@ function loadChats() {
     const list = document.getElementById("chatList");
     list.innerHTML = "";
     Object.keys(data).forEach(id => {
+      const info = data[id] || {};
       const div = document.createElement("div");
       div.className = "chatItem";
-      div.textContent = data[id].name || id;
-      div.onclick = () => openChat(id, data[id].name, data[id].type);
+      div.textContent = info.name || id;
+      div.onclick = () => openChat(id, info.name, info.type);
       list.appendChild(div);
     });
   });
 }
 
 function openChat(id, name, type = "private") {
+  if (!id || typeof name === 'undefined' || typeof type === 'undefined') return;
   currentChat = id;
   currentType = type;
   document.getElementById("chatTitle").textContent = name || id;
@@ -211,7 +220,10 @@ function openChat(id, name, type = "private") {
 
 function sendMessage() {
   const text = document.getElementById("msgInput").value.trim();
-  if (!text || !currentChat) return;
+  if (!text || !currentChat) {
+    alert("Please select a chat and enter a message.");
+    return;
+  }
   db.ref(`${currentType}Chats/${currentChat}/messages`).push({
     sender: user,
     text,
@@ -222,8 +234,8 @@ function sendMessage() {
 
 function toggleEmojiPicker() {
   const picker = document.getElementById("emojiPicker");
+  picker.innerHTML = "";
   picker.style.display = picker.style.display === "flex" ? "none" : "flex";
-  if (picker.innerHTML) return;
   const emojis = [..."😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕📱📧📌💬💡🧡🥺👀✅📣🕹️😆😍🤩🫶🤓🗨️🔒💭💻📚💤🐸😺🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🐮🦁🐷🐸🐵🦄🐔🐧🐦🐤🐣🐺🦖🦕"];
   emojis.forEach(e => {
     const span = document.createElement("span");
@@ -234,6 +246,43 @@ function toggleEmojiPicker() {
     };
     picker.appendChild(span);
   });
+}
+
+function openGroup() {
+  const groupName = prompt("Enter group name:");
+  if (!groupName) return;
+  const id = "group_" + Date.now();
+  db.ref(`groupChats/${id}`).set({
+    name: groupName,
+    createdBy: user
+  });
+  db.ref(`users/${user}/chats/${id}`).set({
+    name: groupName,
+    type: "group"
+  });
+  openChat(id, groupName, "group");
+}
+
+function addFriendChat() {
+  const friendName = prompt("Enter your friend's name:");
+  if (!friendName) return;
+  const id = [user, friendName].sort().join("_");
+  db.ref(`privateChats/${id}`).set({});
+  db.ref(`users/${user}/chats/${id}`).set({
+    name: friendName,
+    type: "private"
+  });
+  openChat(id, friendName, "private");
+}
+
+function openSettings() {
+  document.getElementById("currentUsername").textContent = user;
+  document.getElementById("currentPassword").textContent = pass || "(none)";
+  document.getElementById("settings").style.display = "flex";
+}
+
+function closeSettings() {
+  document.getElementById("settings").style.display = "none";
 }
 </script>
 </body>

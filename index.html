@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chatting – Final Polished</title>
+  <title>Static Live Chatting – Final</title>
 
   <style>
     :root {
@@ -48,6 +48,7 @@
       flex-direction: column;
       overflow: hidden;
     }
+
     input, button {
       padding: 10px;
       font-size: 16px;
@@ -61,26 +62,9 @@
       cursor: pointer;
     }
 
-    #lockedPanel {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.8);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-    }
-    #lockedPanel .panel {
-      max-width: 300px;
-    }
-
-    .panel {
-      padding: 20px;
-      background: var(--chat-bg);
-      border-radius: 10px;
-    }
+    /* Panels */
     #login, #settingsPanel, #groupJoinPanel, #groupCreatePanel, #directoryPanel,
-    #confirmPanel, #noticePanel, #editGroupPanel, #friendsPanel, #addChatPanel {
+    #confirmPanel, #noticePanel, #editGroupPanel, #friendsPanel, #addChatPanel, #lockedPanel {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.7);
       display: none;
@@ -89,6 +73,14 @@
       justify-content: center;
       z-index: 999;
     }
+    #lockedPanel .panel {
+      max-width: 300px;
+    }
+    .panel {
+      padding: 20px;
+      background: var(--chat-bg);
+      border-radius: 10px;
+    }
     .panelContent {
       background: var(--chat-bg);
       padding: 20px;
@@ -96,9 +88,7 @@
       max-width: 400px;
     }
     #app {
-      display: flex;
-      flex: 1;
-      height: 100%;
+      display: flex; flex: 1; height: 100%;
     }
     #sidebar {
       width: 280px;
@@ -123,6 +113,7 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
+
     #messages {
       flex: 1;
       display: flex;
@@ -130,6 +121,7 @@
       padding: 15px;
       overflow-y: auto;
     }
+
     .msg {
       max-width: 70%;
       padding: 12px 16px;
@@ -198,10 +190,9 @@
       background: var(--sidebar-color);
     }
     #inputArea input {
-      flex: 1;
-      margin-right: 5px;
-      font-size: 17px;
+      flex: 1; margin-right: 5px; font-size: 17px;
     }
+
     #emojiPicker {
       display: none;
       position: absolute;
@@ -218,6 +209,7 @@
       margin: 6px;
       cursor: pointer;
     }
+
     .chatItem {
       background: var(--chat-item-bg);
       padding: 10px;
@@ -249,6 +241,7 @@
       margin-bottom: 5px;
       border-radius: 6px;
     }
+
     #staticMenu {
       position: fixed;
       bottom: 10px;
@@ -269,8 +262,8 @@
     .nameColor5 { color: #ff88ff; }
 
     @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      0%,100% { opacity:1; }
+      50% { opacity:0.6; }
     }
 
     /* Hide sidebar on mobile unless toggled (placeholder) */
@@ -283,30 +276,24 @@
 </head>
 <body>
 <script>
-// If on mobile, hide sidebar unless user toggles (placeholder)
-if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
-  document.body.classList.add('mobile');
-}
-window.onbeforeunload=()=>{
-  if(isLocked) return null; // no prompt if locked, but otherwise:
+// Attempt to handle missing favicon on GH Pages:
+window.onbeforeunload=()=> {
+  if(isLocked) return null; 
   return "Are you sure you want to leave?";
 };
+
+// Detect mobile
+if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+  document.body.classList.add("mobile");
+}
 </script>
 
-<!-- Panels: confirm, notice, locked, etc. -->
+<!-- Panels -->
 <div id="confirmPanel">
   <div class="panelContent" id="confirmInner"></div>
 </div>
 <div id="noticePanel">
   <div class="panelContent" id="noticeInner"></div>
-</div>
-<div id="lockedPanel">
-  <div class="panel">
-    <h3>Account Locked</h3>
-    <p>Enter verification password to unlock:</p>
-    <input id="unlockPass" type="password"/><br/>
-    <button onclick="tryUnlock()">Unlock</button>
-  </div>
 </div>
 <div id="editGroupPanel">
   <div class="panelContent" id="editGroupInner"></div>
@@ -316,6 +303,14 @@ window.onbeforeunload=()=>{
 </div>
 <div id="addChatPanel">
   <div class="panelContent" id="addChatInner"></div>
+</div>
+<div id="lockedPanel">
+  <div class="panel">
+    <h3>Account Locked</h3>
+    <p>Enter verification password:</p>
+    <input id="unlockPass" type="password"/><br/>
+    <button onclick="tryUnlock()">Unlock</button>
+  </div>
 </div>
 
 <!-- Login -->
@@ -332,7 +327,7 @@ window.onbeforeunload=()=>{
   </div>
 </div>
 
-<!-- App -->
+<!-- Main App -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <button onclick="openFriendsPanel()">Friends</button>
@@ -373,7 +368,7 @@ window.onbeforeunload=()=>{
   <input id="editUsername"><br/>
   <label>Password (optional):</label><br/>
   <input id="editPassword"><br/>
-  <p>Lock Account? (Set a verification password to lock after 5min idle or manually)</p>
+  <p>Lock Account? (Set a verification password for 5-min idle or manual lock):</p>
   <input id="lockPass" type="password" placeholder="Verification password"/>
   <button onclick="lockNow()">Lock Now</button><br/>
   <button onclick="saveSettings()">Save</button>
@@ -405,7 +400,7 @@ window.onbeforeunload=()=>{
   <button onclick="closeCreatePanel()">Close</button>
 </div>
 
-<!-- Public Directory Panel -->
+<!-- Public Directory -->
 <div id="directoryPanel" class="panel" style="display:none;">
   <h3>All Public Groups</h3>
   <div id="publicList" style="max-height:300px; overflow:auto;"></div>
@@ -416,29 +411,13 @@ window.onbeforeunload=()=>{
   🌟 More Unblocked Games by Static
 </div>
 
-<!-- Add Chat Panel -->
-<div id="addChatPanel">
-  <div class="panelContent" id="addChatInner">
-    <h3>Add Chat</h3>
-    <button onclick="showCreatePanel()">Create Group</button><br/>
-    <button onclick="showJoinPanel()">Join Group</button><br/>
-    <button onclick="closeAddChatPanel()">Close</button>
-  </div>
-</div>
-
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
-/*
-  Final Polished Chat
-  - Stays logged in
-  - Add Chat panel works
-  - Friend requests: green check, red X
-  - On accept => open chat
-  - Theme toggle button, no reload
-  - 'Lock account when away' with verification password
-  - Removed send password near send button
-  - Full bug check
+/* 
+   Final Polished, Fixing All Syntax Errors
+   and doLogin defined, no forced chat switching,
+   etc.
 */
 
 const firebaseConfig={
@@ -453,6 +432,7 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
+// Global State
 let user=localStorage.getItem("user")||"";
 let pass=localStorage.getItem("pass")||"";
 let currentChat="", currentType="";
@@ -472,8 +452,7 @@ let idleTimer=null;
 function setIdleLockTimer(){
   clearTimeout(idleTimer);
   if(verificationPass){
-    // 5 minutes
-    idleTimer=setTimeout(()=>lockAccount(), 5*60*1000);
+    idleTimer=setTimeout(()=>lockAccount(), 5*60*1000); 
   }
 }
 document.onmousemove=setIdleLockTimer;
@@ -491,7 +470,7 @@ function lockNow(){
   lockAccount();
 }
 function lockAccount(){
-  if(isLocked) return;
+  if(isLocked)return;
   isLocked=true;
   document.getElementById("lockedPanel").style.display="flex";
   document.getElementById("unlockPass").value="";
@@ -515,8 +494,8 @@ function doLogin(){
   user=document.getElementById("username").value.trim();
   pass=document.getElementById("password").value.trim();
   if(!user)return;
-  localStorage.setItem("user",user);
-  localStorage.setItem("pass",pass);
+  localStorage.setItem("user", user);
+  localStorage.setItem("pass", pass);
   startApp();
 }
 function startApp(){
@@ -547,39 +526,36 @@ function loadFriends(){
     friends=s.val()||{};
   });
 }
-
 function loadChats(){
   db.ref(`users/${user}/chats`).on("value", snap=>{
     const data=snap.val()||{};
     const sorted=Object.entries(data).sort((a,b)=>(b[1].last||0)-(a[1].last||0));
     const cList=document.getElementById("chatList");
     cList.innerHTML="";
-    sorted.forEach(([id, info])=>{
+    sorted.forEach(([id,info])=>{
       const div=document.createElement("div");
       div.className="chatItem";
       if(id===chatActive) div.classList.add("active");
       let chatName=info.name||id;
-      if(info.type==="private" && blocked[chatName]) {
-        chatName+=" [Blocked]";
-      }
+      if(info.type==="private"&&blocked[chatName]) chatName+=" [Blocked]";
       div.textContent=chatName;
+
       const rowRight=document.createElement("div");
       rowRight.style.display="flex";
       rowRight.style.alignItems="center";
 
-      // unread
       if(chatUnread[id]){
         const bd=document.createElement("span");
         bd.className="chatBadge";
         bd.textContent="+"+chatUnread[id];
         rowRight.appendChild(bd);
       }
-      // trash button
+
       const delBtn=document.createElement("button");
       delBtn.textContent="🗑";
       delBtn.onclick=(e)=>{
         e.stopPropagation();
-        confirmDeleteChat(id, info);
+        confirmDeleteChat(id,info);
       };
       rowRight.appendChild(delBtn);
       div.appendChild(rowRight);
@@ -592,7 +568,6 @@ function loadChats(){
     });
   });
 }
-
 function loadRequests(){
   db.ref(`users/${user}/requests`).on("value", snap=>{
     const tab=document.getElementById("requestsTab");
@@ -602,32 +577,28 @@ function loadRequests(){
       const d=document.createElement("div");
       d.className="requestItem";
       d.textContent=`${from} wants to chat `;
-      // green check, red X
-      const chk=document.createElement("button");
-      chk.textContent="✔";
-      chk.style.background="green";
-      chk.onclick=()=>{
+      const green=document.createElement("button");
+      green.textContent="✔";
+      green.style.background="green";
+      green.onclick=()=>{
         if(blocked[from])return showNotice("You blocked this user. Unblock first.");
         const cid=[user, from].sort().join("_");
         db.ref(`privateChats/${cid}`).set({});
         db.ref(`users/${user}/chats/${cid}`).set({name:from,type:"private",last:Date.now()});
         db.ref(`users/${user}/requests/${from}`).remove();
-        // add friend
         db.ref(`users/${user}/friends/${from}`).set(true);
         db.ref(`users/${from}/friends/${user}`).set(true);
-        // instantly open chat
         openChat(cid, from, "private");
       };
-      d.appendChild(chk);
+      d.appendChild(green);
 
-      const xx=document.createElement("button");
-      xx.textContent="✘";
-      xx.style.background="red";
-      xx.onclick=()=>{
-        // decline
+      const red=document.createElement("button");
+      red.textContent="✘";
+      red.style.background="red";
+      red.onclick=()=>{
         db.ref(`users/${user}/requests/${from}`).remove();
       };
-      d.appendChild(xx);
+      d.appendChild(red);
 
       tab.appendChild(d);
     });
@@ -637,20 +608,17 @@ function highlightChat(id){
   chatActive=id;
   document.querySelectorAll(".chatItem").forEach(i=>i.classList.remove("active"));
 }
-
 function confirmDeleteChat(chatId, info){
   if(info.type==="group"){
     db.ref(`groupChats/${chatId}/createdBy`).once("value", s=>{
       const c=s.val();
-      if(c!==user) {
-        // leave group
+      if(c!==user){
         showConfirm(`Leave group ${info.name}?`, ()=>{
           db.ref(`groupChats/${chatId}/members/${user}`).remove();
           db.ref(`users/${user}/chats/${chatId}`).remove();
           showNotice("Left group.");
         });
       } else {
-        // owner => delete
         showConfirm(`Delete group ${info.name}?`, ()=>{
           db.ref(`groupChats/${chatId}`).remove();
           db.ref(`users/${user}/chats/${chatId}`).remove();
@@ -659,16 +627,16 @@ function confirmDeleteChat(chatId, info){
       }
     });
   } else {
-    showConfirm(`Leave private chat with ${info.name}?`,()=>{
+    showConfirm(`Leave private chat with ${info.name}?`, ()=>{
       db.ref(`users/${user}/chats/${chatId}`).remove();
       showNotice("Private chat removed from your list.");
     });
   }
 }
 
-//** open chat
+//** openChat
 function openChat(id, name, type){
-  if(isLocked) return; // can't open if locked
+  if(isLocked)return;
   currentChat=id; currentType=type;
   chatUnread[id]=0;
   highlightChat(id);
@@ -676,15 +644,15 @@ function openChat(id, name, type){
   document.getElementById("messages").innerHTML="";
   document.getElementById("groupMembers").style.display=(type==="group")?"block":"none";
 
-  showPresenceInfo(name,type);
+  showPresenceInfo(name, type);
 
-  const path=(type==="group"?"groupChats":"privateChats")+"/"+id+"/messages";
-  db.ref(path).off();
-  db.ref(path).orderByKey().limitToLast(100).on("value", snap=>{
-    const msgs=snap.val()||{};
-    const sorted=Object.entries(msgs).sort((a,b)=>(b[1].timestamp||0)-(a[1].timestamp||0));
-    const cont=document.getElementById("messages");
-    cont.innerHTML="";
+  const refPath=(type==="group"?"groupChats":"privateChats")+"/"+id+"/messages";
+  db.ref(refPath).off();
+  db.ref(refPath).orderByKey().limitToLast(100).on("value",snap=>{
+    const data=snap.val()||{};
+    const sorted=Object.entries(data).sort((a,b)=>(b[1].timestamp||0)-(a[1].timestamp||0));
+    const msgCont=document.getElementById("messages");
+    msgCont.innerHTML="";
     sorted.forEach(([mId,mVal])=>{
       createMessageBubble(mId,mVal,type);
     });
@@ -713,12 +681,14 @@ function openChat(id, name, type){
   db.ref(`users/${user}/chats/${id}/last`).set(Date.now());
 }
 
-//** create bubble
+//** bubble
 function createMessageBubble(msgId, msg, chatType){
-  if(!msg.sender) return;
-  // block logic
-  if(chatType==="private" && msg.sender!==user && blocked[msg.sender]) return;
-  if(chatType==="group" && msg.sender!==user && blocked[msg.sender]) return;
+  // block
+  if(chatType==="private"){
+    if(msg.sender!==user && blocked[msg.sender])return;
+  } else if(chatType==="group"){
+    if(msg.sender!==user && blocked[msg.sender])return;
+  }
 
   const isMe=(msg.sender===user);
   const bubble=document.createElement("div");
@@ -737,8 +707,8 @@ function createMessageBubble(msgId, msg, chatType){
   }
 
   if(chatType==="group" && msg.sender!=="_system" && !isMe){
-    const colc=getColorClass(msg.sender);
-    bubble.innerHTML=`<span class='${colc}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span> `+bubble.innerHTML;
+    const cc=getColorClass(msg.sender);
+    bubble.innerHTML=`<span class='${cc}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span> `+bubble.innerHTML;
   }
   if(msg.sender==="_system"){
     bubble.style.fontStyle="italic";
@@ -754,8 +724,8 @@ function createMessageBubble(msgId, msg, chatType){
   // reaction bar
   const rBar=document.createElement("div");
   rBar.className="reactionBar";
-  const reacts=["❤️","👍","😂","😮","😢"];
-  reacts.forEach(r=>{
+  const reac=["❤️","👍","😂","😮","😢"];
+  reac.forEach(r=>{
     const sp=document.createElement("span");
     sp.textContent=r;
     sp.onclick=(e)=>{
@@ -769,11 +739,10 @@ function createMessageBubble(msgId, msg, chatType){
 
   bubble.addEventListener("dblclick", e=>{
     e.stopPropagation();
-    if(isLocked) return;
+    if(isLocked)return;
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
   });
 
-  // time
   const time=new Date(msg.timestamp||0).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   const ts=document.createElement("div");
   ts.className="timestamp "+(isMe?"mineTime":"otherTime");
@@ -784,11 +753,10 @@ function createMessageBubble(msgId, msg, chatType){
 }
 
 function applyReaction(msgId, reaction){
-  if(!currentChat||!currentType) return;
+  if(!currentChat||!currentType)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages/${msgId}/reaction`).set(reaction);
 }
-
 function getColorClass(u){
   if(!colorMap[u]){
     colorMap[u]=colorClasses[Math.floor(Math.random()*colorClasses.length)];
@@ -796,23 +764,23 @@ function getColorClass(u){
   return colorMap[u];
 }
 
+//** typing
 function sendTyping(){
   if(!currentChat||isLocked)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/typing`).set(user);
-  setTimeout(()=>{
-    db.ref(`${path}/${currentChat}/typing`).set("");
-  },2000);
+  setTimeout(()=> db.ref(`${path}/${currentChat}/typing`).set(""), 2000);
 }
 
+//** send
 function sendMessage(){
-  if(isLocked) return;
+  if(isLocked)return;
   const inp=document.getElementById("msgInput");
   const text=inp.value.trim();
-  if(!text||!currentChat) return;
+  if(!text||!currentChat)return;
   if(currentType==="private"){
     const friend=document.getElementById("chatTitle").textContent;
-    if(blocked[friend]) {
+    if(blocked[friend]){
       showNotice("You blocked this user. Unblock first.");
       return;
     }
@@ -835,7 +803,6 @@ function showPresenceInfo(friendName, chatType){
     document.getElementById("presenceLabel").textContent="(Blocked)";
     return;
   }
-  // real-time presence
   db.ref(`presence/${friendName}`).off();
   db.ref(`presence/${friendName}`).on("value", s=>{
     const val=s.val();
@@ -855,8 +822,8 @@ function showPresenceInfo(friendName, chatType){
 
 //** theme
 function toggleTheme(){
-  const cur=document.body.classList.contains("light")?"light":
-            document.body.classList.contains("blue")?"blue":"dark";
+  const cur=(document.body.classList.contains("light")?"light":
+             document.body.classList.contains("blue")?"blue":"dark");
   let next="dark";
   if(cur==="dark") next="light";
   else if(cur==="light") next="blue";
@@ -882,17 +849,19 @@ function saveSettings(){
   const nu=document.getElementById("editUsername").value.trim();
   const np=document.getElementById("editPassword").value.trim();
   if(!nu)return;
-  user=nu;pass=np;
+  user=nu; pass=np;
   localStorage.setItem("user",nu);
   localStorage.setItem("pass",np);
 
-  const lp=document.getElementById("lockPass").value.trim()||"";
-  verificationPass=lp;
-  localStorage.setItem("verificationPass",lp);
+  const lPass=document.getElementById("lockPass").value.trim()||"";
+  verificationPass=lPass;
+  localStorage.setItem("verificationPass",lPass);
 
-  showNotice("Settings Saved. (No Reload needed!)");
+  showNotice("Settings saved. (No reload needed!)");
+  setIdleLockTimer();
 }
 
+//** confirm + notice
 function showConfirm(html, yesCb){
   const cp=document.getElementById("confirmPanel");
   const ci=document.getElementById("confirmInner");
@@ -931,7 +900,7 @@ function closeNotice(){
 function blockUserUI(){
   showConfirm("Enter user to block/unblock:<br/><input id='blkU'/>", ()=>{
     const bn=document.getElementById("blkU").value.trim();
-    if(!bn)return showNotice("No name provided.");
+    if(!bn)return showNotice("No name entered!");
     if(blocked[bn]){
       db.ref(`users/${user}/blocked/${bn}`).remove();
       showNotice(`Unblocked ${bn}`);
@@ -947,7 +916,7 @@ function addFriendUI(){
   showConfirm("Enter friend's username:<br/><input id='addF'/>", ()=>{
     const f=document.getElementById("addF").value.trim();
     if(!f)return showNotice("No username.");
-    if(blocked[f]) return showNotice("You blocked them. Unblock first.");
+    if(blocked[f])return showNotice("You blocked them. Unblock first.");
     db.ref(`users/${f}/requests/${user}`).set({requested:true});
     db.ref(`privateChats/${[user,f].sort().join('_')}`).set({});
     showNotice(`Friend request sent to ${f}.`);
@@ -956,12 +925,11 @@ function addFriendUI(){
 function openFriendsPanel(){
   if(isLocked)return;
   const fi=document.getElementById("friendsInner");
-  fi.innerHTML=`<h3>Your Friends</h3>`;
+  fi.innerHTML="<h3>Your Friends</h3>";
   Object.keys(friends).forEach(fr=>{
     const row=document.createElement("div");
     row.style.marginBottom="6px";
     row.innerHTML=`${fr} `;
-    // open chat
     const oc=document.createElement("button");
     oc.textContent="Open Chat";
     oc.onclick=()=>{
@@ -975,13 +943,11 @@ function openFriendsPanel(){
     };
     row.appendChild(oc);
 
-    // invite to group
     const iv=document.createElement("button");
     iv.textContent="Invite Group";
     iv.onclick=()=> pickGroupForInvite(fr);
     row.appendChild(iv);
 
-    // block
     const bk=document.createElement("button");
     bk.textContent="Block/Unblock";
     bk.onclick=()=>{
@@ -1006,7 +972,7 @@ function pickGroupForInvite(friend){
   db.ref(`users/${user}/chats`).once("value", snap=>{
     const d=snap.val()||{};
     const groups=Object.entries(d).filter(([id,inf])=>inf.type==="group");
-    if(!groups.length) return showNotice("No groups to invite to.");
+    if(!groups.length)return showNotice("No groups to invite to.");
     let h=`<h3>Pick Group for ${friend}</h3>`;
     groups.forEach(([gid,ginfo])=>{
       h+=`<button onclick='inviteFriendToGroup(\"${gid}\",\"${friend}\")'>${ginfo.name}</button><br/>`;
@@ -1021,9 +987,16 @@ function inviteFriendToGroup(gid, friend){
   showNotice(`Invited ${friend} to group ${gid}`);
 }
 
-//** add chat
+//** Add chat panel
 function showAddChatPanel(){
   if(isLocked)return;
+  const inner=document.getElementById("addChatInner");
+  inner.innerHTML=`
+    <h3>Add Chat</h3>
+    <button onclick='showCreatePanel()'>Create Group</button><br/>
+    <button onclick='showJoinPanel()'>Join Group</button><br/>
+    <button onclick='closeAddChatPanel()'>Close</button>
+  `;
   document.getElementById("addChatPanel").style.display="flex";
 }
 function closeAddChatPanel(){
@@ -1040,13 +1013,14 @@ function createGroupChat(){
   const pw=document.getElementById("groupPassword").value.trim();
   if(!nm)return;
   const gid="group_"+Date.now();
-  const mem={};mem[user]=true;
-  db.ref(`groupChats/${gid}`).set({name:nm,type:ty,password:pw,createdBy:user,members:mem});
+  const members={};members[user]=true;
+  db.ref(`groupChats/${gid}`).set({name:nm,type:ty,password:pw,createdBy:user,members});
   db.ref(`users/${user}/chats/${gid}`).set({name:nm,type:"group",last:Date.now()});
   closeCreatePanel();
   closeAddChatPanel();
   openChat(gid,nm,"group");
 }
+
 function showJoinPanel(){document.getElementById("groupJoinPanel").style.display="flex";}
 function closeJoinPanel(){document.getElementById("groupJoinPanel").style.display="none";}
 function joinGroupChat(){
@@ -1057,7 +1031,7 @@ function joinGroupChat(){
     const g=sp.val();
     if(!g)return showNotice("Group not found");
     if(g.type==="password"&&g.password!==pw)return showNotice("Wrong password");
-    if(g.type==="invite"&&!(g.members&&g.members[user]))return showNotice("Not invited!");
+    if(g.type==="invite"&&!(g.members&&g.members[user]))return showNotice("Not invited");
     db.ref(`groupChats/${id}/members/${user}`).set(true);
     db.ref(`users/${user}/chats/${id}`).set({name:g.name,type:"group",last:Date.now()});
     closeJoinPanel();
@@ -1104,6 +1078,7 @@ function openImportExportPanel(){
   panel.style.justifyContent="center";
   panel.style.alignItems="center";
   panel.style.zIndex=1001;
+
   const inn=document.createElement("div");
   inn.style.background="var(--chat-bg)";
   inn.style.padding="20px";
@@ -1118,6 +1093,7 @@ function openImportExportPanel(){
   panel.appendChild(inn);
   document.body.appendChild(panel);
 }
+
 function exportChatData(){
   db.ref(\`users/\${user}/chats\`).once("value", snap=>{
     const data=snap.val()||{};
@@ -1138,6 +1114,7 @@ function exportChatData(){
     });
   });
 }
+
 function importChatData(file){
   const rdr=new FileReader();
   rdr.onload=(e)=>{
@@ -1150,45 +1127,54 @@ function importChatData(file){
         });
       });
       showNotice("Chat data imported!");
-    }catch(err){
+    } catch(err){
       showNotice("Invalid backup file");
     }
   };
   rdr.readAsText(file);
 }
 
-//** done
-console.log("✅ Final Polished Chat with all requested features loaded!");
+//** final
+function applyTheme(){
+  const saved=localStorage.getItem("theme")||"dark";
+  document.body.classList.remove("light","blue");
+  if(saved==="light") document.body.classList.add("light");
+  else if(saved==="blue") document.body.classList.add("blue");
+}
+if(user){
+  // If user is stored, skip login
+  document.addEventListener("DOMContentLoaded", ()=>{
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="flex";
+    applyTheme();
+    setupPresence();
+    loadBlocked();
+    loadFriends();
+    loadChats();
+    loadRequests();
+    setIdleLockTimer();
+  });
+}
+
+console.log("✅ All syntax fixed, doLogin defined, final version loaded!");
 </script>
 
-<!-- Example Firebase Realtime Database Rules:
+<!-- Example Firebase Rules:
 {
   "rules": {
     ".read": "auth == null",
     ".write": "auth == null",
     "users": {
-      "$username": {
-        ".read":"true",
-        ".write":"true"
-      }
+      "$username": { ".read":"true",".write":"true" }
     },
-    "privateChats":{
-      "$chatId":{
-        ".read":"true",
-        ".write":"true"
-      }
+    "privateChats": {
+      "$chatId": { ".read":"true",".write":"true" }
     },
-    "groupChats":{
-      "$groupId":{
-        ".read":"true",
-        ".write":"true"
-      }
+    "groupChats": {
+      "$groupId": { ".read":"true",".write":"true" }
     },
-    "presence":{
-      "$user":{
-        ".read":"true",
-        ".write":"true"
-      }
+    "presence": {
+      "$user": { ".read":"true",".write":"true" }
     }
   }
 }

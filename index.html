@@ -1,3 +1,4 @@
+<!-- FULL STATIC LIVE CHATTING SYSTEM: UPGRADED VERSION -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +14,8 @@
       --msg-bg: #444;
       --hover-bg: #555;
       --accent: #1e90ff;
+      --bubble-user: #1e90ff;
+      --bubble-other: #666;
     }
     body.light {
       --bg-color: #f0f0f0;
@@ -22,6 +25,8 @@
       --msg-bg: #ddd;
       --hover-bg: #bbb;
       --accent: #007acc;
+      --bubble-user: #007aff;
+      --bubble-other: #ccc;
     }
     body {
       margin: 0;
@@ -33,10 +38,10 @@
       flex-direction: column;
     }
     input, button {
-      padding: 10px;
-      font-size: 16px;
+      padding: 12px;
+      font-size: 18px;
       margin: 5px;
-      border-radius: 5px;
+      border-radius: 6px;
       border: none;
     }
     button { background: var(--accent); color: white; cursor: pointer; }
@@ -59,22 +64,47 @@
     }
     #topBar {
       background: var(--chat-bg);
-      padding: 10px;
+      padding: 12px;
       display: flex; justify-content: space-between;
       align-items: center;
-    }
-    #chatTitle {
-      font-weight: bold;
+      font-size: 20px;
     }
     #messages {
-      flex: 1; padding: 10px;
+      flex: 1; padding: 15px;
       overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+    .msg {
+      max-width: 70%;
+      margin-bottom: 12px;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 17px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .msg.mine {
+      background: var(--bubble-user);
+      align-self: flex-end;
+      color: #fff;
+      border-bottom-right-radius: 5px;
+    }
+    .msg.other {
+      background: var(--bubble-other);
+      align-self: flex-start;
+      color: #000;
+      border-bottom-left-radius: 5px;
+    }
+    #typingIndicator {
+      padding: 6px 16px;
+      font-style: italic;
+      font-size: 15px;
     }
     #inputArea {
       background: var(--sidebar-color);
       display: flex; padding: 10px;
     }
-    #inputArea input { flex: 1; margin-right: 6px; }
+    #inputArea input { flex: 1; margin-right: 6px; font-size: 18px; }
     #emojiPicker {
       display: none; flex-wrap: wrap;
       max-width: 250px; background: var(--chat-bg);
@@ -82,55 +112,26 @@
       z-index: 99; padding: 10px;
     }
     #emojiPicker span {
-      font-size: 20px; margin: 5px; cursor: pointer;
-    }
-    .msg span {
-      color: var(--accent); font-weight: bold;
+      font-size: 24px; margin: 6px; cursor: pointer;
     }
     .chatItem {
       background: var(--msg-bg);
-      padding: 8px; margin-bottom: 6px;
+      padding: 10px; margin-bottom: 6px;
       border-radius: 5px; cursor: pointer;
     }
     .chatItem:hover { background: var(--hover-bg); }
-    #typingIndicator {
-      padding: 5px 10px;
-      font-style: italic;
-      font-size: 12px;
+    #groupMembers {
+      padding: 8px 14px;
+      background: var(--chat-bg);
+      font-size: 14px;
+      color: #ccc;
     }
-    #chatPasswordDisplay {
-      font-size: 12px;
-      padding-left: 10px;
-    }
-    #requestsTab, #sentRequestsTab {
-      font-size: 13px;
-      padding: 5px;
-      margin-top: 10px;
-    }
-    #staticMenu {
-      position: fixed;
-      bottom: 10px; left: 10px;
-      background: #1e1e1e; color: white;
-      padding: 10px; border-radius: 10px;
-      box-shadow: 0 0 10px #0ff;
-      animation: blink 2s infinite;
-      z-index: 1000;
-    }
-    #staticMenuClose {
-      position: absolute;
-      top: 2px;
-      right: 6px;
-      cursor: pointer;
-      color: red;
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+    #chatTitle {
+      flex: 1;
     }
   </style>
 </head>
 <body>
-
 <div id="login">
   <h2>Static Live Chatting</h2>
   <p>⚠️ Do not share passwords or sensitive info.</p>
@@ -145,29 +146,22 @@
     <h3>Chats</h3>
     <div id="chatList"></div>
     <hr/>
-    <h4>Incoming Requests</h4>
-    <div id="requestsTab"></div>
-    <h4>Sent Requests</h4>
-    <div id="sentRequestsTab"></div>
-    <hr/>
-    <button onclick="openGroup()">➕ Create Group</button>
-    <button onclick="addFriendChat()">👤 Add Friend</button>
+    <button onclick="createGroup()">➕ Create Group</button>
+    <button onclick="joinGroup()">🔓 Join Group</button>
+    <button onclick="addFriend()">👤 Add Friend</button>
     <button onclick="openSettings()">⚙️ Settings</button>
     <button onclick="toggleTheme()">🌓 Theme</button>
   </div>
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
-      <div style="display:flex; align-items:center;">
-        <div id="chatPasswordDisplay" style="display:none;"></div>
-        <button onclick="toggleChatPass()">🔓</button>
-        <button onclick="openSettings()">⚙️</button>
-      </div>
+      <div><button onclick="openSettings()">⚙️</button></div>
     </div>
+    <div id="groupMembers" style="display:none;"></div>
     <div id="messages"></div>
     <div id="typingIndicator" style="display:none;">User is typing...</div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type message..." oninput="sendTyping()" onkeypress="if(event.key==='Enter')sendMessage();"/>
+      <input id="msgInput" placeholder="Type message..." oninput="sendTyping()" onkeypress="if(event.key==='Enter')sendMessage();" />
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>
@@ -179,27 +173,15 @@
   <h2>Settings</h2>
   <label>Username: <input id="editUsername" /></label><br/>
   <label>Password: <input id="editPassword" /></label><br/>
-  <p>Changing password may break old chats (A) or affect only new ones (B).</p>
-  <button onclick="saveSettings('A')">Save (Affect Past)</button>
-  <button onclick="saveSettings('B')">Save (Future Only)</button>
-  <button onclick="showBlocked()">🚫 Blocked Users</button>
-  <button onclick="closeSettings()">Close</button>
+  <p><button onclick="saveSettings()">Save</button> <button onclick="closeSettings()">Close</button></p>
 </div>
 
-<div id="staticMenu">
-  <span id="staticMenuClose" onclick="closeStaticMenu()">✖</span>
-  🌟 More Unblocked Games by Static
-</div>
-
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
-window.onbeforeunload = function () {
-  return "Are you sure you want to leave? Your progress may not be saved.";
-};
+window.onbeforeunload = () => "Are you sure you want to leave? Your progress may not be saved.";
 
-const config = {
+const firebaseConfig = {
   apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
   authDomain: "static-live-chatting.firebaseapp.com",
   databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
@@ -208,21 +190,12 @@ const config = {
   messagingSenderId: "578562140653",
   appId: "1:578562140653:web:c12df07155627083e9dfe4"
 };
-firebase.initializeApp(config);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let user = localStorage.getItem("user") || "";
 let pass = localStorage.getItem("pass") || "";
-let blocked = JSON.parse(localStorage.getItem("blocked") || "[]");
-let currentChat = "", currentType = "", currentPassword = "";
-let typingTimeout;
-
-if (user && !localStorage.getItem("locked")) {
-  document.getElementById("login").style.display = "none";
-  document.getElementById("app").style.display = "flex";
-  loadChats(); loadRequests();
-}
-if (localStorage.getItem("theme") === "light") document.body.classList.add("light");
+let currentChat = "", currentType = "", currentPassword = "", typingTimeout;
 
 function login() {
   user = document.getElementById("username").value.trim();
@@ -232,10 +205,7 @@ function login() {
   localStorage.setItem("pass", pass);
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
-  loadChats(); loadRequests();
-  if (Notification.permission === "granted") {
-    new Notification("Static Chat Ready", { body: "You're now online." });
-  }
+  loadChats();
 }
 
 function togglePassword() {
@@ -246,56 +216,57 @@ function togglePassword() {
 function loadChats() {
   db.ref("users/" + user + "/chats").on("value", snap => {
     const data = snap.val() || {};
-    const list = Object.entries(data).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-    const container = document.getElementById("chatList");
-    container.innerHTML = "";
-    list.forEach(([id, info]) => {
+    const list = document.getElementById("chatList");
+    list.innerHTML = "";
+    Object.entries(data).forEach(([id, info]) => {
       const div = document.createElement("div");
       div.className = "chatItem";
       div.textContent = info.name || id;
-      div.onclick = () => openChat(id, info.name, info.type, info.password, info.oldName);
-      container.appendChild(div);
+      div.onclick = () => openChat(id, info.name, info.type || "private");
+      list.appendChild(div);
     });
   });
 }
 
-function openChat(id, name, type = "private", password = "", oldName = "") {
-  currentChat = id; currentType = type; currentPassword = password;
-  const displayName = oldName ? `${name} (used to be ${oldName})` : name;
-  document.getElementById("chatTitle").textContent = displayName;
-  document.getElementById("chatPasswordDisplay").textContent = password ? `Password: ${password}` : "";
-  const passDisplay = document.getElementById("chatPasswordDisplay");
-  passDisplay.style.display = "none";
+function openChat(id, name, type) {
+  currentChat = id;
+  currentType = type;
+  document.getElementById("chatTitle").textContent = name;
+  document.getElementById("messages").innerHTML = "";
+  document.getElementById("groupMembers").style.display = type === "group" ? "block" : "none";
 
-  const ref = db.ref(`${type}Chats/${id}/messages`);
-  ref.off(); document.getElementById("messages").innerHTML = "";
+  if (type === "group") {
+    db.ref("groupChats/" + id + "/members").on("value", snap => {
+      const members = snap.val() || {};
+      document.getElementById("groupMembers").textContent = "Members: " + Object.keys(members).join(", ");
+    });
+  }
+
+  const ref = db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/messages");
+  ref.off();
   ref.on("child_added", snap => {
     const msg = snap.val();
-    if (blocked.includes(msg.sender)) return;
-    const time = new Date(msg.timestamp).toLocaleTimeString();
-    document.getElementById("messages").innerHTML += `<div class="msg"><span>${msg.sender}</span> (${time}): ${msg.text}</div>`;
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "msg " + (msg.sender === user ? "mine" : "other");
+    msgDiv.textContent = msg.text;
+    document.getElementById("messages").appendChild(msgDiv);
     document.getElementById("messages").scrollTop = 999999;
   });
 
-  db.ref(`${type}Chats/${id}/typing`).on("value", snap => {
+  db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/typing").on("value", snap => {
     const typer = snap.val();
-    document.getElementById("typingIndicator").style.display = (typer && typer !== user) ? "block" : "none";
+    const box = document.getElementById("typingIndicator");
+    box.style.display = (typer && typer !== user) ? "block" : "none";
+    box.textContent = `${typer} is typing...`;
   });
-
-  db.ref(`users/${user}/chats/${id}/last`).set(Date.now());
-}
-
-function toggleChatPass() {
-  const el = document.getElementById("chatPasswordDisplay");
-  el.style.display = el.style.display === "none" ? "inline" : "none";
 }
 
 function sendTyping() {
   if (!currentChat) return;
-  db.ref(`${currentType}Chats/${currentChat}/typing`).set(user);
+  db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing").set(user);
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
-    db.ref(`${currentType}Chats/${currentChat}/typing`).set("");
+    db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing").set("");
   }, 1500);
 }
 
@@ -303,8 +274,10 @@ function sendMessage() {
   const input = document.getElementById("msgInput");
   const text = input.value.trim();
   if (!text || !currentChat) return;
-  db.ref(`${currentType}Chats/${currentChat}/messages`).push({
-    sender: user, text, timestamp: Date.now()
+  db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages").push({
+    sender: user,
+    text,
+    timestamp: Date.now()
   });
   input.value = "";
   sendTyping();
@@ -314,8 +287,7 @@ function toggleEmojiPicker() {
   const picker = document.getElementById("emojiPicker");
   picker.innerHTML = "";
   picker.style.display = picker.style.display === "flex" ? "none" : "flex";
-  const emojis = [..."😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕📱📧📌💬💡🧡🥺👀✅📣🕹️😆😍🤩🫶🤓🗨️🔒💭💻📚💤"];
-  emojis.forEach(e => {
+  [..."😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕📱📧📌💬💡🧡🥺👀✅📣🕹️😆😍🤩🫶🤓🗨️🔒💭💻📚💤"].forEach(e => {
     const span = document.createElement("span");
     span.textContent = e;
     span.onclick = () => {
@@ -326,56 +298,37 @@ function toggleEmojiPicker() {
   });
 }
 
-function openGroup() {
+function addFriend() {
+  const name = prompt("Friend's username:");
+  if (!name) return;
+  const id = [user, name].sort().join("_");
+  db.ref("privateChats/" + id).set({});
+  db.ref("users/" + user + "/chats/" + id).set({ name, type: "private" });
+}
+
+function createGroup() {
   const name = prompt("Group name:");
-  const pw = prompt("Password (optional):");
+  const type = prompt("Type: open / password / invite-only");
+  const pw = type === "password" ? prompt("Set password:") : "";
   const id = "group_" + Date.now();
-  db.ref(`groupChats/${id}`).set({ name, password: pw, createdBy: user });
-  db.ref(`users/${user}/chats/${id}`).set({ name, password: pw, type: "group", last: Date.now() });
-  openChat(id, name, "group", pw);
+  const groupData = { name, type, password: pw, createdBy: user };
+  groupData.members = { [user]: true };
+  db.ref("groupChats/" + id).set(groupData);
+  db.ref("users/" + user + "/chats/" + id).set({ name, type: "group" });
 }
 
-function addFriendChat() {
-  const friend = prompt("Friend's username:");
-  if (!friend) return;
-  const id = [user, friend].sort().join("_");
-  db.ref(`privateChats/${id}`).set({});
-  db.ref(`users/${user}/chats/${id}`).set({ name: friend, type: "private", last: Date.now() });
-  db.ref(`users/${friend}/requests/${user}`).set({ requested: true });
-  db.ref(`users/${user}/sent/${friend}`).set({ sent: true });
-  openChat(id, friend, "private");
-}
-
-function loadRequests() {
-  db.ref(`users/${user}/requests`).on("value", snap => {
-    const tab = document.getElementById("requestsTab");
-    tab.innerHTML = "";
-    Object.keys(snap.val() || {}).forEach(from => {
-      const div = document.createElement("div");
-      div.textContent = `From: ${from} `;
-      const btn = document.createElement("button");
-      btn.textContent = "Accept";
-      btn.onclick = () => {
-        const id = [user, from].sort().join("_");
-        db.ref(`privateChats/${id}`).set({});
-        db.ref(`users/${user}/chats/${id}`).set({ name: from, type: "private", last: Date.now() });
-        db.ref(`users/${user}/requests/${from}`).remove();
-        db.ref(`users/${from}/sent/${user}`).remove();
-        openChat(id, from, "private");
-      };
-      div.appendChild(btn);
-      tab.appendChild(div);
-    });
-  });
-
-  db.ref(`users/${user}/sent`).on("value", snap => {
-    const tab = document.getElementById("sentRequestsTab");
-    tab.innerHTML = "";
-    Object.keys(snap.val() || {}).forEach(to => {
-      const div = document.createElement("div");
-      div.textContent = `To: ${to} (pending)`;
-      tab.appendChild(div);
-    });
+function joinGroup() {
+  const id = prompt("Group ID:");
+  db.ref("groupChats/" + id).once("value", snap => {
+    const g = snap.val();
+    if (!g) return;
+    if (g.type === "password") {
+      const entered = prompt("Enter group password:");
+      if (entered !== g.password) return;
+    }
+    if (g.type === "invite-only" && !g.members?.[user]) return;
+    db.ref("groupChats/" + id + "/members/" + user).set(true);
+    db.ref("users/" + user + "/chats/" + id).set({ name: g.name, type: "group" });
   });
 }
 
@@ -389,39 +342,18 @@ function closeSettings() {
   document.getElementById("settings").style.display = "none";
 }
 
-function saveSettings(mode) {
+function saveSettings() {
   const newUser = document.getElementById("editUsername").value.trim();
   const newPass = document.getElementById("editPassword").value.trim();
   if (!newUser) return;
   localStorage.setItem("user", newUser);
   localStorage.setItem("pass", newPass);
-  if (mode === "A" && currentChat) {
-    db.ref(`users/${newUser}/chats/${currentChat}/password`).set(newPass);
-  }
   location.reload();
 }
 
 function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
-}
-
-function showBlocked() {
-  const name = prompt("Blocked:\n" + blocked.join(", ") + "\nType name to block/unblock:");
-  if (!name) return;
-  if (blocked.includes(name)) {
-    blocked = blocked.filter(n => n !== name);
-  } else {
-    blocked.push(name);
-  }
-  localStorage.setItem("blocked", JSON.stringify(blocked));
-}
-
-function closeStaticMenu() {
-  document.getElementById("staticMenu").style.display = "none";
-  setTimeout(() => {
-    document.getElementById("staticMenu").style.display = "block";
-  }, 180000);
 }
 </script>
 </body>

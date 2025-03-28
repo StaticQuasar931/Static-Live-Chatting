@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chatting – Final No-Lag</title>
+  <title>Static Live Chatting – No Presence</title>
   <style>
     :root {
       --bg-color:#111;
@@ -60,10 +60,12 @@
     body {
       margin:0; font-family:Arial,sans-serif;
       background:var(--bg-color); color:var(--text-color);
-      height:100vh; display:flex; flex-direction:column; overflow:hidden;
+      height:100vh; display:flex; flex-direction:column;
+      overflow:hidden;
     }
     input, button {
-      padding:10px; font-size:16px; margin:5px; border-radius:6px; border:none;
+      padding:10px; font-size:16px; margin:5px;
+      border-radius:6px; border:none;
     }
     button { background:var(--accent); color:#fff; cursor:pointer; }
 
@@ -105,9 +107,7 @@
       gap:5px; background:rgba(0,0,0,0.6); padding:5px; border-radius:6px;
       margin-bottom:5px;
     }
-    .reactionBar span {
-      font-size:22px; cursor:pointer;
-    }
+    .reactionBar span { font-size:22px; cursor:pointer; }
     .reactionTag { margin-left:6px; font-size:14px; opacity:0.8; }
     .timestamp {
       position:absolute; font-size:10px; opacity:0.7; bottom:-14px;
@@ -128,15 +128,14 @@
     }
     #emojiPicker {
       display:none; position:absolute; bottom:70px; right:15px;
-      background:var(--chat-bg); padding:10px; flex-wrap:wrap; z-index:99;
-      max-width:260px;
+      background:var(--chat-bg); padding:10px; flex-wrap:wrap;
+      z-index:99; max-width:260px;
     }
-    #emojiPicker span {
-      font-size:22px; margin:6px; cursor:pointer;
-    }
+    #emojiPicker span { font-size:22px; margin:6px; cursor:pointer; }
     .chatItem {
-      background:var(--chat-item-bg); padding:10px; border-radius:6px;
-      margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;
+      background:var(--chat-item-bg);
+      padding:10px; border-radius:6px; margin-bottom:8px;
+      display:flex; justify-content:space-between; align-items:center;
       cursor:pointer; transition:background 0.2s;
     }
     .chatItem:hover { background:var(--bubble-them); }
@@ -146,7 +145,8 @@
       padding:3px 8px; border-radius:12px; margin-left:5px;
     }
     .requestItem {
-      background:var(--bubble-them); padding:10px; margin-bottom:5px; border-radius:6px;
+      background:var(--bubble-them);
+      padding:10px; margin-bottom:5px; border-radius:6px;
     }
     #staticMenu {
       position:fixed; bottom:10px; left:10px;
@@ -164,27 +164,23 @@
       0%,100% { opacity:1; }
       50% { opacity:0.6; }
     }
-    /* Centered modals */
+    /* center modals */
     .modal {
-      position:fixed; inset:0;
-      background:rgba(0,0,0,0.7);
+      position:fixed; inset:0; background:rgba(0,0,0,0.7);
       display:none; flex-direction:column; align-items:center; justify-content:center;
       z-index:999;
     }
     .panelContent {
-      background:var(--chat-bg);
-      padding:20px; border-radius:10px; max-width:400px;
+      background:var(--chat-bg); padding:20px;
+      border-radius:10px; max-width:400px;
     }
-    /* Center the login form too */
+    /* center login form */
     #login {
       position:fixed; inset:0; display:flex;
       align-items:center; justify-content:center;
-      background:rgba(0,0,0,0.7);
-      z-index:999;
+      background:rgba(0,0,0,0.7); z-index:999;
     }
-    #login .panelContent {
-      max-width:300px;
-    }
+    #login .panelContent { max-width:300px; }
 
     @media(max-width:768px){
       body.mobile #sidebar { display:none; }
@@ -193,7 +189,6 @@
 </head>
 <body>
 <script>
-// mobile detection
 if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
   document.body.classList.add("mobile");
 }
@@ -278,7 +273,7 @@ function doLogin(){
     <h3>Settings</h3>
     <label>Username:</label><br/>
     <input id="editUsername"/><br/>
-    <label>Password (Key used to message people, share it for friend requests):</label><br/>
+    <label>Password (Key used to message/friend requests):</label><br/>
     <input id="editPassword"/><br/>
     <p>Verification pass (5-min idle lock):</p>
     <input id="lockPass" type="password"/><br/>
@@ -297,7 +292,7 @@ function doLogin(){
     <p>⚠️ Do not share sensitive info</p>
     <input id="username" placeholder="Username" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
     <div style="display:flex;align-items:center;">
-      <input id="password" type="password" placeholder="Password (Key used for messaging/friend requests)" 
+      <input id="password" type="password" placeholder="Password (Key for friend requests)"
              style="margin:5px 0;flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
       <button style="margin:5px 0;" onclick="toggleLoginPass()">👁️</button>
     </div>
@@ -347,15 +342,6 @@ function doLogin(){
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
-/*
-   Single-File Chat
-   - Centered login, password is "key"
-   - "Seen" logic in private chats for your messages
-   - Remove old presence listeners to avoid lag
-   - 5 themes: dark->light->blue->green->pink
-   - Idle lock, friend requests, reaction bar, read receipts
-*/
-
 const firebaseConfig={
   apiKey:"AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
   authDomain:"static-live-chatting.firebaseapp.com",
@@ -368,9 +354,9 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let colorMap={};
-const colorClasses=["nameColor1","nameColor2","nameColor3","nameColor4","nameColor5"];
-let blocked={}, friends={};
+// We remove all presence references from the code
+
+let colorMap={}, blocked={}, friends={};
 let currentChat="", currentType="";
 let chatActive="";
 let chatUnread={};
@@ -378,28 +364,20 @@ let chatUnread={};
 let verificationPass=localStorage.getItem("verificationPass")||"";
 let isLocked=false, idleTimer=null;
 
-let userPresenceRef=null; // your presence
-let oldFriendPresenceRef=null; // old presence for private chat
+document.onmousemove=setIdleLockTimer;
+document.onkeypress=setIdleLockTimer;
 
-//** If user stored => skip login
-if(user){
-  document.addEventListener("DOMContentLoaded",()=>{
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="flex";
-    applyTheme();
-    setupPresence();
-    loadBlocked();
-    loadFriends();
-    loadChats();
-    loadRequests();
-    setIdleLockTimer();
-  });
+function setIdleLockTimer(){
+  clearTimeout(idleTimer);
+  if(verificationPass){
+    idleTimer=setTimeout(()=>lockAccount(),5*60*1000);
+  }
 }
+
 function startApp(){
   document.getElementById("login").style.display="none";
   document.getElementById("app").style.display="flex";
   applyTheme();
-  setupPresence();
   loadBlocked();
   loadFriends();
   loadChats();
@@ -407,26 +385,46 @@ function startApp(){
   setIdleLockTimer();
   showNotice(`Logged in as ${user}`);
 }
+
+function lockNow(){
+  if(!verificationPass){
+    const lp=document.getElementById("lockPass").value.trim();
+    if(!lp)return showNotice("No verification pass!");
+    verificationPass=lp;
+    localStorage.setItem("verificationPass", lp);
+  }
+  lockAccount();
+}
+function lockAccount(){
+  if(isLocked)return;
+  isLocked=true;
+  document.getElementById("lockedPanel").style.display="flex";
+  document.getElementById("unlockPass").value="";
+}
+function tryUnlock(){
+  const up=document.getElementById("unlockPass").value.trim();
+  if(up===verificationPass){
+    isLocked=false;
+    document.getElementById("lockedPanel").style.display="none";
+    setIdleLockTimer();
+  } else {
+    showNotice("Wrong verification pass!");
+  }
+}
+
+function doLogin(){
+  const un=document.getElementById("username").value.trim();
+  const pw=document.getElementById("password").value.trim();
+  if(!un)return;
+  localStorage.setItem("user",un);
+  localStorage.setItem("pass",pw);
+  user=un; pass=pw;
+  startApp();
+}
 window.onbeforeunload=()=>{
   if(isLocked)return null;
   return "Are you sure you want to leave?";
 };
-
-//** presence
-function setupPresence(){
-  userPresenceRef=db.ref(`presence/${user}`);
-  userPresenceRef.set({state:"online", lastOnline:Date.now()})
-    .catch(e=>showNotice("presence set error: "+e.message));
-  userPresenceRef.onDisconnect().set({state:"offline", lastOnline:firebase.database.ServerValue.TIMESTAMP})
-    .catch(e=>console.warn("onDisconnect error:", e.message));
-}
-
-function removeFriendPresence(){
-  if(oldFriendPresenceRef){
-    oldFriendPresenceRef.off();
-    oldFriendPresenceRef=null;
-  }
-}
 
 //** theming
 function toggleTheme(){
@@ -457,42 +455,6 @@ function applyTheme(){
   else if(saved==="pink") document.body.classList.add("pink");
 }
 
-//** idle lock
-function setIdleLockTimer(){
-  clearTimeout(idleTimer);
-  if(verificationPass){
-    idleTimer=setTimeout(()=>lockAccount(),5*60*1000);
-  }
-}
-document.onmousemove=setIdleLockTimer;
-document.onkeypress=setIdleLockTimer;
-
-function lockNow(){
-  if(!verificationPass){
-    const v=document.getElementById("lockPass").value.trim();
-    if(!v)return showNotice("No verification pass!");
-    verificationPass=v;
-    localStorage.setItem("verificationPass",v);
-  }
-  lockAccount();
-}
-function lockAccount(){
-  if(isLocked)return;
-  isLocked=true;
-  document.getElementById("lockedPanel").style.display="flex";
-  document.getElementById("unlockPass").value="";
-}
-function tryUnlock(){
-  const up=document.getElementById("unlockPass").value.trim();
-  if(up===verificationPass){
-    isLocked=false;
-    document.getElementById("lockedPanel").style.display="none";
-    setIdleLockTimer();
-  } else {
-    showNotice("Wrong verification pass!");
-  }
-}
-
 //** block/friends
 function loadBlocked(){
   db.ref(`users/${user}/blocked`).on("value", s=>{
@@ -507,7 +469,7 @@ function loadFriends(){
 function blockUserUI(){
   showConfirm("Enter user to block/unblock:<br/><input id='blkU' onkeypress='if(event.key===\"Enter\")confirmYes()'/>",()=>{
     const bn=document.getElementById("blkU").value.trim();
-    if(!bn)return showNotice("No user typed!");
+    if(!bn)return showNotice("No user typed");
     if(blocked[bn]){
       db.ref(`users/${user}/blocked/${bn}`).remove();
       showNotice(`Unblocked ${bn}`);
@@ -529,21 +491,16 @@ function addFriendUI(){
     showNotice(`Friend request sent to ${f}`);
   });
 }
-
-//** open friends panel
 function openFriendsPanel(){
   if(isLocked)return;
   const fi=document.getElementById("friendsInner");
   fi.innerHTML="<h3>Your Friends</h3>";
   Object.keys(friends).forEach(fr=>{
     const div=document.createElement("div");
-    div.style.background="var(--chat-bg)";
-    div.style.padding="8px";
-    div.style.marginBottom="8px";
-    div.style.borderRadius="6px";
+    div.style.background="var(--chat-bg)"; div.style.marginBottom="8px";
+    div.style.padding="8px"; div.style.borderRadius="6px";
     div.innerHTML=`<b>${fr}</b><br/>`;
 
-    // open chat
     const bOpen=document.createElement("button");
     bOpen.textContent="Open Chat";
     bOpen.onclick=()=>{
@@ -583,10 +540,10 @@ function closeFriendsPanel(){
   document.getElementById("friendsPanel").style.display="none";
 }
 function pickGroupForInvite(friend){
-  db.ref(`users/${user}/chats`).once("value", snap=>{
-    const d=snap.val()||{};
-    const groups=Object.entries(d).filter(([id,inf])=>inf.type==="group");
-    if(!groups.length)return showNotice("No group found to invite!");
+  db.ref(`users/${user}/chats`).once("value",snap=>{
+    const data=snap.val()||{};
+    const groups=Object.entries(data).filter(([id,inf])=>inf.type==="group");
+    if(!groups.length)return showNotice("No group found!");
     let h=`<h3>Pick Group for ${friend}</h3>`;
     groups.forEach(([gid,ginfo])=>{
       h+=`<button onclick='inviteFriendToGroup("${gid}","${friend}")'>${ginfo.name}</button><br/>`;
@@ -606,9 +563,9 @@ function loadChats(){
   db.ref(`users/${user}/chats`).on("value", snap=>{
     const data=snap.val()||{};
     const sorted=Object.entries(data).sort((a,b)=>(b[1].last||0)-(a[1].last||0));
-    const cList=document.getElementById("chatList");
-    cList.innerHTML="";
-    sorted.forEach(([id,info])=>{
+    const container=document.getElementById("chatList");
+    container.innerHTML="";
+    sorted.forEach(([id, info])=>{
       const div=document.createElement("div");
       div.className="chatItem";
       if(id===chatActive) div.classList.add("active");
@@ -628,7 +585,7 @@ function loadChats(){
       delBtn.textContent="🗑";
       delBtn.onclick=(e)=>{
         e.stopPropagation();
-        confirmDeleteChat(id,info);
+        confirmDeleteChat(id, info);
       };
       rowRight.appendChild(delBtn);
       div.appendChild(rowRight);
@@ -637,7 +594,7 @@ function loadChats(){
         openChat(id,nm,info.type);
         highlightChat(id);
       };
-      cList.appendChild(div);
+      container.appendChild(div);
     });
   });
 }
@@ -668,7 +625,7 @@ function loadRequests(){
         db.ref(`users/${user}/friends/${from}`).set(true);
         db.ref(`users/${from}/friends/${user}`).set(true);
 
-        // remove from their requestsSent
+        // remove from requestsSent on from
         db.ref(`users/${from}/requestsSent/${user}`).once("value", s2=>{
           if(s2.exists()){
             db.ref(`users/${from}/requestsSent/${user}`).remove();
@@ -677,8 +634,7 @@ function loadRequests(){
           }
         });
 
-        // open for acceptor
-        openChat(cid, from, "private");
+        openChat(cid,from,"private");
       };
       d.appendChild(g);
 
@@ -697,36 +653,31 @@ function loadRequests(){
     const outData=snap2.val()||{};
     st.innerHTML="<strong>Requests Sent:</strong><br/>";
     Object.keys(outData).forEach(to=>{
-      const d=document.createElement("div");
-      d.className="requestItem";
-      d.textContent=`(Pending) ${to} `;
+      const di=document.createElement("div");
+      di.className="requestItem";
+      di.textContent=`(Pending) ${to} `;
       const c=document.createElement("button");
       c.textContent="Cancel";
       c.onclick=()=>{
         db.ref(`users/${user}/requestsSent/${to}`).remove();
         db.ref(`users/${to}/requests/${user}`).remove();
       };
-      d.appendChild(c);
-      st.appendChild(d);
+      di.appendChild(c);
+      st.appendChild(di);
     });
   });
   // watch accepted
   db.ref(`users/${user}/accepted`).on("child_added", s=>{
     const who=s.key;
-    showNotice(`${who} accepted your friend request! Chat unlocked!`);
-    // remove from requestsSent
+    showNotice(`${who} accepted your request! Chat unlocked.`);
     db.ref(`users/${user}/requestsSent/${who}`).remove();
-    // ensure chat
     const cid=[user,who].sort().join("_");
     db.ref(`privateChats/${cid}`).once("value", s3=>{
       if(!s3.exists()) db.ref(`privateChats/${cid}`).set({});
     });
     db.ref(`users/${user}/chats/${cid}`).set({name:who,type:"private",last:Date.now()});
-    // open if none open
     if(!currentChat) openChat(cid, who, "private");
-    setTimeout(()=>{
-      db.ref(`users/${user}/accepted/${who}`).remove();
-    },3000);
+    setTimeout(()=>db.ref(`users/${user}/accepted/${who}`).remove(),3000);
   });
 }
 function confirmDeleteChat(chatId, info){
@@ -756,10 +707,9 @@ function confirmDeleteChat(chatId, info){
 }
 
 //** open chat
-function openChat(cid, nm, ty){
+function openChat(cid,nm,ty){
   if(isLocked)return;
-  currentChat=cid;
-  currentType=ty;
+  currentChat=cid; currentType=ty;
   chatUnread[cid]=0;
   highlightChat(cid);
 
@@ -767,33 +717,7 @@ function openChat(cid, nm, ty){
   document.getElementById("messages").innerHTML="";
   document.getElementById("groupMembers").style.display=(ty==="group")?"block":"none";
 
-  // remove old presence if private
-  removeFriendPresence();
-
-  if(ty==="private"){
-    // attach presence for friend
-    if(nm!=="No Chat"){
-      const friendName=nm.replace(" [Blocked]","");
-      oldFriendPresenceRef=db.ref(`presence/${friendName}`);
-      oldFriendPresenceRef.on("value", s=>{
-        const val=s.val();
-        const label=document.getElementById("presenceLabel");
-        if(!val){
-          label.textContent="(Offline)";
-        } else if(val.state==="online"){
-          label.textContent="(Online)";
-        } else {
-          const delta=Date.now()-(val.lastOnline||0);
-          const mins=Math.floor(delta/60000);
-          label.textContent=`(Last seen ${mins} min ago)`;
-        }
-      });
-    }
-  } else {
-    // group => no friend presence
-    const label=document.getElementById("presenceLabel");
-    label.textContent="(Group)";
-  }
+  // No presence references, so skip
 
   const path=(ty==="group"?"groupChats":"privateChats")+"/"+cid+"/messages";
   db.ref(path).off();
@@ -807,14 +731,12 @@ function openChat(cid, nm, ty){
     });
     markMessagesRead(Object.keys(data));
   });
-
   if(ty==="group"){
     db.ref(`groupChats/${cid}/members`).on("value", sp=>{
       const mm=Object.keys(sp.val()||{});
       document.getElementById("groupMembers").textContent="Members: "+mm.join(", ");
     });
   }
-
   db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/typing`).off();
   db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/typing`).on("value", s=>{
     const val=s.val();
@@ -829,17 +751,9 @@ function openChat(cid, nm, ty){
   db.ref(`users/${user}/chats/${cid}/last`).set(Date.now());
 }
 
-function removeFriendPresence(){
-  if(oldFriendPresenceRef){
-    oldFriendPresenceRef.off();
-    oldFriendPresenceRef=null;
-  }
-}
-
 function createMessageBubble(msgId, msg, ty){
-  // blocked
-  if(ty==="private" && msg.sender!==user && blocked[msg.sender])return;
-  if(ty==="group" && msg.sender!==user && blocked[msg.sender])return;
+  if(ty==="private"&&msg.sender!==user&&blocked[msg.sender])return;
+  if(ty==="group"&&msg.sender!==user&&blocked[msg.sender])return;
 
   const isMe=(msg.sender===user);
   const bubble=document.createElement("div");
@@ -856,8 +770,7 @@ function createMessageBubble(msgId, msg, ty){
   } else {
     bubble.textContent=msg.text;
   }
-
-  if(ty==="group" && msg.sender!=="_system" && !isMe){
+  if(ty==="group"&&msg.sender!=="_system"&&!isMe){
     const cc=getColorClass(msg.sender);
     bubble.innerHTML=`<span class='${cc}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span>`+bubble.innerHTML;
   }
@@ -866,7 +779,6 @@ function createMessageBubble(msgId, msg, ty){
     bubble.style.opacity="0.7";
   }
 
-  // Reaction
   const rt=document.createElement("span");
   rt.className="reactionTag";
   if(msg.reaction) rt.textContent=msg.reaction;
@@ -892,16 +804,14 @@ function createMessageBubble(msgId, msg, ty){
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
   });
 
-  // time
   const time=new Date(msg.timestamp||0).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
   const ts=document.createElement("div");
   ts.className="timestamp "+(isMe?"mineTime":"otherTime");
   ts.textContent=time;
   bubble.appendChild(ts);
 
-  // read receipts
   if(ty==="group"){
-    // "Seen by x,y" except sender
+    // group => "Seen by: x,y"
     if(msg.readBy){
       const readList=Object.keys(msg.readBy).filter(u=>u!==msg.sender);
       if(readList.length>0){
@@ -926,8 +836,7 @@ function createMessageBubble(msgId, msg, ty){
 
   document.getElementById("messages").appendChild(bubble);
 }
-
-function applyReaction(msgId, reaction){
+function applyReaction(msgId,reaction){
   if(!currentChat||!currentType)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages/${msgId}/reaction`).set(reaction);
@@ -951,46 +860,19 @@ function sendMessage(){
   const text=inp.value.trim();
   if(!text||!currentChat)return;
   if(currentType==="private"){
-    const frName=document.getElementById("chatTitle").textContent.replace(" [Blocked]","");
-    if(blocked[frName])return showNotice("You blocked user. Unblock first!");
+    const nm=document.getElementById("chatTitle").textContent.replace(" [Blocked]","");
+    if(blocked[nm])return showNotice("You blocked them. Unblock first!");
   }
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages`).push({
-    sender:user, text, timestamp:Date.now(),
+    sender:user,
+    text,
+    timestamp:Date.now(),
     reaction:"",
     readBy:{[user]:Date.now()}
   });
   inp.value="";
   sendTyping();
-}
-
-function showPresenceInfo(nm,ty){
-  // remove old presence
-  removeFriendPresence();
-  const label=document.getElementById("presenceLabel");
-  if(ty==="group"){
-    label.textContent="(Group)";
-    return;
-  }
-  if(blocked[nm]){
-    label.textContent="(Blocked)";
-    return;
-  }
-  const friend=nm.replace(" [Blocked]","");
-  // add new presence
-  oldFriendPresenceRef=db.ref(`presence/${friend}`);
-  oldFriendPresenceRef.on("value", s=>{
-    const val=s.val();
-    if(!val){
-      label.textContent="(Offline)";
-    } else if(val.state==="online"){
-      label.textContent="(Online)";
-    } else {
-      const delta=Date.now()-(val.lastOnline||0);
-      const mins=Math.floor(delta/60000);
-      label.textContent=`(Last seen ${mins} min ago)`;
-    }
-  });
 }
 
 function getColorClass(u){
@@ -1136,14 +1018,14 @@ function saveSettings(){
   const np=document.getElementById("editPassword").value.trim();
   if(!nu)return;
   user=nu; pass=np;
-  localStorage.setItem("user",nu);
-  localStorage.setItem("pass",np);
+  localStorage.setItem("user", nu);
+  localStorage.setItem("pass", np);
 
   const lP=document.getElementById("lockPass").value.trim()||"";
   verificationPass=lP;
   localStorage.setItem("verificationPass",lP);
 
-  showNotice("Settings saved. If presence fails, update your rules for /presence.");
+  showNotice("Settings saved! No presence in code, so no presence rules needed.");
   setIdleLockTimer();
 }
 
@@ -1182,37 +1064,32 @@ function closeNotice(){
   document.getElementById("noticePanel").style.display="none";
 }
 
-console.log("✅ Final Polished No-Lag version loaded. If presence warns permission_denied, fix your /presence rules. Enjoy!");
+if(user){
+  document.addEventListener("DOMContentLoaded",()=>{
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="flex";
+    applyTheme();
+    loadBlocked(); loadFriends(); loadChats(); loadRequests();
+    setIdleLockTimer();
+  });
+}
+
+console.log("✅ Presence removed. No watchers for presence. This should reduce lag. 5 themes, friend requests, read receipts, idle lock remain!");
 </script>
 
-<!-- Example rules (presence included):
+<!-- For a fully open DB with no presence:
 {
   "rules": {
-    ".read":"true",
-    ".write":"true",
-    "presence":{
-      "$uid":{
-        ".read":"true",
-        ".write":"true"
-      }
+    ".read": true,
+    ".write": true,
+    "users": {
+      "$username": { ".read": true, ".write": true }
     },
-    "users":{
-      "$username":{
-        ".read":"true",
-        ".write":"true"
-      }
+    "privateChats": {
+      "$chatId": { ".read": true, ".write": true }
     },
-    "privateChats":{
-      "$chatId":{
-        ".read":"true",
-        ".write":"true"
-      }
-    },
-    "groupChats":{
-      "$groupId":{
-        ".read":"true",
-        ".write":"true"
-      }
+    "groupChats": {
+      "$groupId": { ".read": true, ".write": true }
     }
   }
 }

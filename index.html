@@ -1,11 +1,10 @@
-<!-- Static Live Chatting – Final Fixed Version -->
+<!-- Static Live Chatting – Updated with Typing Sync, Requests Tab, Settings Fixes -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Static Live Chatting</title>
-  <link rel="manifest" href="manifest.json">
   <style>
     :root {
       --bg-color: #111;
@@ -33,17 +32,6 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
-      transition: background 0.3s, color 0.3s;
-    }
-    #login, #settings {
-      position: fixed;
-      inset: 0;
-      background: var(--bg-color);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
     }
     input, button {
       padding: 10px;
@@ -57,6 +45,16 @@
       color: white;
       cursor: pointer;
     }
+    #login, #settings {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
     #app {
       display: flex;
       flex: 1;
@@ -66,8 +64,6 @@
       background: var(--sidebar-color);
       padding: 10px;
       overflow-y: auto;
-      display: flex;
-      flex-direction: column;
     }
     #chatPanel {
       flex: 1;
@@ -91,20 +87,6 @@
       font-style: italic;
       font-size: 12px;
       color: #ccc;
-    }
-    .msg span {
-      color: var(--accent);
-      font-weight: bold;
-    }
-    .chatItem {
-      padding: 8px;
-      background: var(--msg-bg);
-      margin-bottom: 6px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .chatItem:hover {
-      background: var(--hover-bg);
     }
     #inputArea {
       display: flex;
@@ -131,11 +113,31 @@
       margin: 5px;
       cursor: pointer;
     }
+    .msg span {
+      color: var(--accent);
+      font-weight: bold;
+    }
+    .chatItem {
+      padding: 8px;
+      background: var(--msg-bg);
+      margin-bottom: 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .chatItem:hover {
+      background: var(--hover-bg);
+    }
     #chatPassword {
       margin: 5px;
       font-size: 12px;
       text-align: right;
       padding-right: 10px;
+    }
+    #requestsTab {
+      padding: 10px;
+      background: var(--chat-bg);
+      color: var(--text-color);
+      font-size: 14px;
     }
     #staticMenu {
       position: fixed;
@@ -178,20 +180,23 @@
     <h3>Chats</h3>
     <div id="chatList"></div>
     <hr/>
+    <h4>Friend Requests</h4>
+    <div id="requestsTab"></div>
+    <hr/>
     <button onclick="openGroup()">➕ Create Group</button>
     <button onclick="addFriendChat()">👤 Add Friend Chat</button>
-    <button onclick="toggleTheme()">🌓 Toggle Theme</button>
-    <button onclick="openSettings()">⚙️ Settings</button>
   </div>
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
-      <div id="chatPassword"><span id="chatPassDisplay" style="display:none;"></span><button onclick="revealPassword()">🔓 Show</button></div>
+      <div>
+        <button onclick="openSettings()">⚙️</button>
+      </div>
     </div>
     <div id="messages"></div>
-    <div id="typingIndicator" style="display: none;">User is typing...</div>
+    <div id="typingIndicator" style="display:none;">User is typing...</div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type message..." oninput="showTyping()" onkeypress="if(event.key==='Enter')sendMessage();" />
+      <input id="msgInput" placeholder="Type message..." oninput="sendTyping()" onkeypress="if(event.key==='Enter')sendMessage();" />
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>
@@ -203,7 +208,8 @@
   <h2>Settings</h2>
   <label>Username: <input id="editUsername" /></label>
   <label>Password: <input id="editPassword" /></label>
-  <p>Changing your password may break previous chats (A) or only affect new ones (B).</p>
+  <p>Theme: <button onclick="toggleTheme()">🌓 Toggle</button></p>
+  <p>Password changes may break chats (A) or only affect new ones (B).</p>
   <button onclick="saveSettings('A')">Save (Affect Past)</button>
   <button onclick="saveSettings('B')">Save (Future Only)</button>
   <button onclick="requestNotificationPermission()">🔔 Enable Notifications</button>
@@ -218,6 +224,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics-compat.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
@@ -240,6 +247,7 @@ if (user && !localStorage.getItem("locked")) {
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
   loadChats();
+  loadRequests();
 }
 if (localStorage.getItem("theme") === "light") document.body.classList.add("light");
 
@@ -252,11 +260,14 @@ function login() {
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
   loadChats();
+  loadRequests();
 }
+
 function togglePassword() {
   const input = document.getElementById("password");
   input.type = input.type === "password" ? "text" : "password";
 }
+
 function loadChats() {
   db.ref("users/" + user + "/chats").on("value", snap => {
     const data = snap.val() || {};
@@ -272,17 +283,40 @@ function loadChats() {
     });
   });
 }
+
+function loadRequests() {
+  db.ref("users/" + user + "/requests").on("value", snap => {
+    const data = snap.val() || {};
+    const tab = document.getElementById("requestsTab");
+    tab.innerHTML = "";
+    Object.keys(data).forEach(from => {
+      const div = document.createElement("div");
+      div.textContent = `From: ${from}`;
+      const btn = document.createElement("button");
+      btn.textContent = "Accept";
+      btn.onclick = () => {
+        const id = [user, from].sort().join("_");
+        db.ref(`privateChats/${id}`).set({});
+        db.ref(`users/${user}/chats/${id}`).set({ name: from, type: "private" });
+        db.ref(`users/${user}/requests/${from}`).remove();
+        alert(`Accepted friend request from ${from}`);
+        loadChats();
+      };
+      div.appendChild(btn);
+      tab.appendChild(div);
+    });
+  });
+}
+
 function openChat(id, name, type = "private", password = "") {
   if (!id) return;
   currentChat = id;
   currentType = type;
   currentPassword = password;
   document.getElementById("chatTitle").textContent = name;
-  document.getElementById("chatPassDisplay").textContent = password ? `Password: ${password}` : "";
-  document.getElementById("chatPassDisplay").style.display = "none";
+  document.getElementById("messages").innerHTML = "";
   const ref = db.ref(`${type}Chats/${id}/messages`);
   ref.off();
-  document.getElementById("messages").innerHTML = "";
   ref.on("child_added", snap => {
     const msg = snap.val();
     if (blocked.includes(msg.sender)) return;
@@ -294,7 +328,28 @@ function openChat(id, name, type = "private", password = "") {
       new Notification("New Message", { body: `${msg.sender}: ${msg.text}` });
     }
   });
+
+  // Listen for typing
+  db.ref(`${type}Chats/${id}/typing`).on("value", snap => {
+    const typer = snap.val();
+    const typingBox = document.getElementById("typingIndicator");
+    if (typer && typer !== user) {
+      typingBox.style.display = "block";
+      typingBox.textContent = `${typer} is typing...`;
+    } else {
+      typingBox.style.display = "none";
+    }
+  });
 }
+
+function sendTyping() {
+  if (!currentChat) return;
+  db.ref(`${currentType}Chats/${currentChat}/typing`).set(user);
+  setTimeout(() => {
+    db.ref(`${currentType}Chats/${currentChat}/typing`).set("");
+  }, 2000);
+}
+
 function sendMessage() {
   const text = document.getElementById("msgInput").value.trim();
   if (!text || !currentChat) return;
@@ -304,7 +359,9 @@ function sendMessage() {
     timestamp: Date.now()
   });
   document.getElementById("msgInput").value = "";
+  db.ref(`${currentType}Chats/${currentChat}/typing`).set("");
 }
+
 function toggleEmojiPicker() {
   const picker = document.getElementById("emojiPicker");
   picker.innerHTML = "";
@@ -320,12 +377,7 @@ function toggleEmojiPicker() {
     picker.appendChild(span);
   });
 }
-function showTyping() {
-  const el = document.getElementById("typingIndicator");
-  el.style.display = "block";
-  clearTimeout(window.typingTimeout);
-  window.typingTimeout = setTimeout(() => el.style.display = "none", 1500);
-}
+
 function openGroup() {
   const name = prompt("Group name:");
   const pw = prompt("Password (optional):");
@@ -334,6 +386,7 @@ function openGroup() {
   db.ref(`users/${user}/chats/${id}`).set({ name, password: pw, type: "group" });
   openChat(id, name, "group", pw);
 }
+
 function addFriendChat() {
   const friend = prompt("Friend's username:");
   if (!friend) return;
@@ -344,14 +397,12 @@ function addFriendChat() {
   db.ref(`users/${friend}/requests/${user}`).set({ requested: true });
   openChat(id, friend, "private");
 }
-function revealPassword() {
-  const el = document.getElementById("chatPassDisplay");
-  el.style.display = el.style.display === "none" ? "inline" : "none";
-}
+
 function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
 }
+
 function requestNotificationPermission() {
   if (!("Notification" in window)) return alert("Your browser does not support notifications.");
   Notification.requestPermission().then(permission => {
@@ -362,6 +413,7 @@ function requestNotificationPermission() {
     }
   });
 }
+
 function saveSettings(mode) {
   const newUser = document.getElementById("editUsername").value.trim();
   const newPass = document.getElementById("editPassword").value.trim();
@@ -373,20 +425,24 @@ function saveSettings(mode) {
     : "Password changed. New chats only.");
   location.reload();
 }
+
 function openSettings() {
   document.getElementById("editUsername").value = user;
   document.getElementById("editPassword").value = pass;
   document.getElementById("settings").style.display = "flex";
 }
+
 function closeSettings() {
   document.getElementById("settings").style.display = "none";
 }
+
 function closeStaticMenu() {
   document.getElementById("staticMenu").style.display = "none";
   setTimeout(() => {
     document.getElementById("staticMenu").style.display = "block";
   }, 180000);
 }
+
 function showBlocked() {
   const newList = prompt(`Blocked users:\n${blocked.join("\n")}\n\nType a name to unblock or block someone new:`);
   if (!newList) return;
@@ -399,6 +455,7 @@ function showBlocked() {
   }
   localStorage.setItem("blocked", JSON.stringify(blocked));
 }
+
 </script>
 </body>
 </html>

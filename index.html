@@ -1,4 +1,3 @@
-<!-- FULL STATIC LIVE CHATTING SYSTEM: UPGRADED VERSION -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,173 +8,229 @@
     :root {
       --bg-color: #111;
       --text-color: #fff;
-      --sidebar-color: #222;
-      --chat-bg: #333;
-      --msg-bg: #444;
-      --hover-bg: #555;
+      --sidebar-color: #1c1c1c;
+      --chat-bg: #222;
+      --bubble-me: #1e90ff;
+      --bubble-them: #444;
       --accent: #1e90ff;
-      --bubble-user: #1e90ff;
-      --bubble-other: #666;
+      --badge: red;
     }
     body.light {
-      --bg-color: #f0f0f0;
+      --bg-color: #f4f4f4;
       --text-color: #000;
-      --sidebar-color: #e0e0e0;
-      --chat-bg: #ccc;
-      --msg-bg: #ddd;
-      --hover-bg: #bbb;
+      --sidebar-color: #ddd;
+      --chat-bg: #eee;
+      --bubble-me: #007aff;
+      --bubble-them: #ccc;
       --accent: #007acc;
-      --bubble-user: #007aff;
-      --bubble-other: #ccc;
     }
     body {
       margin: 0;
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
       height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     input, button {
-      padding: 12px;
-      font-size: 18px;
+      padding: 10px;
+      font-size: 16px;
       margin: 5px;
       border-radius: 6px;
       border: none;
     }
     button { background: var(--accent); color: white; cursor: pointer; }
-    #login, #settings {
+    .panel {
+      padding: 20px;
+      background: var(--chat-bg);
+      border-radius: 10px;
+    }
+    #login, #settingsPanel, #groupJoinPanel, #groupCreatePanel, #directoryPanel {
       position: fixed; inset: 0;
       background: var(--bg-color);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       z-index: 999;
     }
-    #app { display: flex; flex: 1; height: 100%; }
+    #app {
+      display: flex;
+      flex: 1;
+      height: 100%;
+    }
     #sidebar {
-      width: 260px; background: var(--sidebar-color);
-      display: flex; flex-direction: column;
-      padding: 10px; overflow-y: auto;
+      width: 280px;
+      background: var(--sidebar-color);
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      overflow-y: auto;
     }
     #chatPanel {
-      flex: 1; display: flex; flex-direction: column;
-      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--chat-bg);
     }
     #topBar {
-      background: var(--chat-bg);
-      padding: 12px;
-      display: flex; justify-content: space-between;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      font-size: 20px;
+      padding: 10px;
+      font-size: 18px;
+      background: var(--chat-bg);
     }
     #messages {
-      flex: 1; padding: 15px;
+      flex: 1;
+      padding: 15px;
       overflow-y: auto;
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
     }
     .msg {
       max-width: 70%;
-      margin-bottom: 12px;
       padding: 12px 16px;
+      margin: 6px;
       border-radius: 20px;
       font-size: 17px;
       line-height: 1.4;
       word-wrap: break-word;
     }
-    .msg.mine {
-      background: var(--bubble-user);
+    .me {
       align-self: flex-end;
-      color: #fff;
+      background: var(--bubble-me);
+      color: white;
       border-bottom-right-radius: 5px;
     }
-    .msg.other {
-      background: var(--bubble-other);
+    .them {
       align-self: flex-start;
-      color: #000;
+      background: var(--bubble-them);
+      color: white;
       border-bottom-left-radius: 5px;
     }
     #typingIndicator {
-      padding: 6px 16px;
       font-style: italic;
-      font-size: 15px;
+      font-size: 14px;
+      margin: 0 20px 10px;
     }
     #inputArea {
+      display: flex;
+      padding: 10px;
       background: var(--sidebar-color);
-      display: flex; padding: 10px;
     }
-    #inputArea input { flex: 1; margin-right: 6px; font-size: 18px; }
+    #inputArea input {
+      flex: 1;
+      margin-right: 5px;
+      font-size: 17px;
+    }
     #emojiPicker {
-      display: none; flex-wrap: wrap;
-      max-width: 250px; background: var(--chat-bg);
-      position: absolute; bottom: 70px; right: 10px;
-      z-index: 99; padding: 10px;
+      display: none;
+      position: absolute;
+      bottom: 70px;
+      right: 15px;
+      background: var(--chat-bg);
+      padding: 10px;
+      flex-wrap: wrap;
+      z-index: 99;
+      max-width: 260px;
     }
     #emojiPicker span {
-      font-size: 24px; margin: 6px; cursor: pointer;
+      font-size: 22px;
+      margin: 6px;
+      cursor: pointer;
     }
     .chatItem {
-      background: var(--msg-bg);
-      padding: 10px; margin-bottom: 6px;
-      border-radius: 5px; cursor: pointer;
-    }
-    .chatItem:hover { background: var(--hover-bg); }
-    #groupMembers {
-      padding: 8px 14px;
       background: var(--chat-bg);
-      font-size: 14px;
-      color: #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
     }
-    #chatTitle {
-      flex: 1;
+    .chatItem:hover {
+      background: var(--bubble-them);
+    }
+    .chatBadge {
+      background: var(--badge);
+      color: white;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+    .requestItem {
+      background: var(--bubble-them);
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+    }
+    #staticMenu {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: #1e1e1e;
+      color: white;
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: 0 0 6px #0ff;
+      animation: blink 2s infinite;
+      z-index: 1000;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
     }
   </style>
 </head>
 <body>
-<div id="login">
-  <h2>Static Live Chatting</h2>
-  <p>⚠️ Do not share passwords or sensitive info.</p>
-  <input id="username" placeholder="Nickname" />
-  <input id="password" type="password" placeholder="Password (optional)" />
-  <button onclick="togglePassword()">👁 Show Password</button>
-  <button onclick="login()">Log In</button>
+
+<div id="login" style="display:flex;">
+  <div class="panel">
+    <h2>Static Live Chatting</h2>
+    <p>⚠️ Never share sensitive info</p>
+    <input id="username" placeholder="Username"/><br/>
+    <input id="password" type="password" placeholder="Password (optional)"/><br/>
+    <button onclick="login()">Log In</button>
+  </div>
 </div>
 
 <div id="app" style="display:none;">
   <div id="sidebar">
+    <h3>Friend Requests</h3>
+    <div id="requestsTab"></div>
     <h3>Chats</h3>
     <div id="chatList"></div>
     <hr/>
-    <button onclick="createGroup()">➕ Create Group</button>
-    <button onclick="joinGroup()">🔓 Join Group</button>
-    <button onclick="addFriend()">👤 Add Friend</button>
-    <button onclick="openSettings()">⚙️ Settings</button>
-    <button onclick="toggleTheme()">🌓 Theme</button>
+    <button onclick="showJoinPanel()">🔓 Join Group Chat</button>
+    <button onclick="showCreatePanel()">➕ Create Group</button>
+    <button onclick="showDirectory()">🌐 Public Chats/People</button>
   </div>
+
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
-      <div><button onclick="openSettings()">⚙️</button></div>
+      <div>
+        <button onclick="openSettings()">⚙️</button>
+      </div>
     </div>
-    <div id="groupMembers" style="display:none;"></div>
+    <div id="groupMembers" style="padding:5px 15px; display:none; font-size:14px;"></div>
     <div id="messages"></div>
-    <div id="typingIndicator" style="display:none;">User is typing...</div>
+    <div id="typingIndicator" style="display:none;"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type message..." oninput="sendTyping()" onkeypress="if(event.key==='Enter')sendMessage();" />
+      <input id="msgInput" placeholder="Type..." oninput="sendTyping()" onkeypress="if(event.key==='Enter')sendMessage();"/>
       <button onclick="toggleEmojiPicker()">😀</button>
+      <button onclick="toggleLock()">🔒</button>
       <button onclick="sendMessage()">Send</button>
     </div>
     <div id="emojiPicker"></div>
   </div>
 </div>
-
-<div id="settings" style="display:none;">
-  <h2>Settings</h2>
-  <label>Username: <input id="editUsername" /></label><br/>
-  <label>Password: <input id="editPassword" /></label><br/>
-  <p><button onclick="saveSettings()">Save</button> <button onclick="closeSettings()">Close</button></p>
-</div>
-
+<!-- ✅ Part 2: Full JavaScript Logic -->
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
@@ -195,7 +250,10 @@ const db = firebase.database();
 
 let user = localStorage.getItem("user") || "";
 let pass = localStorage.getItem("pass") || "";
-let currentChat = "", currentType = "", currentPassword = "", typingTimeout;
+let currentChat = "", currentType = "", typingTimeout;
+let chatUnread = {};
+
+if (user) startApp();
 
 function login() {
   user = document.getElementById("username").value.trim();
@@ -203,27 +261,35 @@ function login() {
   if (!user) return;
   localStorage.setItem("user", user);
   localStorage.setItem("pass", pass);
+  startApp();
+}
+
+function startApp() {
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
   loadChats();
-}
-
-function togglePassword() {
-  const input = document.getElementById("password");
-  input.type = input.type === "password" ? "text" : "password";
+  loadRequests();
+  if (localStorage.getItem("theme") === "light") document.body.classList.add("light");
 }
 
 function loadChats() {
   db.ref("users/" + user + "/chats").on("value", snap => {
     const data = snap.val() || {};
-    const list = document.getElementById("chatList");
-    list.innerHTML = "";
-    Object.entries(data).forEach(([id, info]) => {
+    const list = Object.entries(data).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
+    const container = document.getElementById("chatList");
+    container.innerHTML = "";
+    list.forEach(([id, info]) => {
       const div = document.createElement("div");
       div.className = "chatItem";
-      div.textContent = info.name || id;
-      div.onclick = () => openChat(id, info.name, info.type || "private");
-      list.appendChild(div);
+      const name = info.name || id;
+      div.textContent = name;
+      const badge = document.createElement("span");
+      badge.className = "chatBadge";
+      badge.style.display = chatUnread[id] ? "inline-block" : "none";
+      badge.textContent = chatUnread[id] || "";
+      div.appendChild(badge);
+      div.onclick = () => openChat(id, name, info.type || "private");
+      container.appendChild(div);
     });
   });
 }
@@ -231,14 +297,15 @@ function loadChats() {
 function openChat(id, name, type) {
   currentChat = id;
   currentType = type;
+  chatUnread[id] = 0;
   document.getElementById("chatTitle").textContent = name;
   document.getElementById("messages").innerHTML = "";
   document.getElementById("groupMembers").style.display = type === "group" ? "block" : "none";
 
   if (type === "group") {
     db.ref("groupChats/" + id + "/members").on("value", snap => {
-      const members = snap.val() || {};
-      document.getElementById("groupMembers").textContent = "Members: " + Object.keys(members).join(", ");
+      const members = Object.keys(snap.val() || {});
+      document.getElementById("groupMembers").textContent = "Members: " + members.join(", ");
     });
   }
 
@@ -246,19 +313,30 @@ function openChat(id, name, type) {
   ref.off();
   ref.on("child_added", snap => {
     const msg = snap.val();
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "msg " + (msg.sender === user ? "mine" : "other");
-    msgDiv.textContent = msg.text;
-    document.getElementById("messages").appendChild(msgDiv);
+    const isMe = msg.sender === user;
+    const bubble = document.createElement("div");
+    bubble.className = "msg " + (isMe ? "me" : "them");
+    bubble.textContent = msg.text;
+    document.getElementById("messages").appendChild(bubble);
     document.getElementById("messages").scrollTop = 999999;
+    if (!isMe && currentChat !== id) {
+      chatUnread[id] = (chatUnread[id] || 0) + 1;
+      loadChats();
+    }
   });
 
   db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/typing").on("value", snap => {
     const typer = snap.val();
     const box = document.getElementById("typingIndicator");
-    box.style.display = (typer && typer !== user) ? "block" : "none";
-    box.textContent = `${typer} is typing...`;
+    if (typer && typer !== user) {
+      box.style.display = "block";
+      box.textContent = `${typer} is typing...`;
+    } else {
+      box.style.display = "none";
+    }
   });
+
+  db.ref("users/" + user + "/chats/" + id + "/last").set(Date.now());
 }
 
 function sendTyping() {
@@ -267,7 +345,7 @@ function sendTyping() {
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
     db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing").set("");
-  }, 1500);
+  }, 2000);
 }
 
 function sendMessage() {
@@ -287,7 +365,7 @@ function toggleEmojiPicker() {
   const picker = document.getElementById("emojiPicker");
   picker.innerHTML = "";
   picker.style.display = picker.style.display === "flex" ? "none" : "flex";
-  [..."😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕📱📧📌💬💡🧡🥺👀✅📣🕹️😆😍🤩🫶🤓🗨️🔒💭💻📚💤"].forEach(e => {
+  [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑"].forEach(e => {
     const span = document.createElement("span");
     span.textContent = e;
     span.onclick = () => {
@@ -298,48 +376,51 @@ function toggleEmojiPicker() {
   });
 }
 
-function addFriend() {
-  const name = prompt("Friend's username:");
-  if (!name) return;
-  const id = [user, name].sort().join("_");
-  db.ref("privateChats/" + id).set({});
-  db.ref("users/" + user + "/chats/" + id).set({ name, type: "private" });
-}
-
-function createGroup() {
-  const name = prompt("Group name:");
-  const type = prompt("Type: open / password / invite-only");
-  const pw = type === "password" ? prompt("Set password:") : "";
-  const id = "group_" + Date.now();
-  const groupData = { name, type, password: pw, createdBy: user };
-  groupData.members = { [user]: true };
-  db.ref("groupChats/" + id).set(groupData);
-  db.ref("users/" + user + "/chats/" + id).set({ name, type: "group" });
-}
-
-function joinGroup() {
-  const id = prompt("Group ID:");
-  db.ref("groupChats/" + id).once("value", snap => {
-    const g = snap.val();
-    if (!g) return;
-    if (g.type === "password") {
-      const entered = prompt("Enter group password:");
-      if (entered !== g.password) return;
-    }
-    if (g.type === "invite-only" && !g.members?.[user]) return;
-    db.ref("groupChats/" + id + "/members/" + user).set(true);
-    db.ref("users/" + user + "/chats/" + id).set({ name: g.name, type: "group" });
+function toggleLock() {
+  if (!currentChat || !currentType) return;
+  const password = localStorage.getItem("pass");
+  const text = `🔒 Password: ${password || "(none)"}`;
+  db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages").push({
+    sender: user,
+    text,
+    timestamp: Date.now()
   });
 }
 
+function loadRequests() {
+  db.ref("users/" + user + "/requests").on("value", snap => {
+    const tab = document.getElementById("requestsTab");
+    tab.innerHTML = "";
+    const data = snap.val() || {};
+    Object.keys(data).forEach(from => {
+      const div = document.createElement("div");
+      div.className = "requestItem";
+      div.textContent = `${from} wants to chat `;
+      const accept = document.createElement("button");
+      accept.textContent = "Accept";
+      accept.onclick = () => {
+        const id = [user, from].sort().join("_");
+        db.ref("privateChats/" + id).set({});
+        db.ref("users/" + user + "/chats/" + id).set({ name: from, type: "private", last: Date.now() });
+        db.ref("users/" + user + "/requests/" + from).remove();
+      };
+      div.appendChild(accept);
+      tab.appendChild(div);
+    });
+  });
+}
+</script>
+<script>
+// === Part 3: Settings, Group Creation/Join, Public Directory ===
+
 function openSettings() {
+  document.getElementById("settingsPanel").style.display = "flex";
   document.getElementById("editUsername").value = user;
   document.getElementById("editPassword").value = pass;
-  document.getElementById("settings").style.display = "flex";
 }
 
 function closeSettings() {
-  document.getElementById("settings").style.display = "none";
+  document.getElementById("settingsPanel").style.display = "none";
 }
 
 function saveSettings() {
@@ -355,6 +436,338 @@ function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
 }
+
+function showJoinPanel() {
+  document.getElementById("groupJoinPanel").style.display = "flex";
+}
+
+function closeJoinPanel() {
+  document.getElementById("groupJoinPanel").style.display = "none";
+}
+
+function joinGroupChat() {
+  const id = document.getElementById("joinGroupID").value.trim();
+  const enteredPw = document.getElementById("joinGroupPassword").value.trim();
+  if (!id) return;
+  db.ref("groupChats/" + id).once("value", snap => {
+    const group = snap.val();
+    if (!group) return alert("Group not found");
+    if (group.type === "password" && group.password !== enteredPw) return alert("Wrong password");
+    if (group.type === "invite" && !(group.members && group.members[user])) return alert("You are not invited");
+    db.ref("groupChats/" + id + "/members/" + user).set(true);
+    db.ref("users/" + user + "/chats/" + id).set({ name: group.name, type: "group", last: Date.now() });
+    closeJoinPanel();
+    openChat(id, group.name, "group");
+  });
+}
+
+function showCreatePanel() {
+  document.getElementById("groupCreatePanel").style.display = "flex";
+}
+
+function closeCreatePanel() {
+  document.getElementById("groupCreatePanel").style.display = "none";
+}
+
+function createGroupChat() {
+  const name = document.getElementById("groupName").value.trim();
+  const type = document.getElementById("groupType").value;
+  const pw = document.getElementById("groupPassword").value.trim();
+  if (!name) return;
+  const id = "group_" + Date.now();
+  const members = {}; members[user] = true;
+  db.ref("groupChats/" + id).set({
+    name, type, password: pw, members, createdBy: user
+  });
+  db.ref("users/" + user + "/chats/" + id).set({
+    name, type: "group", last: Date.now()
+  });
+  closeCreatePanel();
+  openChat(id, name, "group");
+}
+
+function showDirectory() {
+  document.getElementById("directoryPanel").style.display = "flex";
+  loadPublicDirectory();
+}
+
+function closeDirectory() {
+  document.getElementById("directoryPanel").style.display = "none";
+}
+
+function loadPublicDirectory() {
+  const list = document.getElementById("publicList");
+  list.innerHTML = "<strong>Open Groups:</strong><br/>";
+  db.ref("groupChats").once("value", snap => {
+    const groups = snap.val() || {};
+    Object.entries(groups).forEach(([id, g]) => {
+      if (g.type === "open") {
+        const btn = document.createElement("button");
+        btn.textContent = g.name + " (" + id + ")";
+        btn.onclick = () => {
+          db.ref("groupChats/" + id + "/members/" + user).set(true);
+          db.ref("users/" + user + "/chats/" + id).set({ name: g.name, type: "group", last: Date.now() });
+          closeDirectory();
+          openChat(id, g.name, "group");
+        };
+        list.appendChild(btn);
+        list.appendChild(document.createElement("br"));
+      }
+    });
+  });
+
+  list.innerHTML += "<br/><strong>People (Public):</strong><br/>";
+  db.ref("users").once("value", snap => {
+    const users = snap.val() || {};
+    Object.keys(users).forEach(u => {
+      if (u !== user && !(users[u].pass || "").length) {
+        const btn = document.createElement("button");
+        btn.textContent = u;
+        btn.onclick = () => {
+          const id = [user, u].sort().join("_");
+          db.ref("privateChats/" + id).set({});
+          db.ref("users/" + user + "/chats/" + id).set({ name: u, type: "private", last: Date.now() });
+          db.ref("users/" + u + "/requests/" + user).set({ requested: true });
+          closeDirectory();
+          openChat(id, u, "private");
+        };
+        list.appendChild(btn);
+        list.appendChild(document.createElement("br"));
+      }
+    });
+  });
+}
 </script>
-</body>
+<script>
+// === Part 4: Group Management Panel (Invite Users to Group) ===
+
+function openGroupManagement(id) {
+  const panel = document.createElement("div");
+  panel.style.position = "fixed";
+  panel.style.inset = 0;
+  panel.style.background = "rgba(0,0,0,0.7)";
+  panel.style.display = "flex";
+  panel.style.justifyContent = "center";
+  panel.style.alignItems = "center";
+  panel.style.zIndex = 1001;
+
+  const inner = document.createElement("div");
+  inner.style.background = "var(--chat-bg)";
+  inner.style.padding = "20px";
+  inner.style.borderRadius = "10px";
+  inner.style.maxWidth = "300px";
+  inner.innerHTML = `
+    <h3 style='margin-top:0'>Manage Group</h3>
+    <label>Invite user:</label><br/>
+    <input id='inviteUser' placeholder='Username' style='width:100%' /><br/>
+    <label>With password:</label><br/>
+    <input id='invitePass' type='password' placeholder='Optional password' style='width:100%' /><br/><br/>
+    <button onclick='inviteToGroup("${id}")'>Invite</button>
+    <button onclick='this.parentElement.parentElement.remove()'>Close</button>
+  `;
+  panel.appendChild(inner);
+  document.body.appendChild(panel);
+}
+
+function inviteToGroup(id) {
+  const username = document.getElementById("inviteUser").value.trim();
+  const pass = document.getElementById("invitePass").value.trim();
+  if (!username) return;
+  db.ref("groupChats/" + id + "/members/" + username).set(true);
+  db.ref("users/" + username + "/chats/" + id).set({ name: "Group Invite", type: "group", last: Date.now() });
+  if (pass) localStorage.setItem("pass", pass);
+  alert("User invited to group!");
+}
+
+// Add group manage button to group chat top bar (optional)
+document.addEventListener("DOMContentLoaded", () => {
+  const topBar = document.getElementById("topBar");
+  const manageBtn = document.createElement("button");
+  manageBtn.textContent = "🛠";
+  manageBtn.title = "Manage Group";
+  manageBtn.onclick = () => {
+    if (currentType === "group") openGroupManagement(currentChat);
+  };
+  topBar.appendChild(manageBtn);
+});
+</script>
+<script>
+// === Part 5: Username History + Rename Tracking ===
+
+function saveSettings() {
+  const newUser = document.getElementById("editUsername").value.trim();
+  const newPass = document.getElementById("editPassword").value.trim();
+  if (!newUser) return;
+  if (newUser !== user) {
+    db.ref("users/" + user + "/oldNames").push(newUser);
+  }
+  localStorage.setItem("user", newUser);
+  localStorage.setItem("pass", newPass);
+  location.reload();
+}
+
+function openChat(id, name, type) {
+  currentChat = id;
+  currentType = type;
+  chatUnread[id] = 0;
+  db.ref("users/" + user + "/chats/" + id + "/last").set(Date.now());
+
+  // Fetch rename history
+  db.ref("users").once("value", snap => {
+    const users = snap.val() || {};
+    const nameParts = name.split(" (used to be:");
+    const actualName = nameParts[0];
+    const matchUser = Object.keys(users).find(k => k === actualName);
+    let display = actualName;
+    if (matchUser && users[matchUser].oldNames) {
+      const old = Object.values(users[matchUser].oldNames).slice(-1)[0];
+      if (old && old !== actualName) display += ` (used to be: ${old})`;
+    }
+    document.getElementById("chatTitle").textContent = display;
+  });
+
+  document.getElementById("messages").innerHTML = "";
+  document.getElementById("groupMembers").style.display = type === "group" ? "block" : "none";
+
+  if (type === "group") {
+    db.ref("groupChats/" + id + "/members").on("value", snap => {
+      const members = Object.keys(snap.val() || {});
+      document.getElementById("groupMembers").textContent = "Members: " + members.join(", ");
+    });
+  }
+
+  const ref = db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/messages");
+  ref.off();
+  ref.on("child_added", snap => {
+    const msg = snap.val();
+    const isMe = msg.sender === user;
+    const bubble = document.createElement("div");
+    bubble.className = "msg " + (isMe ? "me" : "them");
+    bubble.textContent = msg.text;
+    document.getElementById("messages").appendChild(bubble);
+    document.getElementById("messages").scrollTop = 999999;
+    if (!isMe && currentChat !== id) {
+      chatUnread[id] = (chatUnread[id] || 0) + 1;
+      loadChats();
+    }
+  });
+
+  db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/typing").on("value", snap => {
+    const typer = snap.val();
+    const box = document.getElementById("typingIndicator");
+    if (typer && typer !== user) {
+      box.style.display = "block";
+      box.textContent = `${typer} is typing...`;
+    } else {
+      box.style.display = "none";
+    }
+  });
+}
+
+// === Part 6: Export & Import Chat Data ===
+
+function exportChatData() {
+  const exportObj = {};
+  db.ref("users/" + user + "/chats").once("value", snap => {
+    const chats = snap.val() || {};
+    const promises = Object.keys(chats).map(chatId => {
+      const path = chats[chatId].type === "group" ? "groupChats" : "privateChats";
+      return db.ref(`${path}/${chatId}/messages`).once("value`).then(s => {
+        exportObj[chatId] = s.val() || {};
+      });
+    });
+    Promise.all(promises).then(() => {
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `static-chat-backup-${user}.json`;
+      link.click();
+    });
+  });
+}
+
+function importChatData(file) {
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      Object.entries(imported).forEach(([chatId, messages]) => {
+        const type = chatId.startsWith("group_") ? "groupChats" : "privateChats";
+        Object.entries(messages).forEach(([msgId, msg]) => {
+          db.ref(`${type}/${chatId}/messages/${msgId}`).set(msg);
+        });
+      });
+      alert("Chat data imported successfully!");
+    } catch (e) {
+      alert("Invalid backup file");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function openImportExportPanel() {
+  const panel = document.createElement("div");
+  panel.style.position = "fixed";
+  panel.style.inset = 0;
+  panel.style.background = "rgba(0,0,0,0.7)";
+  panel.style.display = "flex";
+  panel.style.justifyContent = "center";
+  panel.style.alignItems = "center";
+  panel.style.zIndex = 1001;
+
+  const inner = document.createElement("div");
+  inner.style.background = "var(--chat-bg)";
+  inner.style.padding = "20px";
+  inner.style.borderRadius = "10px";
+  inner.style.maxWidth = "300px";
+  inner.innerHTML = `
+    <h3 style='margin-top:0'>Export / Import</h3>
+    <button onclick='exportChatData()'>📤 Export My Chats</button><br/><br/>
+    <input type='file' onchange='importChatData(this.files[0])' /><br/><br/>
+    <button onclick='this.parentElement.parentElement.remove()'>Close</button>
+  `;
+  panel.appendChild(inner);
+  document.body.appendChild(panel);
+}
+
+// === Part 7: Firebase Security Rules Guide ===
+// Add the following rules to your Firebase Realtime Database:
+/*
+{
+  "rules": {
+    ".read": "auth == null",
+    ".write": "auth == null",
+
+    "users": {
+      "$username": {
+        ".read": "true",
+        ".write": "true"
+      }
+    },
+
+    "privateChats": {
+      "$chatId": {
+        ".read": "true",
+        ".write": "true"
+      }
+    },
+
+    "groupChats": {
+      "$groupId": {
+        ".read": "true",
+        ".write": "true"
+      }
+    }
+  }
+}
+*/
+// These rules ensure full read/write access since no authentication is required.
+// If needed, you can add stricter rules or email/password auth later.
+
+// === The End: Initialization & Final Hook ===
+
+console.log("✅ Static Live Chatting fully loaded and initialized");
+document.body.classList.toggle("light", localStorage.getItem("theme") === "light");
+</script>
 </html>

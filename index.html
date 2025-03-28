@@ -1,20 +1,169 @@
-<!-- FULLY WORKING STATIC LIVE CHATTING HTML -->
+<!-- Static Live Chatting – Final Fixed Version -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Static Live Chatting</title>
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="manifest.json">
   <style>
-    /* Full style block from previous setup remains unchanged for brevity */
-    /* Same as your canvas setup (colors, layout, static menu, etc.) */
-    /* You can paste your full style here or keep the existing one */
+    :root {
+      --bg-color: #111;
+      --text-color: #fff;
+      --sidebar-color: #222;
+      --chat-bg: #333;
+      --msg-bg: #444;
+      --hover-bg: #555;
+      --accent: #1e90ff;
+    }
+    body.light {
+      --bg-color: #f0f0f0;
+      --text-color: #000;
+      --sidebar-color: #e0e0e0;
+      --chat-bg: #ccc;
+      --msg-bg: #ddd;
+      --hover-bg: #bbb;
+      --accent: #007acc;
+    }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    #login, #settings {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      margin: 5px;
+      border-radius: 5px;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+    #app {
+      display: flex;
+      flex: 1;
+    }
+    #sidebar {
+      width: 250px;
+      background: var(--sidebar-color);
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #chatPanel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    #topBar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: var(--chat-bg);
+    }
+    #messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    #typingIndicator {
+      padding: 5px 10px;
+      font-style: italic;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .msg span {
+      color: var(--accent);
+      font-weight: bold;
+    }
+    .chatItem {
+      padding: 8px;
+      background: var(--msg-bg);
+      margin-bottom: 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .chatItem:hover {
+      background: var(--hover-bg);
+    }
+    #inputArea {
+      display: flex;
+      padding: 10px;
+      background: var(--sidebar-color);
+    }
+    #inputArea input {
+      flex: 1;
+      margin-right: 6px;
+    }
+    #emojiPicker {
+      display: none;
+      flex-wrap: wrap;
+      max-width: 250px;
+      background: var(--chat-bg);
+      padding: 10px;
+      position: absolute;
+      bottom: 70px;
+      right: 20px;
+      z-index: 10;
+    }
+    #emojiPicker span {
+      font-size: 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    #chatPassword {
+      margin: 5px;
+      font-size: 12px;
+      text-align: right;
+      padding-right: 10px;
+    }
+    #staticMenu {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: #1e1e1e;
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #0ff;
+      animation: blink 2s infinite;
+      z-index: 1000;
+    }
+    #staticMenuClose {
+      position: absolute;
+      top: 2px;
+      right: 6px;
+      cursor: pointer;
+      color: red;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login">
   <h2>Static Live Chatting</h2>
   <p>⚠️ Do not chat sensitive info.</p>
@@ -24,7 +173,6 @@
   <button onclick="login()">Log In</button>
 </div>
 
-<!-- CHAT APP -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <h3>Chats</h3>
@@ -33,6 +181,7 @@
     <button onclick="openGroup()">➕ Create Group</button>
     <button onclick="addFriendChat()">👤 Add Friend Chat</button>
     <button onclick="toggleTheme()">🌓 Toggle Theme</button>
+    <button onclick="openSettings()">⚙️ Settings</button>
   </div>
   <div id="chatPanel">
     <div id="topBar">
@@ -50,7 +199,6 @@
   </div>
 </div>
 
-<!-- SETTINGS -->
 <div id="settings" style="display:none;">
   <h2>Settings</h2>
   <label>Username: <input id="editUsername" /></label>
@@ -58,21 +206,18 @@
   <p>Changing your password may break previous chats (A) or only affect new ones (B).</p>
   <button onclick="saveSettings('A')">Save (Affect Past)</button>
   <button onclick="saveSettings('B')">Save (Future Only)</button>
-  <button onclick="closeSettings()">Close</button>
   <button onclick="requestNotificationPermission()">🔔 Enable Notifications</button>
+  <button onclick="showBlocked()">Manage Blocked Users</button>
+  <button onclick="closeSettings()">Close</button>
 </div>
 
-<!-- STATIC MENU -->
 <div id="staticMenu">
   <span id="staticMenuClose" onclick="closeStaticMenu()">✖</span>
   🌟 More Unblocked Games by Static
 </div>
 
-<!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
-
-<!-- FULL SCRIPT LOGIC -->
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
@@ -98,10 +243,6 @@ if (user && !localStorage.getItem("locked")) {
 }
 if (localStorage.getItem("theme") === "light") document.body.classList.add("light");
 
-function togglePassword() {
-  const input = document.getElementById("password");
-  input.type = input.type === "password" ? "text" : "password";
-}
 function login() {
   user = document.getElementById("username").value.trim();
   pass = document.getElementById("password").value.trim();
@@ -111,6 +252,10 @@ function login() {
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
   loadChats();
+}
+function togglePassword() {
+  const input = document.getElementById("password");
+  input.type = input.type === "password" ? "text" : "password";
 }
 function loadChats() {
   db.ref("users/" + user + "/chats").on("value", snap => {
@@ -135,28 +280,24 @@ function openChat(id, name, type = "private", password = "") {
   document.getElementById("chatTitle").textContent = name;
   document.getElementById("chatPassDisplay").textContent = password ? `Password: ${password}` : "";
   document.getElementById("chatPassDisplay").style.display = "none";
-  document.getElementById("messages").innerHTML = "";
   const ref = db.ref(`${type}Chats/${id}/messages`);
   ref.off();
+  document.getElementById("messages").innerHTML = "";
   ref.on("child_added", snap => {
     const msg = snap.val();
     if (blocked.includes(msg.sender)) return;
     const time = new Date(msg.timestamp).toLocaleTimeString();
     const html = `<div class="msg"><span>${msg.sender}</span> (${time}): ${msg.text}</div>`;
     document.getElementById("messages").innerHTML += html;
-    if (Notification.permission === "granted") {
-      new Notification("New message", { body: `${msg.sender}: ${msg.text}` });
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    if (Notification.permission === "granted" && msg.sender !== user) {
+      new Notification("New Message", { body: `${msg.sender}: ${msg.text}` });
     }
   });
-}
-function revealPassword() {
-  const el = document.getElementById("chatPassDisplay");
-  el.style.display = el.style.display === "none" ? "inline" : "none";
 }
 function sendMessage() {
   const text = document.getElementById("msgInput").value.trim();
   if (!text || !currentChat) return;
-  if (blocked.includes(currentChat)) return alert("You are blocked from messaging this user.");
   db.ref(`${currentType}Chats/${currentChat}/messages`).push({
     sender: user,
     text,
@@ -194,36 +335,48 @@ function openGroup() {
   openChat(id, name, "group", pw);
 }
 function addFriendChat() {
-  const friend = prompt("Friend's name:");
+  const friend = prompt("Friend's username:");
   if (!friend) return;
-  const confirm = window.confirm(`Send friend request to ${friend}?`);
-  if (!confirm) return;
+  if (!confirm(`Send friend request to ${friend}?`)) return;
   const id = [user, friend].sort().join("_");
   db.ref(`privateChats/${id}`).set({});
   db.ref(`users/${user}/chats/${id}`).set({ name: friend, type: "private" });
   db.ref(`users/${friend}/requests/${user}`).set({ requested: true });
   openChat(id, friend, "private");
 }
-function saveSettings(mode) {
-  const u = document.getElementById("editUsername").value.trim();
-  const p = document.getElementById("editPassword").value.trim();
-  if (!u) return alert("Username required");
-  localStorage.setItem("user", u);
-  localStorage.setItem("pass", p);
-  alert(mode === "A" ? "Changed for past chats" : "Changed for future only");
-  location.reload();
+function revealPassword() {
+  const el = document.getElementById("chatPassDisplay");
+  el.style.display = el.style.display === "none" ? "inline" : "none";
 }
 function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
 }
 function requestNotificationPermission() {
-  if (!("Notification" in window)) return alert("Not supported.");
+  if (!("Notification" in window)) return alert("Your browser does not support notifications.");
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
-      new Notification("Enabled", { body: "Chat will notify you of new messages." });
+      new Notification("Notifications enabled!", {
+        body: "Static Live Chatting will notify you of new messages."
+      });
     }
   });
+}
+function saveSettings(mode) {
+  const newUser = document.getElementById("editUsername").value.trim();
+  const newPass = document.getElementById("editPassword").value.trim();
+  if (!newUser) return alert("Username required");
+  localStorage.setItem("user", newUser);
+  localStorage.setItem("pass", newPass);
+  alert(mode === "A"
+    ? "Password changed. May affect old chats."
+    : "Password changed. New chats only.");
+  location.reload();
+}
+function openSettings() {
+  document.getElementById("editUsername").value = user;
+  document.getElementById("editPassword").value = pass;
+  document.getElementById("settings").style.display = "flex";
 }
 function closeSettings() {
   document.getElementById("settings").style.display = "none";
@@ -233,6 +386,18 @@ function closeStaticMenu() {
   setTimeout(() => {
     document.getElementById("staticMenu").style.display = "block";
   }, 180000);
+}
+function showBlocked() {
+  const newList = prompt(`Blocked users:\n${blocked.join("\n")}\n\nType a name to unblock or block someone new:`);
+  if (!newList) return;
+  if (blocked.includes(newList)) {
+    blocked = blocked.filter(name => name !== newList);
+    alert(`Unblocked ${newList}`);
+  } else {
+    blocked.push(newList);
+    alert(`Blocked ${newList}`);
+  }
+  localStorage.setItem("blocked", JSON.stringify(blocked));
 }
 </script>
 </body>

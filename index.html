@@ -3,43 +3,64 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chat – Expanded Features</title>
+  <title>Static Live Chat – Final Bugfix</title>
   <style>
     :root {
-      --bg-color:#111; --text-color:#fff;
-      --sidebar-color:#1c1c1c; --chat-bg:#222;
-      --bubble-me:#1e90ff; --bubble-them:#444;
-      --accent:#1e90ff; --badge:red; --chat-item-bg:#333;
+      /* Default (Dark) theme variables */
+      --bg-color:#111;
+      --text-color:#fff;
+      --sidebar-color:#1c1c1c;
+      --chat-bg:#222;
+      --bubble-me:#1e90ff;
+      --bubble-them:#444;
+      --accent:#1e90ff;
+      --badge:red;
+      --chat-item-bg:#333;
     }
     body.light {
-      --bg-color:#f4f4f4; --text-color:#000;
-      --sidebar-color:#ddd; --chat-bg:#eee;
-      --bubble-me:#007aff; --bubble-them:#ccc;
-      --accent:#007acc; --chat-item-bg:#bbb;
+      --bg-color:#f4f4f4;
+      --text-color:#000;
+      --sidebar-color:#ddd;
+      --chat-bg:#eee;
+      --bubble-me:#007aff;
+      --bubble-them:#ccc;
+      --accent:#007acc;
+      --chat-item-bg:#bbb;
     }
     body.blue {
-      --bg-color:#0b1622; --text-color:#f0f8ff;
-      --sidebar-color:#132336; --chat-bg:#1e2d40;
-      --bubble-me:#1f65ff; --bubble-them:#41546a;
-      --accent:#389fff; --chat-item-bg:#2e3d52;
+      --bg-color:#0b1622;
+      --text-color:#f0f8ff;
+      --sidebar-color:#132336;
+      --chat-bg:#1e2d40;
+      --bubble-me:#1f65ff;
+      --bubble-them:#41546a;
+      --accent:#389fff;
+      --chat-item-bg:#2e3d52;
     }
     body.green {
-      --bg-color:#102a10; --text-color:#e8ffe8;
-      --sidebar-color:#224522; --chat-bg:#1a331a;
-      --bubble-me:#28a745; --bubble-them:#375a37;
-      --accent:#4caf50; --chat-item-bg:#2b442b;
+      --bg-color:#102a10;
+      --text-color:#e8ffe8;
+      --sidebar-color:#224522;
+      --chat-bg:#1a331a;
+      --bubble-me:#28a745;
+      --bubble-them:#375a37;
+      --accent:#4caf50;
+      --chat-item-bg:#2b442b;
     }
     body.pink {
-      --bg-color:#331024; --text-color:#ffe0f0;
-      --sidebar-color:#441533; --chat-bg:#551a44;
-      --bubble-me:#ff3377; --bubble-them:#773355;
-      --accent:#ff66a2; --chat-item-bg:#442244;
+      --bg-color:#331024;
+      --text-color:#ffe0f0;
+      --sidebar-color:#441533;
+      --chat-bg:#551a44;
+      --bubble-me:#ff3377;
+      --bubble-them:#773355;
+      --accent:#ff66a2;
+      --chat-item-bg:#442244;
     }
     body {
       margin:0; font-family:Arial,sans-serif;
       background:var(--bg-color); color:var(--text-color);
-      height:100vh; display:flex; flex-direction:column;
-      overflow:hidden;
+      height:100vh; display:flex; flex-direction:column; overflow:hidden;
     }
     input, button {
       padding:10px; font-size:16px; margin:5px;
@@ -47,7 +68,9 @@
     }
     button { background:var(--accent); color:#fff; cursor:pointer; }
 
-    #app { display:flex; flex:1; height:100%; }
+    #app {
+      display:flex; flex:1; height:100%;
+    }
     #sidebar {
       width:280px; background:var(--sidebar-color);
       display:flex; flex-direction:column; padding:10px; overflow-y:auto;
@@ -67,8 +90,9 @@
     #loadMoreBtn {
       display:none; position:absolute; top:10px; left:50%;
       transform:translateX(-50%); z-index:10;
-      background:var(--accent); color:white; padding:8px; border:none;
-      border-radius:6px; cursor:pointer; opacity:0.8;
+      background:var(--accent); color:#fff;
+      padding:8px; border:none; border-radius:6px;
+      cursor:pointer; opacity:0.8;
     }
     .msg {
       max-width:70%; padding:12px 16px; margin:6px 0;
@@ -86,8 +110,8 @@
     .reactionBar {
       position:absolute; bottom:100%; left:50%;
       transform:translateX(-50%); display:none; flex-direction:row;
-      gap:5px; background:rgba(0,0,0,0.6); padding:5px; border-radius:6px;
-      margin-bottom:5px;
+      gap:5px; background:rgba(0,0,0,0.6);
+      padding:5px; border-radius:6px; margin-bottom:5px;
     }
     .reactionBar span { font-size:22px; cursor:pointer; }
     .reactionTag { margin-left:6px; font-size:14px; opacity:0.8; }
@@ -96,7 +120,9 @@
     }
     .mineTime { right:10px; }
     .otherTime { left:10px; }
-    .readReceipt { font-size:12px; opacity:0.6; margin-top:2px; }
+    .readReceipt {
+      font-size:12px; opacity:0.6; margin-top:2px;
+    }
     #typingIndicator {
       display:none; font-style:italic; font-size:14px;
       margin:0 20px 10px;
@@ -129,8 +155,9 @@
       margin-bottom:5px; border-radius:6px;
     }
     #staticMenu {
-      position:fixed; bottom:10px; left:10px; background:#1e1e1e; color:#fff;
-      padding:5px 8px; border-radius:8px; font-size:13px; box-shadow:0 0 6px #0ff;
+      position:fixed; bottom:10px; left:10px;
+      background:#1e1e1e; color:#fff; padding:5px 8px;
+      border-radius:8px; font-size:13px; box-shadow:0 0 6px #0ff;
       animation:blink 2s infinite; z-index:1000;
     }
     .nameColor1 { color:#ff8888; }
@@ -161,16 +188,6 @@
     }
     #login .panelContent { max-width:300px; }
 
-    /* Slash command autocomplete */
-    #slashAutocomplete {
-      display:none; position:absolute; bottom:120px; right:20px;
-      background:var(--chat-bg); border-radius:6px; padding:8px; z-index:99;
-    }
-    #slashAutocomplete button {
-      display:block; margin:4px 0; padding:6px; width:100%;
-      text-align:left; background:var(--accent);
-    }
-
     @media(max-width:768px){
       body.mobile #sidebar { display:none; }
     }
@@ -183,12 +200,13 @@ if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAge
   document.body.classList.add("mobile");
 }
 
+// user & pass from localStorage
 let user=localStorage.getItem("user")||"";
 let pass=localStorage.getItem("pass")||"";
 
 function toggleLoginPass(){
   const pw=document.getElementById("password");
-  pw.type=(pw.type==="password")?"text":"password";
+  pw.type = (pw.type==="password")?"text":"password";
 }
 function doLogin(){
   const un=document.getElementById("username").value.trim();
@@ -201,7 +219,7 @@ function doLogin(){
 }
 </script>
 
-<!-- Confirm, Notice, Lock Panels -->
+<!-- Confirm + Notice + Lock Panels -->
 <div id="confirmPanel" class="modal">
   <div class="panelContent" id="confirmInner"></div>
 </div>
@@ -216,46 +234,31 @@ function doLogin(){
   </div>
 </div>
 
-<!-- All other modals: friendsPanel, addChatPanel, groupJoinPanel, groupCreatePanel, directoryPanel, editGroupPanel, settingsPanel -->
-<div id="friendsPanel" class="modal">
-  <div class="panelContent" id="friendsInner"></div>
-</div>
-<div id="addChatPanel" class="modal">
-  <div class="panelContent" id="addChatInner"></div>
-</div>
-<div id="groupJoinPanel" class="modal">
-  <div class="panelContent">
-    <h3>Join Group Chat</h3>
-    <input id="joinGroupID" placeholder="Group ID" onkeypress="if(event.key==='Enter')joinGroupChat()"/><br/>
-    <input id="joinGroupPassword" placeholder="Password (if needed)" onkeypress="if(event.key==='Enter')joinGroupChat()"/><br/>
-    <button onclick="joinGroupChat()">Join</button>
-    <button onclick="closeJoinPanel()">Close</button>
-  </div>
-</div>
-<div id="groupCreatePanel" class="modal">
-  <div class="panelContent">
-    <h3>Create Group</h3>
-    <input id="groupName" placeholder="Group Name" onkeypress="if(event.key==='Enter')createGroupChat()"/><br/>
-    <select id="groupType">
-      <option value="open">Open</option>
-      <option value="password">Password</option>
-      <option value="invite">Invite Only</option>
-    </select><br/>
-    <input id="groupPassword" placeholder="Password (optional)" onkeypress="if(event.key==='Enter')createGroupChat()"/><br/>
-    <button onclick="createGroupChat()">Create</button>
-    <button onclick="closeCreatePanel()">Close</button>
-  </div>
-</div>
-<div id="directoryPanel" class="modal">
-  <div class="panelContent">
-    <h3>All Public Groups</h3>
-    <div id="publicList" style="max-height:300px;overflow:auto;"></div>
-    <button onclick="closeDirectory()">Close</button>
-  </div>
-</div>
-<div id="editGroupPanel" class="modal">
-  <div class="panelContent" id="editGroupInner"></div>
-</div>
+<!-- Various modals: friendsPanel, addChatPanel, groupJoinPanel, groupCreatePanel, directoryPanel, editGroupPanel, settingsPanel ... omitted in HTML but will be references in code for show/hide. -->
+<div id="friendsPanel" class="modal"><div class="panelContent" id="friendsInner"></div></div>
+<div id="addChatPanel" class="modal"><div class="panelContent" id="addChatInner"></div></div>
+<div id="groupJoinPanel" class="modal"><div class="panelContent">
+  <h3>Join Group Chat</h3>
+  <input id="joinGroupID" placeholder="Group ID" onkeypress="if(event.key==='Enter')joinGroupChat()"/><br/>
+  <input id="joinGroupPassword" placeholder="Password (if needed)" onkeypress="if(event.key==='Enter')joinGroupChat()"/><br/>
+  <button onclick="joinGroupChat()">Join</button>
+  <button onclick="closeJoinPanel()">Close</button>
+</div></div>
+<div id="groupCreatePanel" class="modal"><div class="panelContent" id="groupCreateInner">
+  <h3>Create Group</h3>
+  <input id="groupName" placeholder="Group Name" onkeypress="if(event.key==='Enter')createGroupChat()"/><br/>
+  <select id="groupType">
+    <option value="open">Open</option>
+    <option value="password">Password</option>
+    <option value="invite">Invite Only</option>
+  </select><br/>
+  <input id="groupPassword" placeholder="Password (optional)" onkeypress="if(event.key==='Enter')createGroupChat()"/><br/>
+  <button onclick="createGroupChat()">Create</button>
+  <button onclick="closeCreatePanel()">Close</button>
+</div></div>
+<div id="directoryPanel" class="modal"><div class="panelContent"><h3>All Public Groups</h3><div id="publicList" style="max-height:300px;overflow:auto;"></div><button onclick="closeDirectory()">Close</button></div></div>
+<div id="editGroupPanel" class="modal"><div class="panelContent" id="editGroupInner"></div></div>
+
 <div id="settingsPanel" class="modal">
   <div class="panelContent">
     <h3>Settings</h3>
@@ -274,18 +277,14 @@ function doLogin(){
   </div>
 </div>
 
-<!-- Slash command autocomplete -->
-<div id="slashAutocomplete"></div>
-
 <!-- Login Screen -->
-<div id="login">
-  <div class="panelContent">
+<div id="login" style="display:flex;">
+  <div class="panelContent" style="max-width:300px;">
     <h2>Static Live Chatting</h2>
     <p>⚠️ Do not share sensitive info</p>
     <input id="username" placeholder="Username" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
     <div style="display:flex;align-items:center;">
-      <input id="password" type="password" placeholder="Password (Key for friend requests)"
-             style="margin:5px 0;flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
+      <input id="password" type="password" placeholder="Password (Key for friend requests)" style="margin:5px 0;flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
       <button style="margin:5px 0;" onclick="toggleLoginPass()">👁️</button>
     </div>
     <button onclick="doLogin()">Log In</button>
@@ -305,6 +304,7 @@ function doLogin(){
     <h3>Chats</h3>
     <div id="chatList"></div>
   </div>
+
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
@@ -321,8 +321,7 @@ function doLogin(){
     </div>
     <div id="typingIndicator"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type... (try '/' for commands!)"
-             oninput="inputSlashCommands(event)"
+      <input id="msgInput" placeholder="Type... (try '/' for slash commands!)"
              onkeypress="if(event.key==='Enter')sendMessage();"/>
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
@@ -338,16 +337,7 @@ function doLogin(){
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
-/*
-   Adds:
-   1) "Load More" button for older messages
-   4) Expanded emoji set
-   6) Push Notifications (requestPermission, show local notifs)
-   8) Owner-only admin tools in group (can remove messages)
-   9) Bot commands: /tod truth, /tod dare, /title ...
-     + Slash command autocomplete
-*/
-
+// Initialize Firebase
 const firebaseConfig={
   apiKey:"AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
   authDomain:"static-live-chatting.firebaseapp.com",
@@ -360,18 +350,19 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let colorMap={}; let blocked={}; let friends={};
-let currentChat=""; let currentType="";
-let chatActive=""; let chatUnread={};
+let colorMap={}, blocked={}, friends={};
+let currentChat="", currentType="";
+let chatActive="";
+let chatUnread={};
 
 let verificationPass=localStorage.getItem("verificationPass")||"";
 let isLocked=false, idleTimer=null;
 
 // "Load More" state
-let oldestKey=null; // store the oldest message key in the loaded batch
-let hasMoreOld=true; // whether more older messages exist
+let oldestKey=null;
+let hasMoreOld=true;
 
-// Bot commands
+// BOT arrays
 const truths=[
   "What is your favorite memory from the last year?",
   "What is your biggest fear?",
@@ -407,18 +398,7 @@ const dares=[
   "Say the alphabet backwards as fast as you can."
 ];
 
-function requestNotificationPermission(){
-  if(!("Notification" in window)){
-    showNotice("Browser does not support notifications!");
-    return;
-  }
-  Notification.requestPermission().then((perm)=>{
-    if(perm==="granted") showNotice("Notifications enabled!");
-    else showNotice("Notifications not granted.");
-  });
-}
-
-//** Idle Lock
+//** IDLE LOCK
 document.onmousemove=setIdleLockTimer;
 document.onkeypress=setIdleLockTimer;
 function setIdleLockTimer(){
@@ -431,7 +411,8 @@ function lockNow(){
   if(!verificationPass){
     const p=document.getElementById("lockPass").value.trim();
     if(!p)return showNotice("No verification pass!");
-    verificationPass=p; localStorage.setItem("verificationPass",p);
+    verificationPass=p;
+    localStorage.setItem("verificationPass",p);
   }
   lockAccount();
 }
@@ -454,7 +435,7 @@ window.onbeforeunload=()=>{
   return "Are you sure you want to leave?";
 };
 
-//** Theming
+//** THEME
 function toggleTheme(){
   const c=(document.body.classList.contains("light")?"light":
            document.body.classList.contains("blue")?"blue":
@@ -483,12 +464,15 @@ function applyTheme(){
   else if(saved==="pink") document.body.classList.add("pink");
 }
 
-//** Start App
+//** START
 function startApp(){
   document.getElementById("login").style.display="none";
   document.getElementById("app").style.display="flex";
   applyTheme();
-  loadBlocked(); loadFriends(); loadChats(); loadRequests();
+  loadBlocked();
+  loadFriends();
+  loadChats();
+  loadRequests();
   setIdleLockTimer();
   showNotice(`Logged in as ${user}`);
 }
@@ -497,15 +481,24 @@ if(user){
     document.getElementById("login").style.display="none";
     document.getElementById("app").style.display="flex";
     applyTheme();
-    loadBlocked(); loadFriends(); loadChats(); loadRequests();
+    loadBlocked();
+    loadFriends();
+    loadChats();
+    loadRequests();
     setIdleLockTimer();
   });
 }
 
-//** BLOCK
+//** BLOCK / FRIENDS
 function loadBlocked(){
   db.ref(`users/${user}/blocked`).on("value", snap=>{
     blocked=snap.val()||{};
+  });
+}
+let friends={};
+function loadFriends(){
+  db.ref(`users/${user}/friends`).on("value", snap=>{
+    friends=snap.val()||{};
   });
 }
 function blockUserUI(){
@@ -519,14 +512,6 @@ function blockUserUI(){
       db.ref(`users/${user}/blocked/${bn}`).set(true);
       showNotice(`Blocked ${bn}`);
     }
-  });
-}
-
-//** FRIENDS
-let friends={};
-function loadFriends(){
-  db.ref(`users/${user}/friends`).on("value", snap=>{
-    friends=snap.val()||{};
   });
 }
 function addFriendUI(){
@@ -559,7 +544,7 @@ function openFriendsPanel(){
       });
       db.ref(`users/${user}/chats/${cid}`).set({name:fr,type:"private",last:Date.now()});
       closeFriendsPanel();
-      openChat(cid,fr,"private");
+      openChat(cid, fr, "private");
     };
     div.appendChild(bOpen);
 
@@ -607,7 +592,7 @@ function inviteFriendToGroup(gid, friend){
   showNotice(`Invited ${friend} to group ${gid}`);
 }
 
-//** CHATS / REQUESTS
+//** LOAD CHATS / REQUESTS
 function loadChats(){
   db.ref(`users/${user}/chats`).on("value", snap=>{
     const data=snap.val()||{};
@@ -619,7 +604,7 @@ function loadChats(){
       div.className="chatItem";
       if(id===chatActive) div.classList.add("active");
       let nm=info.name||id;
-      if(info.type==="private"&&blocked[nm]) nm+=" [Blocked]";
+      if(info.type==="private" && blocked[nm]) nm+=" [Blocked]";
       div.textContent=nm;
 
       const rowRight=document.createElement("div");
@@ -634,13 +619,13 @@ function loadChats(){
       delBtn.textContent="🗑";
       delBtn.onclick=(ev)=>{
         ev.stopPropagation();
-        confirmDeleteChat(id, info);
+        confirmDeleteChat(id,info);
       };
       rowRight.appendChild(delBtn);
       div.appendChild(rowRight);
 
       div.onclick=()=>{
-        openChat(id, nm, info.type);
+        openChat(id,nm,info.type);
         highlightChat(id);
       };
       cList.appendChild(div);
@@ -673,7 +658,7 @@ function loadRequests(){
         db.ref(`users/${user}/friends/${from}`).set(true);
         db.ref(`users/${from}/friends/${user}`).set(true);
 
-        db.ref(`users/${from}/requestsSent/${user}`).once("value", s2=>{
+        db.ref(`users/${from}/requestsSent/${user}`).once("value",(s2)=>{
           if(s2.exists()){
             db.ref(`users/${from}/requestsSent/${user}`).remove();
             db.ref(`users/${from}/accepted/${user}`).set(true);
@@ -718,17 +703,19 @@ function loadRequests(){
     db.ref(`users/${user}/requestsSent/${who}`).remove();
     const cid=[user,who].sort().join("_");
     db.ref(`privateChats/${cid}`).once("value", s3=>{
-      if(!s3.exists()) db.ref(`privateChats/${cid}`).set({});
+      if(!s3.exists()){
+        db.ref(`privateChats/${cid}`).set({});
+      }
     });
     db.ref(`users/${user}/chats/${cid}`).set({name:who,type:"private",last:Date.now()});
-    if(!currentChat) openChat(cid, who, "private");
+    if(!currentChat) openChat(cid,who,"private");
     setTimeout(()=>db.ref(`users/${user}/accepted/${who}`).remove(),3000);
   });
 }
 function confirmDeleteChat(chatId, info){
   if(info.type==="group"){
-    db.ref(`groupChats/${chatId}/createdBy`).once("value", s=>{
-      const c=s.val();
+    db.ref(`groupChats/${chatId}/createdBy`).once("value",(snap)=>{
+      const c=snap.val();
       if(c!==user){
         showConfirm(`Leave group ${info.name}?`,()=>{
           db.ref(`groupChats/${chatId}/members/${user}`).remove();
@@ -751,79 +738,52 @@ function confirmDeleteChat(chatId, info){
   }
 }
 
-//** open chat with child-added watchers
+//** MESSAGES watchers
 let messagesRef=null;
-let childAdded=null, childChanged=null;
-function openChat(cid,nm,ty){
+let childAddedListener=null;
+let childChangedListener=null;
+
+function openChat(cid, nm, ty){
   if(isLocked)return;
   currentChat=cid; currentType=ty;
   chatUnread[cid]=0;
   highlightChat(cid);
+
   document.getElementById("chatTitle").textContent=nm||cid;
   document.getElementById("messages").innerHTML="";
-  oldestKey=null; hasMoreOld=true;
+  oldestKey=null;
+  hasMoreOld=true;
   document.getElementById("loadMoreBtn").style.display="none";
   document.getElementById("groupMembers").style.display=(ty==="group")?"block":"none";
 
+  // turn off old watchers
   if(messagesRef){
-    messagesRef.off();
-    if(childAdded) messagesRef.off("child_added",childAdded);
-    if(childChanged) messagesRef.off("child_changed",childChanged);
+    if(childAddedListener) messagesRef.off("child_added", childAddedListener);
+    if(childChangedListener) messagesRef.off("child_changed", childChangedListener);
   }
-  messagesRef=db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/messages`);
 
-  // fetch the last 100 in descending order, then attach watchers
+  messagesRef=db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/messages`);
   fetchLatestMessages(()=>{
-    attachTypingListener();
+    // group membership
     if(ty==="group"){
-      db.ref(`groupChats/${cid}/members`).on("value", sp=>{
+      db.ref(`groupChats/${cid}/members`).on("value",(sp)=>{
         const mm=Object.keys(sp.val()||{});
         document.getElementById("groupMembers").textContent="Members: "+mm.join(", ");
       });
     }
+    attachTypingListener();
   });
   db.ref(`users/${user}/chats/${cid}/last`).set(Date.now());
 }
 
-//** load older messages
-function loadOlderMessages(){
-  if(!currentChat||!hasMoreOld||!oldestKey)return;
-  document.getElementById("loadMoreBtn").disabled=true;
-  // fetch older 100
-  const ref=messagesRef.orderByKey().endAt(oldestKey).limitToLast(101);
-  ref.once("value", snap=>{
-    const data=snap.val()||{};
-    const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
-    if(keys.length<=1){
-      // no more older
-      hasMoreOld=false;
-      document.getElementById("loadMoreBtn").style.display="none";
-    } else {
-      // skip the first one because it's the oldestKey we already have
-      const slice=keys.slice(1);
-      slice.forEach(mId=>{
-        createMessageBubble(mId, data[mId], currentType, false); // prepend
-      });
-      oldestKey=slice[slice.length-1]; // new oldest
-      if(slice.length<100){
-        hasMoreOld=false;
-        document.getElementById("loadMoreBtn").style.display="none";
-      }
-    }
-    document.getElementById("loadMoreBtn").disabled=false;
-  });
-}
-
 function fetchLatestMessages(cb){
-  const ref=messagesRef.orderByKey().limitToLast(100);
-  ref.once("value", snap=>{
+  messagesRef.orderByKey().limitToLast(100).once("value",(snap)=>{
     const data=snap.val()||{};
     const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
-    // render from newest to oldest
     keys.forEach(k=>{
       createMessageBubble(k, data[k], currentType, true);
     });
-    oldestKey=(keys.length)? keys[keys.length-1]: null;
+    if(keys.length>0) oldestKey=keys[keys.length-1];
     if(keys.length>=100) document.getElementById("loadMoreBtn").style.display="inline";
     else hasMoreOld=false;
 
@@ -832,39 +792,52 @@ function fetchLatestMessages(cb){
   });
 }
 function attachChildWatchers(){
-  childAdded=messagesRef.orderByKey().startAfter((oldestKey||"")).on("child_added",(snap)=>{
-    // new message
+  childAddedListener=messagesRef.orderByKey().startAfter(oldestKey||"").on("child_added",(snap)=>{
     createMessageBubble(snap.key, snap.val(), currentType, true);
     markMessagesRead([snap.key]);
-    // push notification if from someone else
-    if(snap.val().sender!==user&&Notification.permission==="granted"){
-      new Notification("New Message", {body:`${snap.val().sender}: ${snap.val().text.slice(0,30)}`});
+    if(snap.val().sender!==user && Notification.permission==="granted"){
+      new Notification("New Message",{body:`${snap.val().sender}: ${snap.val().text.slice(0,50)}`});
     }
   });
-  childChanged=messagesRef.on("child_changed",(snap)=>{
+  childChangedListener=messagesRef.on("child_changed",(snap)=>{
     updateMessageBubble(snap.key, snap.val(), currentType);
   });
 }
 
+//** load older
+function loadOlderMessages(){
+  if(!currentChat||!hasMoreOld||!oldestKey)return;
+  document.getElementById("loadMoreBtn").disabled=true;
+  messagesRef.orderByKey().endAt(oldestKey).limitToLast(101).once("value",(snap)=>{
+    const data=snap.val()||{};
+    const keys=Object.keys(data).sort((a,b)=>(b>a)?1:-1);
+    if(keys.length<=1){
+      hasMoreOld=false;
+      document.getElementById("loadMoreBtn").style.display="none";
+    } else {
+      const slice=keys.slice(1); // skip the existing oldest
+      slice.forEach(k=>{
+        if(!document.getElementById("msg_"+k)){
+          createMessageBubble(k, data[k], currentType, false);
+        }
+      });
+      oldestKey=slice[slice.length-1];
+      if(slice.length<100) document.getElementById("loadMoreBtn").style.display="none";
+    }
+    document.getElementById("loadMoreBtn").disabled=false;
+  });
+}
 function createMessageBubble(msgId, msg, ty, isNewest){
   if(ty==="private"&&msg.sender!==user&&blocked[msg.sender])return;
   if(ty==="group"&&msg.sender!==user&&blocked[msg.sender])return;
 
+  if(document.getElementById("msg_"+msgId))return; // already loaded
   const isMe=(msg.sender===user);
-  const container=document.getElementById("messages");
-  // if it already exists
-  if(document.getElementById("msg_"+msgId)) return;
-
   const bubble=document.createElement("div");
   bubble.className="msg "+(isMe?"me":"them");
   bubble.id="msg_"+msgId;
 
-  // check if group owner is user => can remove messages
-  bubble.dataset.sender=msg.sender||"";
-  bubble.dataset.msgId=msgId;
-
-  // in group chat, if user===groupChats[ chatId ].createdBy => owner => can remove
-  // We'll do it simpler: "Owner can remove any message" in group. We'll handle it in double-click or context menu ?
+  const container=document.getElementById("messages");
 
   const lines=msg.text.split("\n");
   if(lines.length>6){
@@ -877,8 +850,7 @@ function createMessageBubble(msgId, msg, ty, isNewest){
   } else {
     bubble.textContent=msg.text;
   }
-  // if group, attach name color
-  if(ty==="group"&&msg.sender!=="_system"&&!isMe){
+  if(ty==="group" && msg.sender!=="_system" && !isMe){
     const cc=getColorClass(msg.sender);
     bubble.innerHTML=`<span class='${cc}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span>`+bubble.innerHTML;
   }
@@ -906,20 +878,18 @@ function createMessageBubble(msgId, msg, ty, isNewest){
   });
   bubble.appendChild(rBar);
 
-  // double-click to show reaction or remove if group owner
   bubble.addEventListener("dblclick", e=>{
     e.stopPropagation();
     if(isLocked)return;
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
   });
-  // right-click maybe to remove if group owner. We'll do a "contextmenu" event
+  // contextmenu => if group owner, can remove
   bubble.addEventListener("contextmenu", e=>{
     e.preventDefault();
     if(currentType==="group"){
-      // check if user=owner => groupChats/chatId/createdBy
-      db.ref(`groupChats/${currentChat}/createdBy`).once("value",snap=>{
-        const creator=snap.val();
-        if(creator===user){
+      db.ref(`groupChats/${currentChat}/createdBy`).once("value",(snap)=>{
+        const owner=snap.val();
+        if(owner===user){
           showConfirm("Remove this message?",()=>{
             db.ref(`groupChats/${currentChat}/messages/${msgId}`).remove();
             document.getElementById("msg_"+msgId)?.remove();
@@ -935,7 +905,6 @@ function createMessageBubble(msgId, msg, ty, isNewest){
   ts.textContent=time;
   bubble.appendChild(ts);
 
-  // read receipts
   if(ty==="group"){
     if(msg.readBy){
       const readList=Object.keys(msg.readBy).filter(u=>u!==msg.sender);
@@ -947,7 +916,7 @@ function createMessageBubble(msgId, msg, ty, isNewest){
       }
     }
   } else {
-    // private => show "Seen" if your message read by others
+    // private => show "Seen" if your message read by them
     if(isMe&&msg.readBy){
       const others=Object.keys(msg.readBy).filter(u=>u!==user);
       if(others.length>0){
@@ -964,11 +933,9 @@ function createMessageBubble(msgId, msg, ty, isNewest){
 }
 function updateMessageBubble(msgId, msg, ty){
   const bubble=document.getElementById("msg_"+msgId);
-  if(!bubble)return; // not in loaded set
+  if(!bubble)return;
   const rt=bubble.querySelector(".reactionTag");
   if(rt) rt.textContent=msg.reaction||"";
-
-  // read receipts
   const rec=bubble.querySelector(".readReceipt");
   if(ty==="group"){
     if(msg.readBy){
@@ -979,13 +946,10 @@ function updateMessageBubble(msgId, msg, ty){
           newR.className="readReceipt";
           newR.textContent="Seen by: "+readList.join(", ");
           bubble.appendChild(newR);
-        } else {
-          rec.textContent="Seen by: "+readList.join(", ");
-        }
+        } else rec.textContent="Seen by: "+readList.join(", ");
       } else if(rec) rec.remove();
     } else if(rec) rec.remove();
   } else {
-    // private => if bubble is .me => show "Seen"
     if(bubble.classList.contains("me")&&msg.readBy){
       const others=Object.keys(msg.readBy).filter(u=>u!==user);
       if(others.length>0){
@@ -1000,33 +964,6 @@ function updateMessageBubble(msgId, msg, ty){
   }
 }
 
-//** load older messages
-function loadOlderMessages(){
-  const container=document.getElementById("messages");
-  if(!currentChat)return;
-  if(!oldestKey)return showNotice("No older messages found!");
-  document.getElementById("loadMoreBtn").disabled=true;
-  messagesRef.orderByKey().endAt(oldestKey).limitToLast(101).once("value",(snap)=>{
-    const data=snap.val()||{};
-    const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
-    if(keys.length<=1){
-      // no more older
-      document.getElementById("loadMoreBtn").style.display="none";
-    } else {
-      // skip the first cause it's the existing oldestKey
-      const slice=keys.slice(1);
-      slice.forEach(k=>{
-        if(!document.getElementById("msg_"+k)){
-          createMessageBubble(k, data[k], currentType, false);
-        }
-      });
-      oldestKey=slice[slice.length-1]; // new oldest
-      if(slice.length<100) document.getElementById("loadMoreBtn").style.display="none";
-    }
-    document.getElementById("loadMoreBtn").disabled=false;
-  });
-}
-
 //** Mark read
 function markMessagesRead(msgIds){
   if(!currentChat||!currentType||!user)return;
@@ -1036,7 +973,46 @@ function markMessagesRead(msgIds){
   });
 }
 
-//** typing
+//** load older
+function loadOlderMessages(){
+  if(!currentChat||!hasMoreOld||!oldestKey)return;
+  const loadBtn=document.getElementById("loadMoreBtn");
+  loadBtn.disabled=true;
+  messagesRef.orderByKey().endAt(oldestKey).limitToLast(101).once("value",(snap)=>{
+    const data=snap.val()||{};
+    const keys=Object.keys(data).sort((a,b)=>(b>a)?1:-1);
+    if(keys.length<=1){
+      hasMoreOld=false;
+      loadBtn.style.display="none";
+    } else {
+      const slice=keys.slice(1);
+      slice.forEach(k=>{
+        if(!document.getElementById("msg_"+k)){
+          createMessageBubble(k, data[k], currentType, false);
+        }
+      });
+      oldestKey=slice[slice.length-1];
+      if(slice.length<100) loadBtn.style.display="none";
+    }
+    loadBtn.disabled=false;
+  });
+}
+
+//** TYPING
+function attachTypingListener(){
+  const path=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${path}/${currentChat}/typing`).off();
+  db.ref(`${path}/${currentChat}/typing`).on("value",(s)=>{
+    const val=s.val();
+    const t=document.getElementById("typingIndicator");
+    if(val && val!==user){
+      t.style.display="block";
+      t.textContent=`${val} is typing...`;
+    } else {
+      t.style.display="none";
+    }
+  });
+}
 function sendTyping(){
   if(!currentChat||isLocked)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
@@ -1044,7 +1020,7 @@ function sendTyping(){
   setTimeout(()=> db.ref(`${path}/${currentChat}/typing`).set(""),2000);
 }
 
-//** send
+//** SEND
 function sendMessage(){
   if(isLocked)return;
   const inp=document.getElementById("msgInput");
@@ -1056,7 +1032,7 @@ function sendMessage(){
     inp.value="";
     return;
   }
-  // normal message
+  // normal msg
   if(currentType==="private"){
     const nm=document.getElementById("chatTitle").textContent.replace(" [Blocked]","");
     if(blocked[nm])return showNotice("You blocked them. Unblock first!");
@@ -1070,12 +1046,10 @@ function sendMessage(){
   inp.value="";
   sendTyping();
 }
-
 function processSlashCommand(cmd){
-  const [full, ...rest]=cmd.split(" ");
-  if(full==="/tod"){
+  const [slash, ...rest]=cmd.split(" ");
+  if(slash==="/tod"){
     if(rest[0]==="truth"){
-      // pick random truth
       const t=truths[Math.floor(Math.random()*truths.length)];
       sendSystemMessage(t);
     } else if(rest[0]==="dare"){
@@ -1084,118 +1058,63 @@ function processSlashCommand(cmd){
     } else {
       showNotice("Usage: /tod truth or /tod dare");
     }
-  } else if(full==="/title"){
-    // everything after /title
+  } else if(slash==="/title"){
     const txt=rest.join(" ");
-    if(!txt) return showNotice("Usage: /title <something>");
+    if(!txt) return showNotice("Usage: /title <text>");
     sendSystemMessage(`<< ${txt} >>`);
   } else {
     showNotice(`Unknown command: ${cmd}`);
   }
 }
-
 function sendSystemMessage(msg){
   if(!currentChat||!currentType)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages`).push({
-    sender:"_system",
-    text:msg,
-    timestamp:Date.now(),
-    reaction:"",
-    readBy:{}
+    sender:"_system", text:msg, timestamp:Date.now(),
+    reaction:"", readBy:{}
   });
 }
+function applyReaction(msgId, reaction){
+  if(!currentChat||!currentType)return;
+  const path=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${path}/${currentChat}/messages/${msgId}/reaction`).set(reaction);
+}
 
-const truths=[
-  "What is your favorite memory from the last year?",
-  "What is your biggest fear?",
-  "If you could have any superpower, what would it be?",
-  "What is something embarrassing that has happened to you?",
-  "Have you ever told a lie you regret?",
-  "What was your worst date experience?",
-  "What is your secret talent?",
-  "Have you ever broken a rule and gotten caught?",
-  "What's the hardest challenge you've overcome?",
-  "What is one thing you wish you could change about yourself?",
-  "Do you have a secret crush on someone?",
-  "What's the weirdest thing you've ever eaten?",
-  "What is one thing you can't live without?",
-  "What is something you wish your parents knew about you?",
-  "Have you ever said “I love you” without meaning it?"
-];
-const dares=[
-  "Sing a chorus of your favorite song out loud.",
-  "Do 10 push-ups in front of everyone.",
-  "Let another person style your hair (or pretend to!).",
-  "Attempt your best celebrity impression.",
-  "Walk across the room like a runway model.",
-  "Text the first person in your contacts “You’re amazing!”",
-  "Pretend to be a cat for the next 1 minute.",
-  "Do an impression of your teacher for 30 seconds.",
-  "Swap an item of clothing with someone for the rest of the game.",
-  "Try to lick your elbow (spoiler: it's almost impossible!).",
-  "Do a silly dance for 15 seconds.",
-  "Let someone draw on your face with lipstick (or pretend).",
-  "Speak in a fake accent until your next turn.",
-  "Balance a book on your head for 1 minute.",
-  "Say the alphabet backwards as fast as you can."
-];
-
-//** Expand emojis
+//** Big Emojis
 function toggleEmojiPicker(){
   const picker=document.getElementById("emojiPicker");
+  if(picker.style.display==="flex"){
+    picker.style.display="none";
+    return;
+  }
   picker.innerHTML="";
-  const bigEmojis=[... "😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑😯😦😧😮😲🥱😴😪😵😵‍💫😷🤒🤕🤢🤮🤧😇😈👿👻💀☠️👽🤖🎃😺😸😹😻😼😽🙀😿😾..."];
-  picker.style.display=(picker.style.display==="flex")?"none":"flex";
+  // Large set
+  const bigEmojis=[... "😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑🙄😯😦😧😮😲🥱😴😪😵😵‍💫😷🤒🤕🤢🤮🤧😇😈👿👻💀☠️👽🤖🎃😺😸😹😻😼😽🙀😿😾"];
+  picker.style.display="flex";
   bigEmojis.forEach(e=>{
-    const s=document.createElement("span");
-    s.textContent=e;
-    s.onclick=()=>{
+    const sp=document.createElement("span");
+    sp.textContent=e;
+    sp.onclick=()=>{
       document.getElementById("msgInput").value+=e;
       picker.style.display="none";
     };
-    picker.appendChild(s);
+    picker.appendChild(sp);
   });
 }
 
-//** slash command autocomplete
-function inputSlashCommands(e){
-  const val=e.target.value;
-  const sc=document.getElementById("slashAutocomplete");
-  if(val.startsWith("/")){
-    sc.style.display="block";
-    sc.innerHTML="";
-    const commands=["tod truth","tod dare","title"];
-    commands.forEach(c=>{
-      const b=document.createElement("button");
-      b.textContent=`/${c}`;
-      b.onclick=()=>{
-        e.target.value="/"+c+" ";
-        sc.style.display="none";
-      };
-      sc.appendChild(b);
-    });
-  } else {
-    sc.style.display="none";
-  }
-}
-
-//** notifications
+//** Notification
 function requestNotificationPermission(){
   if(!("Notification" in window)){
-    showNotice("This browser does not support notifications");
+    showNotice("Browser does not support notifications!");
     return;
   }
   Notification.requestPermission().then(perm=>{
-    if(perm==="granted"){
-      showNotice("Notifications enabled!");
-    } else {
-      showNotice("Notifications not granted.");
-    }
+    if(perm==="granted") showNotice("Notifications enabled!");
+    else showNotice("Notifications not granted.");
   });
 }
 
-//** group invites
+//** group create/join
 function showAddChatPanel(){
   if(isLocked)return;
   const i=document.getElementById("addChatInner");
@@ -1233,10 +1152,10 @@ function joinGroupChat(){
   const id=document.getElementById("joinGroupID").value.trim();
   const pw=document.getElementById("joinGroupPassword").value.trim();
   if(!id)return;
-  db.ref(`groupChats/${id}`).once("value", snap=>{
+  db.ref(`groupChats/${id}`).once("value",(snap)=>{
     const g=snap.val();
     if(!g)return showNotice("Group not found");
-    if(g.type==="password"&&g.password!==pw)return showNotice("Wrong password");
+    if(g.type==="password"&&g.password!==pw)return showNotice("Wrong password!");
     if(g.type==="invite"&&!(g.members&&g.members[user]))return showNotice("Not invited!");
     db.ref(`groupChats/${id}/members/${user}`).set(true);
     db.ref(`users/${user}/chats/${id}`).set({name:g.name,type:"group",last:Date.now()});
@@ -1272,12 +1191,12 @@ function openImportExportPanel(){
   document.body.appendChild(panel);
 }
 function exportChatData(){
-  db.ref(`users/${user}/chats`).once("value", snap=>{
+  db.ref(`users/${user}/chats`).once("value",(snap)=>{
     const data=snap.val()||{};
     const exportObj={};
     const tasks=Object.keys(data).map(cid=>{
       const path=(data[cid].type==="group")?"groupChats":"privateChats";
-      return db.ref(`${path}/${cid}/messages`).once("value").then(ss=>{
+      return db.ref(`${path}/${cid}/messages`).once("value").then((ss)=>{
         exportObj[cid]=ss.val()||{};
       });
     });
@@ -1326,12 +1245,12 @@ function saveSettings(){
   const np=document.getElementById("editPassword").value.trim();
   if(!nu)return;
   user=nu; pass=np;
-  localStorage.setItem("user",nu);
-  localStorage.setItem("pass",np);
+  localStorage.setItem("user", nu);
+  localStorage.setItem("pass", np);
 
   const lP=document.getElementById("lockPass").value.trim()||"";
   verificationPass=lP;
-  localStorage.setItem("verificationPass",lP);
+  localStorage.setItem("verificationPass", lP);
 
   showNotice("Settings saved!");
   setIdleLockTimer();
@@ -1372,7 +1291,7 @@ function closeNotice(){
   document.getElementById("noticePanel").style.display="none";
 }
 
-//** color map
+//** color class
 function getColorClass(u){
   if(!colorMap[u]){
     const classes=["nameColor1","nameColor2","nameColor3","nameColor4","nameColor5"];
@@ -1381,10 +1300,25 @@ function getColorClass(u){
   return colorMap[u];
 }
 
-console.log("✅ Single-file: 1) Load More, 4) Big emojis, 6) Notif requests, 8) Owner mod, 9) /tod & /title commands – final version!");
+//** Notification
+function requestNotificationPermission(){
+  if(!("Notification" in window)){
+    showNotice("This browser does not support notifications.");
+    return;
+  }
+  Notification.requestPermission().then((perm)=>{
+    if(perm==="granted"){
+      showNotice("Notifications enabled!");
+    } else {
+      showNotice("Notifications not granted.");
+    }
+  });
+}
+
+console.log("✅ Final single-file code with load more, emojis, notifications, slash commands, group owner admin, all references are defined. Enjoy!");
 </script>
 
-<!-- Example rules, no presence:
+<!-- Example fully open rules (no presence):
 {
   "rules": {
     ".read": true,

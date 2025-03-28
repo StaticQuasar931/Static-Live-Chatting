@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Static Live Chatting</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Static Live Chatting – Final</title>
   <style>
     :root {
       --bg-color: #111;
@@ -41,7 +41,11 @@
       border-radius: 6px;
       border: none;
     }
-    button { background: var(--accent); color: white; cursor: pointer; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
     .panel {
       padding: 20px;
       background: var(--chat-bg);
@@ -74,6 +78,7 @@
       display: flex;
       flex-direction: column;
       background: var(--chat-bg);
+      position: relative;
     }
     #topBar {
       display: flex;
@@ -98,18 +103,31 @@
       font-size: 17px;
       line-height: 1.4;
       word-wrap: break-word;
+      position: relative;
     }
     .me {
       align-self: flex-end;
       background: var(--bubble-me);
-      color: white;
+      color: #fff;
       border-bottom-right-radius: 5px;
     }
     .them {
       align-self: flex-start;
       background: var(--bubble-them);
-      color: white;
+      color: #fff;
       border-bottom-left-radius: 5px;
+    }
+    .timestamp {
+      position: absolute;
+      font-size: 10px;
+      opacity: 0.7;
+      bottom: -14px;
+    }
+    .mineTime {
+      right: 10px;
+    }
+    .otherTime {
+      left: 10px;
     }
     #typingIndicator {
       font-style: italic;
@@ -157,7 +175,7 @@
     }
     .chatBadge {
       background: var(--badge);
-      color: white;
+      color: #fff;
       font-size: 12px;
       padding: 3px 8px;
       border-radius: 12px;
@@ -173,7 +191,7 @@
       bottom: 10px;
       left: 10px;
       background: #1e1e1e;
-      color: white;
+      color: #fff;
       padding: 5px 8px;
       border-radius: 8px;
       font-size: 13px;
@@ -189,6 +207,12 @@
 </head>
 <body>
 
+<!-- 🔒 On before unload confirmation -->
+<script>
+  window.onbeforeunload = () => \"Are you sure you want to leave? Your progress may not be saved.\";
+</script>
+
+<!-- Login Panel -->
 <div id="login" style="display:flex;">
   <div class="panel">
     <h2>Static Live Chatting</h2>
@@ -199,6 +223,7 @@
   </div>
 </div>
 
+<!-- Main App -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <h3>Friend Requests</h3>
@@ -214,7 +239,8 @@
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
-      <div>
+      <div id="topButtons" style="display:flex;align-items:center;">
+        <!-- Manage group button appended by JavaScript if needed -->
         <button onclick="openSettings()">⚙️</button>
       </div>
     </div>
@@ -230,339 +256,394 @@
     <div id="emojiPicker"></div>
   </div>
 </div>
-<!-- ✅ Part 2: Full JavaScript Logic -->
+
+<!-- Static Menu -->
+<div id="staticMenu">
+  🌟 More Unblocked Games by Static
+</div>
+
+<!-- Settings Panel -->
+<div id="settingsPanel" class="panel">
+  <h3>Settings</h3>
+  <label>Username:</label><br/>
+  <input id="editUsername"><br/>
+  <label>Password:</label><br/>
+  <input id="editPassword"><br/>
+  <button onclick="saveSettings()">Save</button>
+  <button onclick="toggleTheme()">Toggle Theme</button>
+  <button onclick="closeSettings()">Close</button>
+</div>
+
+<!-- Group Join Panel -->
+<div id="groupJoinPanel" class="panel">
+  <h3>Join Group</h3>
+  <input id="joinGroupID" placeholder="Group ID"><br/>
+  <input id="joinGroupPassword" placeholder="Password (if needed)"><br/>
+  <button onclick="joinGroupChat()">Join</button>
+  <button onclick="closeJoinPanel()">Close</button>
+</div>
+
+<!-- Group Create Panel -->
+<div id="groupCreatePanel" class="panel">
+  <h3>Create Group</h3>
+  <input id="groupName" placeholder="Group Name"><br/>
+  <select id="groupType">
+    <option value="open">Open</option>
+    <option value="password">Password</option>
+    <option value="invite">Invite Only</option>
+  </select><br/>
+  <input id="groupPassword" placeholder="Password (optional)"><br/>
+  <button onclick="createGroupChat()">Create</button>
+  <button onclick="closeCreatePanel()">Close</button>
+</div>
+
+<!-- Public Directory Panel -->
+<div id="directoryPanel" class="panel">
+  <h3>Public Chats & People</h3>
+  <div id="publicList" style="max-height:300px; overflow:auto;"></div>
+  <button onclick="closeDirectory()">Close</button>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
-window.onbeforeunload = () => "Are you sure you want to leave? Your progress may not be saved.";
-
+// === Firebase Init ===
 const firebaseConfig = {
-  apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
-  authDomain: "static-live-chatting.firebaseapp.com",
-  databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
-  projectId: "static-live-chatting",
-  storageBucket: "static-live-chatting.appspot.com",
-  messagingSenderId: "578562140653",
-  appId: "1:578562140653:web:c12df07155627083e9dfe4"
+  apiKey: \"AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw\",
+  authDomain: \"static-live-chatting.firebaseapp.com\",
+  databaseURL: \"https://static-live-chatting-default-rtdb.firebaseio.com\",
+  projectId: \"static-live-chatting\",
+  storageBucket: \"static-live-chatting.appspot.com\",
+  messagingSenderId: \"578562140653\",
+  appId: \"1:578562140653:web:c12df07155627083e9dfe4\"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let user = localStorage.getItem("user") || "";
-let pass = localStorage.getItem("pass") || "";
-let currentChat = "", currentType = "", typingTimeout;
+// === Global State ===
+let user = localStorage.getItem(\"user\") || \"\";
+let pass = localStorage.getItem(\"pass\") || \"\";
+let currentChat = \"\", currentType = \"\", typingTimeout;
 let chatUnread = {};
 
+// === Launch if user saved ===
 if (user) startApp();
 
+// === Login Flow ===
 function login() {
-  user = document.getElementById("username").value.trim();
-  pass = document.getElementById("password").value.trim();
+  user = document.getElementById(\"username\").value.trim();
+  pass = document.getElementById(\"password\").value.trim();
   if (!user) return;
-  localStorage.setItem("user", user);
-  localStorage.setItem("pass", pass);
+  localStorage.setItem(\"user\", user);
+  localStorage.setItem(\"pass\", pass);
   startApp();
 }
 
 function startApp() {
-  document.getElementById("login").style.display = "none";
-  document.getElementById("app").style.display = "flex";
+  document.getElementById(\"login\").style.display = \"none\";
+  document.getElementById(\"app\").style.display = \"flex\";
   loadChats();
   loadRequests();
-  if (localStorage.getItem("theme") === "light") document.body.classList.add("light");
+  if (localStorage.getItem(\"theme\") === \"light\") document.body.classList.add(\"light\");
 }
 
+// === Loading Chats & Requests ===
 function loadChats() {
-  db.ref("users/" + user + "/chats").on("value", snap => {
+  db.ref(\"users/\" + user + \"/chats\").on(\"value\", snap => {
     const data = snap.val() || {};
     const list = Object.entries(data).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-    const container = document.getElementById("chatList");
-    container.innerHTML = "";
+    const container = document.getElementById(\"chatList\");
+    container.innerHTML = \"\";
     list.forEach(([id, info]) => {
-      const div = document.createElement("div");
-      div.className = "chatItem";
+      const div = document.createElement(\"div\");
+      div.className = \"chatItem\";
       const name = info.name || id;
       div.textContent = name;
-      const badge = document.createElement("span");
-      badge.className = "chatBadge";
-      badge.style.display = chatUnread[id] ? "inline-block" : "none";
-      badge.textContent = chatUnread[id] || "";
+
+      // Badge for unread
+      const badge = document.createElement(\"span\");
+      badge.className = \"chatBadge\";
+      badge.style.display = chatUnread[id] ? \"inline-block\" : \"none\";
+      badge.textContent = chatUnread[id] || \"\";
       div.appendChild(badge);
-      div.onclick = () => openChat(id, name, info.type || "private");
+
+      div.onclick = () => openChat(id, name, info.type || \"private\");
       container.appendChild(div);
     });
   });
 }
 
-function openChat(id, name, type) {
-  currentChat = id;
-  currentType = type;
-  chatUnread[id] = 0;
-  document.getElementById("chatTitle").textContent = name;
-  document.getElementById("messages").innerHTML = "";
-  document.getElementById("groupMembers").style.display = type === "group" ? "block" : "none";
-
-  if (type === "group") {
-    db.ref("groupChats/" + id + "/members").on("value", snap => {
-      const members = Object.keys(snap.val() || {});
-      document.getElementById("groupMembers").textContent = "Members: " + members.join(", ");
-    });
-  }
-
-  const ref = db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/messages");
-  ref.off();
-  ref.on("child_added", snap => {
-    const msg = snap.val();
-    const isMe = msg.sender === user;
-    const bubble = document.createElement("div");
-    bubble.className = "msg " + (isMe ? "me" : "them");
-    bubble.textContent = msg.text;
-    document.getElementById("messages").appendChild(bubble);
-    document.getElementById("messages").scrollTop = 999999;
-    if (!isMe && currentChat !== id) {
-      chatUnread[id] = (chatUnread[id] || 0) + 1;
-      loadChats();
-    }
-  });
-
-  db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/typing").on("value", snap => {
-    const typer = snap.val();
-    const box = document.getElementById("typingIndicator");
-    if (typer && typer !== user) {
-      box.style.display = "block";
-      box.textContent = `${typer} is typing...`;
-    } else {
-      box.style.display = "none";
-    }
-  });
-
-  db.ref("users/" + user + "/chats/" + id + "/last").set(Date.now());
-}
-
-function sendTyping() {
-  if (!currentChat) return;
-  db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing").set(user);
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => {
-    db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing").set("");
-  }, 2000);
-}
-
-function sendMessage() {
-  const input = document.getElementById("msgInput");
-  const text = input.value.trim();
-  if (!text || !currentChat) return;
-  db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages").push({
-    sender: user,
-    text,
-    timestamp: Date.now()
-  });
-  input.value = "";
-  sendTyping();
-}
-
-function toggleEmojiPicker() {
-  const picker = document.getElementById("emojiPicker");
-  picker.innerHTML = "";
-  picker.style.display = picker.style.display === "flex" ? "none" : "flex";
-  [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑"].forEach(e => {
-    const span = document.createElement("span");
-    span.textContent = e;
-    span.onclick = () => {
-      document.getElementById("msgInput").value += e;
-      picker.style.display = "none";
-    };
-    picker.appendChild(span);
-  });
-}
-
-function toggleLock() {
-  if (!currentChat || !currentType) return;
-  const password = localStorage.getItem("pass");
-  const text = `🔒 Password: ${password || "(none)"}`;
-  db.ref((currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages").push({
-    sender: user,
-    text,
-    timestamp: Date.now()
-  });
-}
-
 function loadRequests() {
-  db.ref("users/" + user + "/requests").on("value", snap => {
-    const tab = document.getElementById("requestsTab");
-    tab.innerHTML = "";
+  db.ref(\"users/\" + user + \"/requests\").on(\"value\", snap => {
+    const tab = document.getElementById(\"requestsTab\");
+    tab.innerHTML = \"\";
     const data = snap.val() || {};
     Object.keys(data).forEach(from => {
-      const div = document.createElement("div");
-      div.className = "requestItem";
+      const div = document.createElement(\"div\");
+      div.className = \"requestItem\";
       div.textContent = `${from} wants to chat `;
-      const accept = document.createElement("button");
-      accept.textContent = "Accept";
+      const accept = document.createElement(\"button\");
+      accept.textContent = \"Accept\";
       accept.onclick = () => {
-        const id = [user, from].sort().join("_");
-        db.ref("privateChats/" + id).set({});
-        db.ref("users/" + user + "/chats/" + id).set({ name: from, type: "private", last: Date.now() });
-        db.ref("users/" + user + "/requests/" + from).remove();
+        const id = [user, from].sort().join(\"_\");
+        db.ref(\"privateChats/\" + id).set({});
+        db.ref(\"users/\" + user + \"/chats/\" + id).set({ name: from, type: \"private\", last: Date.now() });
+        db.ref(\"users/\" + user + \"/requests/\" + from).remove();
       };
       div.appendChild(accept);
       tab.appendChild(div);
     });
   });
 }
-</script>
-<script>
-// === Part 3: Settings, Group Creation/Join, Public Directory ===
 
-function openSettings() {
-  document.getElementById("settingsPanel").style.display = "flex";
-  document.getElementById("editUsername").value = user;
-  document.getElementById("editPassword").value = pass;
+// === Open Chat Logic ===
+function openChat(id, name, type) {
+  currentChat = id;
+  currentType = type;
+  chatUnread[id] = 0;
+
+  // Title
+  document.getElementById(\"chatTitle\").textContent = name;
+  // Clear messages
+  document.getElementById(\"messages\").innerHTML = \"\";
+  // Show group members row if group
+  document.getElementById(\"groupMembers\").style.display = (type === \"group\") ? \"block\" : \"none\";
+
+  // Group membership UI
+  if (type === \"group\") {
+    db.ref(\"groupChats/\" + id + \"/members\").on(\"value\", snap => {
+      const members = Object.keys(snap.val() || {});
+      document.getElementById(\"groupMembers\").textContent = \"Members: \" + members.join(\", \");
+    });
+  }
+
+  // Listen for messages
+  const ref = db.ref((type === \"group\" ? \"groupChats\" : \"privateChats\") + \"/\" + id + \"/messages\");
+  ref.off();
+  ref.on(\"child_added\", snap => {
+    const msg = snap.val();
+    createMessageBubble(msg);
+    if (msg.sender !== user && currentChat !== id) {
+      chatUnread[id] = (chatUnread[id] || 0) + 1;
+      loadChats();
+    }
+  });
+
+  // Listen for typing
+  db.ref((type === \"group\" ? \"groupChats\" : \"privateChats\") + \"/\" + id + \"/typing\").on(\"value\", snap => {
+    const typer = snap.val();
+    const box = document.getElementById(\"typingIndicator\");
+    if (typer && typer !== user) {
+      box.style.display = \"block\";
+      box.textContent = `${typer} is typing...`;
+    } else {
+      box.style.display = \"none\";
+    }
+  });
+
+  // Mark last
+  db.ref(\"users/\" + user + \"/chats/\" + id + \"/last\").set(Date.now());
 }
 
-function closeSettings() {
-  document.getElementById("settingsPanel").style.display = "none";
+// === Create Bubble with Timestamp ===
+function createMessageBubble(msg) {
+  const isMe = (msg.sender === user);
+  const bubble = document.createElement(\"div\");
+  bubble.className = \"msg \" + (isMe ? \"me\" : \"them\");
+
+  // Show text
+  bubble.textContent = msg.text;
+
+  // Timestamp
+  const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  const tspan = document.createElement(\"div\");
+  tspan.className = \"timestamp \" + (isMe ? \"mineTime\" : \"otherTime\");
+  tspan.textContent = time;
+  bubble.appendChild(tspan);
+
+  document.getElementById(\"messages\").appendChild(bubble);
+  document.getElementById(\"messages\").scrollTop = 999999;
 }
 
-function saveSettings() {
-  const newUser = document.getElementById("editUsername").value.trim();
-  const newPass = document.getElementById("editPassword").value.trim();
-  if (!newUser) return;
-  localStorage.setItem("user", newUser);
-  localStorage.setItem("pass", newPass);
-  location.reload();
+// === Typing Indicator ===
+function sendTyping() {
+  if (!currentChat) return;
+  db.ref((currentType === \"group\" ? \"groupChats\" : \"privateChats\") + \"/\" + currentChat + \"/typing\").set(user);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    db.ref((currentType === \"group\" ? \"groupChats\" : \"privateChats\") + \"/\" + currentChat + \"/typing\").set(\"\");
+  }, 2000);
 }
 
-function toggleTheme() {
-  document.body.classList.toggle("light");
-  localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+// === Sending Messages ===
+function sendMessage() {
+  const input = document.getElementById(\"msgInput\");
+  const text = input.value.trim();
+  if (!text || !currentChat) return;
+  db.ref((currentType === \"group\" ? \"groupChats\" : \"privateChats\") + \"/\" + currentChat + \"/messages\").push({
+    sender: user,
+    text,
+    timestamp: Date.now()
+  });
+  input.value = \"\";
+  sendTyping();
 }
 
+// === Emoji Picker ===
+function toggleEmojiPicker() {
+  const picker = document.getElementById(\"emojiPicker\");
+  picker.innerHTML = \"\";
+  picker.style.display = (picker.style.display === \"flex\") ? \"none\" : \"flex\";
+  const emojis = [...\"😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑\"];
+  emojis.forEach(e => {
+    const span = document.createElement(\"span\");
+    span.textContent = e;
+    span.onclick = () => {
+      document.getElementById(\"msgInput\").value += e;
+      picker.style.display = \"none\";
+    };
+    picker.appendChild(span);
+  });
+}
+
+// === Lock Icon => Send Password to Chat ===
+function toggleLock() {
+  if (!currentChat || !currentType) return;
+  const password = localStorage.getItem(\"pass\") || \"(none)\";
+  const text = `🔒 Password: ${password}`;
+  db.ref((currentType === \"group\" ? \"groupChats\" : \"privateChats\") + \"/\" + currentChat + \"/messages\").push({
+    sender: user,
+    text,
+    timestamp: Date.now()
+  });
+}
+
+// === Groups (Join/Create) + Directory ===
 function showJoinPanel() {
-  document.getElementById("groupJoinPanel").style.display = "flex";
+  document.getElementById(\"groupJoinPanel\").style.display = \"flex\";
 }
-
 function closeJoinPanel() {
-  document.getElementById("groupJoinPanel").style.display = "none";
+  document.getElementById(\"groupJoinPanel\").style.display = \"none\";
 }
-
 function joinGroupChat() {
-  const id = document.getElementById("joinGroupID").value.trim();
-  const enteredPw = document.getElementById("joinGroupPassword").value.trim();
+  const id = document.getElementById(\"joinGroupID\").value.trim();
+  const enteredPw = document.getElementById(\"joinGroupPassword\").value.trim();
   if (!id) return;
-  db.ref("groupChats/" + id).once("value", snap => {
+  db.ref(\"groupChats/\" + id).once(\"value\", snap => {
     const group = snap.val();
-    if (!group) return alert("Group not found");
-    if (group.type === "password" && group.password !== enteredPw) return alert("Wrong password");
-    if (group.type === "invite" && !(group.members && group.members[user])) return alert("You are not invited");
-    db.ref("groupChats/" + id + "/members/" + user).set(true);
-    db.ref("users/" + user + "/chats/" + id).set({ name: group.name, type: "group", last: Date.now() });
+    if (!group) return alert(\"Group not found\");
+    if (group.type === \"password\" && group.password !== enteredPw) return alert(\"Wrong password\");
+    if (group.type === \"invite\" && !(group.members && group.members[user])) return alert(\"You are not invited\");
+    db.ref(\"groupChats/\" + id + \"/members/\" + user).set(true);
+    db.ref(\"users/\" + user + \"/chats/\" + id).set({ name: group.name, type: \"group\", last: Date.now() });
     closeJoinPanel();
-    openChat(id, group.name, "group");
+    openChat(id, group.name, \"group\");
   });
 }
 
 function showCreatePanel() {
-  document.getElementById("groupCreatePanel").style.display = "flex";
+  document.getElementById(\"groupCreatePanel\").style.display = \"flex\";
 }
-
 function closeCreatePanel() {
-  document.getElementById("groupCreatePanel").style.display = "none";
+  document.getElementById(\"groupCreatePanel\").style.display = \"none\";
 }
-
 function createGroupChat() {
-  const name = document.getElementById("groupName").value.trim();
-  const type = document.getElementById("groupType").value;
-  const pw = document.getElementById("groupPassword").value.trim();
+  const name = document.getElementById(\"groupName\").value.trim();
+  const type = document.getElementById(\"groupType\").value;
+  const pw = document.getElementById(\"groupPassword\").value.trim();
   if (!name) return;
-  const id = "group_" + Date.now();
+  const id = \"group_\" + Date.now();
   const members = {}; members[user] = true;
-  db.ref("groupChats/" + id).set({
-    name, type, password: pw, members, createdBy: user
-  });
-  db.ref("users/" + user + "/chats/" + id).set({
-    name, type: "group", last: Date.now()
-  });
+  db.ref(\"groupChats/\" + id).set({ name, type, password: pw, members, createdBy: user });
+  db.ref(\"users/\" + user + \"/chats/\" + id).set({ name, type: \"group\", last: Date.now() });
   closeCreatePanel();
-  openChat(id, name, "group");
+  openChat(id, name, \"group\");
 }
 
 function showDirectory() {
-  document.getElementById("directoryPanel").style.display = "flex";
+  document.getElementById(\"directoryPanel\").style.display = \"flex\";
   loadPublicDirectory();
 }
-
 function closeDirectory() {
-  document.getElementById("directoryPanel").style.display = "none";
+  document.getElementById(\"directoryPanel\").style.display = \"none\";
 }
-
 function loadPublicDirectory() {
-  const list = document.getElementById("publicList");
-  list.innerHTML = "<strong>Open Groups:</strong><br/>";
-  db.ref("groupChats").once("value", snap => {
+  const list = document.getElementById(\"publicList\");
+  list.innerHTML = \"<strong>Open Groups:</strong><br/>\";
+  db.ref(\"groupChats\").once(\"value\", snap => {
     const groups = snap.val() || {};
     Object.entries(groups).forEach(([id, g]) => {
-      if (g.type === "open") {
-        const btn = document.createElement("button");
-        btn.textContent = g.name + " (" + id + ")";
+      if (g.type === \"open\") {
+        const btn = document.createElement(\"button\");
+        btn.textContent = g.name + \" (\" + id + \")\";
         btn.onclick = () => {
-          db.ref("groupChats/" + id + "/members/" + user).set(true);
-          db.ref("users/" + user + "/chats/" + id).set({ name: g.name, type: "group", last: Date.now() });
+          db.ref(\"groupChats/\" + id + \"/members/\" + user).set(true);
+          db.ref(\"users/\" + user + \"/chats/\" + id).set({ name: g.name, type: \"group\", last: Date.now() });
           closeDirectory();
-          openChat(id, g.name, "group");
+          openChat(id, g.name, \"group\");
         };
         list.appendChild(btn);
-        list.appendChild(document.createElement("br"));
+        list.appendChild(document.createElement(\"br\"));
       }
     });
   });
 
-  list.innerHTML += "<br/><strong>People (Public):</strong><br/>";
-  db.ref("users").once("value", snap => {
+  list.innerHTML += \"<br/><strong>People (Public):</strong><br/>\";
+  db.ref(\"users\").once(\"value\", snap => {
     const users = snap.val() || {};
     Object.keys(users).forEach(u => {
-      if (u !== user && !(users[u].pass || "").length) {
-        const btn = document.createElement("button");
+      if (u !== user && !(users[u].pass || \"\").length) {
+        const btn = document.createElement(\"button\");
         btn.textContent = u;
         btn.onclick = () => {
-          const id = [user, u].sort().join("_");
-          db.ref("privateChats/" + id).set({});
-          db.ref("users/" + user + "/chats/" + id).set({ name: u, type: "private", last: Date.now() });
-          db.ref("users/" + u + "/requests/" + user).set({ requested: true });
+          const id = [user, u].sort().join(\"_\");
+          db.ref(\"privateChats/\" + id).set({});
+          db.ref(\"users/\" + user + \"/chats/\" + id).set({ name: u, type: \"private\", last: Date.now() });
+          db.ref(\"users/\" + u + \"/requests/\" + user).set({ requested: true });
           closeDirectory();
-          openChat(id, u, "private");
+          openChat(id, u, \"private\");
         };
         list.appendChild(btn);
-        list.appendChild(document.createElement("br"));
+        list.appendChild(document.createElement(\"br\"));
       }
     });
   });
 }
-</script>
-<script>
+
 // === Part 4: Group Management Panel (Invite Users to Group) ===
+document.addEventListener(\"DOMContentLoaded\", () => {
+  const topBar = document.getElementById(\"topButtons\");
+  const manageBtn = document.createElement(\"button\");
+  manageBtn.textContent = \"🛠\";
+  manageBtn.title = \"Manage Group\";
+  manageBtn.onclick = () => {
+    if (currentType === \"group\") openGroupManagement(currentChat);
+  };
+  topBar.appendChild(manageBtn);
+});
 
 function openGroupManagement(id) {
-  const panel = document.createElement("div");
-  panel.style.position = "fixed";
+  const panel = document.createElement(\"div\");
+  panel.style.position = \"fixed\";
   panel.style.inset = 0;
-  panel.style.background = "rgba(0,0,0,0.7)";
-  panel.style.display = "flex";
-  panel.style.justifyContent = "center";
-  panel.style.alignItems = "center";
+  panel.style.background = \"rgba(0,0,0,0.7)\";
+  panel.style.display = \"flex\";
+  panel.style.justifyContent = \"center\";
+  panel.style.alignItems = \"center\";
   panel.style.zIndex = 1001;
 
-  const inner = document.createElement("div");
-  inner.style.background = "var(--chat-bg)";
-  inner.style.padding = "20px";
-  inner.style.borderRadius = "10px";
-  inner.style.maxWidth = "300px";
+  const inner = document.createElement(\"div\");
+  inner.style.background = \"var(--chat-bg)\";
+  inner.style.padding = \"20px\";
+  inner.style.borderRadius = \"10px\";
+  inner.style.maxWidth = \"300px\";
   inner.innerHTML = `
     <h3 style='margin-top:0'>Manage Group</h3>
     <label>Invite user:</label><br/>
     <input id='inviteUser' placeholder='Username' style='width:100%' /><br/>
     <label>With password:</label><br/>
     <input id='invitePass' type='password' placeholder='Optional password' style='width:100%' /><br/><br/>
-    <button onclick='inviteToGroup("${id}")'>Invite</button>
+    <button onclick='inviteToGroup(\"${id}\")'>Invite</button>
     <button onclick='this.parentElement.parentElement.remove()'>Close</button>
   `;
   panel.appendChild(inner);
@@ -570,116 +651,33 @@ function openGroupManagement(id) {
 }
 
 function inviteToGroup(id) {
-  const username = document.getElementById("inviteUser").value.trim();
-  const pass = document.getElementById("invitePass").value.trim();
+  const username = document.getElementById(\"inviteUser\").value.trim();
+  const pw = document.getElementById(\"invitePass\").value.trim();
   if (!username) return;
-  db.ref("groupChats/" + id + "/members/" + username).set(true);
-  db.ref("users/" + username + "/chats/" + id).set({ name: "Group Invite", type: "group", last: Date.now() });
-  if (pass) localStorage.setItem("pass", pass);
-  alert("User invited to group!");
+  db.ref(\"groupChats/\" + id + \"/members/\" + username).set(true);
+  db.ref(\"users/\" + username + \"/chats/\" + id).set({ name: \"Group Invite\", type: \"group\", last: Date.now() });
+  if (pw) localStorage.setItem(\"pass\", pw);
+  alert(\"User invited to group!\");
 }
 
-// Add group manage button to group chat top bar (optional)
-document.addEventListener("DOMContentLoaded", () => {
-  const topBar = document.getElementById("topBar");
-  const manageBtn = document.createElement("button");
-  manageBtn.textContent = "🛠";
-  manageBtn.title = "Manage Group";
-  manageBtn.onclick = () => {
-    if (currentType === "group") openGroupManagement(currentChat);
-  };
-  topBar.appendChild(manageBtn);
-});
-</script>
-<script>
 // === Part 5: Username History + Rename Tracking ===
-
-function saveSettings() {
-  const newUser = document.getElementById("editUsername").value.trim();
-  const newPass = document.getElementById("editPassword").value.trim();
-  if (!newUser) return;
-  if (newUser !== user) {
-    db.ref("users/" + user + "/oldNames").push(newUser);
-  }
-  localStorage.setItem("user", newUser);
-  localStorage.setItem("pass", newPass);
-  location.reload();
-}
-
-function openChat(id, name, type) {
-  currentChat = id;
-  currentType = type;
-  chatUnread[id] = 0;
-  db.ref("users/" + user + "/chats/" + id + "/last").set(Date.now());
-
-  // Fetch rename history
-  db.ref("users").once("value", snap => {
-    const users = snap.val() || {};
-    const nameParts = name.split(" (used to be:");
-    const actualName = nameParts[0];
-    const matchUser = Object.keys(users).find(k => k === actualName);
-    let display = actualName;
-    if (matchUser && users[matchUser].oldNames) {
-      const old = Object.values(users[matchUser].oldNames).slice(-1)[0];
-      if (old && old !== actualName) display += ` (used to be: ${old})`;
-    }
-    document.getElementById("chatTitle").textContent = display;
-  });
-
-  document.getElementById("messages").innerHTML = "";
-  document.getElementById("groupMembers").style.display = type === "group" ? "block" : "none";
-
-  if (type === "group") {
-    db.ref("groupChats/" + id + "/members").on("value", snap => {
-      const members = Object.keys(snap.val() || {});
-      document.getElementById("groupMembers").textContent = "Members: " + members.join(", ");
-    });
-  }
-
-  const ref = db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/messages");
-  ref.off();
-  ref.on("child_added", snap => {
-    const msg = snap.val();
-    const isMe = msg.sender === user;
-    const bubble = document.createElement("div");
-    bubble.className = "msg " + (isMe ? "me" : "them");
-    bubble.textContent = msg.text;
-    document.getElementById("messages").appendChild(bubble);
-    document.getElementById("messages").scrollTop = 999999;
-    if (!isMe && currentChat !== id) {
-      chatUnread[id] = (chatUnread[id] || 0) + 1;
-      loadChats();
-    }
-  });
-
-  db.ref((type === "group" ? "groupChats" : "privateChats") + "/" + id + "/typing").on("value", snap => {
-    const typer = snap.val();
-    const box = document.getElementById("typingIndicator");
-    if (typer && typer !== user) {
-      box.style.display = "block";
-      box.textContent = `${typer} is typing...`;
-    } else {
-      box.style.display = "none";
-    }
-  });
-}
+// Merge code with final openChat if needed, or skip if we only track local rename
 
 // === Part 6: Export & Import Chat Data ===
-
 function exportChatData() {
   const exportObj = {};
-  db.ref("users/" + user + "/chats").once("value", snap => {
+  db.ref(\"users/\" + user + \"/chats\").once(\"value\", snap => {
     const chats = snap.val() || {};
     const promises = Object.keys(chats).map(chatId => {
-      const path = chats[chatId].type === "group" ? "groupChats" : "privateChats";
-      return db.ref(`${path}/${chatId}/messages`).once("value`).then(s => {
+      const path = (chats[chatId].type === \"group\") ? \"groupChats\" : \"privateChats\";
+      return db.ref(`${path}/${chatId}/messages`).once(\"value\").then(s => {
         exportObj[chatId] = s.val() || {};
       });
     });
     Promise.all(promises).then(() => {
-      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: \"application/json\" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement(\"a\");
       link.href = url;
       link.download = `static-chat-backup-${user}.json`;
       link.click();
@@ -693,34 +691,34 @@ function importChatData(file) {
     try {
       const imported = JSON.parse(e.target.result);
       Object.entries(imported).forEach(([chatId, messages]) => {
-        const type = chatId.startsWith("group_") ? "groupChats" : "privateChats";
+        const type = chatId.startsWith(\"group_\") ? \"groupChats\" : \"privateChats\";
         Object.entries(messages).forEach(([msgId, msg]) => {
           db.ref(`${type}/${chatId}/messages/${msgId}`).set(msg);
         });
       });
-      alert("Chat data imported successfully!");
-    } catch (e) {
-      alert("Invalid backup file");
+      alert(\"Chat data imported successfully!\");
+    } catch (err) {
+      alert(\"Invalid backup file\");
     }
   };
   reader.readAsText(file);
 }
 
 function openImportExportPanel() {
-  const panel = document.createElement("div");
-  panel.style.position = "fixed";
+  const panel = document.createElement(\"div\");
+  panel.style.position = \"fixed\";
   panel.style.inset = 0;
-  panel.style.background = "rgba(0,0,0,0.7)";
-  panel.style.display = "flex";
-  panel.style.justifyContent = "center";
-  panel.style.alignItems = "center";
+  panel.style.background = \"rgba(0,0,0,0.7)\";
+  panel.style.display = \"flex\";
+  panel.style.justifyContent = \"center\";
+  panel.style.alignItems = \"center\";
   panel.style.zIndex = 1001;
 
-  const inner = document.createElement("div");
-  inner.style.background = "var(--chat-bg)";
-  inner.style.padding = "20px";
-  inner.style.borderRadius = "10px";
-  inner.style.maxWidth = "300px";
+  const inner = document.createElement(\"div\");
+  inner.style.background = \"var(--chat-bg)\";
+  inner.style.padding = \"20px\";
+  inner.style.borderRadius = \"10px\";
+  inner.style.maxWidth = \"300px\";
   inner.innerHTML = `
     <h3 style='margin-top:0'>Export / Import</h3>
     <button onclick='exportChatData()'>📤 Export My Chats</button><br/><br/>
@@ -732,42 +730,63 @@ function openImportExportPanel() {
 }
 
 // === Part 7: Firebase Security Rules Guide ===
-// Add the following rules to your Firebase Realtime Database:
 /*
-{
-  "rules": {
-    ".read": "auth == null",
-    ".write": "auth == null",
+  1) In your Firebase console (Realtime Database -> Rules), paste these:
+  {
+    \"rules\": {
+      \".read\": \"auth == null\",
+      \".write\": \"auth == null\",
 
-    "users": {
-      "$username": {
-        ".read": "true",
-        ".write": "true"
-      }
-    },
+      \"users\": {
+        \"$username\": {
+          \".read\": \"true\",
+          \".write\": \"true\"
+        }
+      },
 
-    "privateChats": {
-      "$chatId": {
-        ".read": "true",
-        ".write": "true"
-      }
-    },
+      \"privateChats\": {
+        \"$chatId\": {
+          \".read\": \"true\",
+          \".write\": \"true\"
+        }
+      },
 
-    "groupChats": {
-      "$groupId": {
-        ".read": "true",
-        ".write": "true"
+      \"groupChats\": {
+        \"$groupId\": {
+          \".read\": \"true\",
+          \".write\": \"true\"
+        }
       }
     }
   }
-}
+  2) This allows full read/write with no user auth. Adjust as needed.
 */
-// These rules ensure full read/write access since no authentication is required.
-// If needed, you can add stricter rules or email/password auth later.
 
 // === The End: Initialization & Final Hook ===
+console.log(\"✅ Static Live Chatting fully loaded and initialized\");
+document.body.classList.toggle(\"light\", localStorage.getItem(\"theme\") === \"light\");
 
-console.log("✅ Static Live Chatting fully loaded and initialized");
-document.body.classList.toggle("light", localStorage.getItem("theme") === "light");
+// === Settings Panel (Part 3 & 5 merge) ===
+function openSettings() {
+  document.getElementById(\"settingsPanel\").style.display = \"flex\";
+  document.getElementById(\"editUsername\").value = user;
+  document.getElementById(\"editPassword\").value = pass;
+}
+function closeSettings() {
+  document.getElementById(\"settingsPanel\").style.display = \"none\";
+}
+function saveSettings() {
+  const newUser = document.getElementById(\"editUsername\").value.trim();
+  const newPass = document.getElementById(\"editPassword\").value.trim();
+  if (!newUser) return;
+  if (newUser !== user) {
+    // Save old name to DB if needed
+    db.ref(\"users/\" + user + \"/oldNames\").push(newUser);
+  }
+  localStorage.setItem(\"user\", newUser);
+  localStorage.setItem(\"pass\", newPass);
+  location.reload();
+}
 </script>
+</body>
 </html>

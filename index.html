@@ -3,58 +3,58 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chatting – Final Polished</title>
+  <title>Static Live Chatting – Final No-Lag</title>
   <style>
     :root {
-      --bg-color: #111;
-      --text-color: #fff;
-      --sidebar-color: #1c1c1c;
-      --chat-bg: #222;
-      --bubble-me: #1e90ff;
-      --bubble-them: #444;
-      --accent: #1e90ff;
-      --badge: red;
-      --chat-item-bg: #333;
+      --bg-color:#111;
+      --text-color:#fff;
+      --sidebar-color:#1c1c1c;
+      --chat-bg:#222;
+      --bubble-me:#1e90ff;
+      --bubble-them:#444;
+      --accent:#1e90ff;
+      --badge:red;
+      --chat-item-bg:#333;
     }
     body.light {
-      --bg-color: #f4f4f4;
-      --text-color: #000;
-      --sidebar-color: #ddd;
-      --chat-bg: #eee;
-      --bubble-me: #007aff;
-      --bubble-them: #ccc;
-      --accent: #007acc;
-      --chat-item-bg: #bbb;
+      --bg-color:#f4f4f4;
+      --text-color:#000;
+      --sidebar-color:#ddd;
+      --chat-bg:#eee;
+      --bubble-me:#007aff;
+      --bubble-them:#ccc;
+      --accent:#007acc;
+      --chat-item-bg:#bbb;
     }
     body.blue {
-      --bg-color: #0b1622;
-      --text-color: #f0f8ff;
-      --sidebar-color: #132336;
-      --chat-bg: #1e2d40;
-      --bubble-me: #1f65ff;
-      --bubble-them: #41546a;
-      --accent: #389fff;
-      --chat-item-bg: #2e3d52;
+      --bg-color:#0b1622;
+      --text-color:#f0f8ff;
+      --sidebar-color:#132336;
+      --chat-bg:#1e2d40;
+      --bubble-me:#1f65ff;
+      --bubble-them:#41546a;
+      --accent:#389fff;
+      --chat-item-bg:#2e3d52;
     }
     body.green {
-      --bg-color: #102a10;
-      --text-color: #e8ffe8;
-      --sidebar-color: #224522;
-      --chat-bg: #1a331a;
-      --bubble-me: #28a745;
-      --bubble-them: #375a37;
-      --accent: #4CAF50;
-      --chat-item-bg: #2b442b;
+      --bg-color:#102a10;
+      --text-color:#e8ffe8;
+      --sidebar-color:#224522;
+      --chat-bg:#1a331a;
+      --bubble-me:#28a745;
+      --bubble-them:#375a37;
+      --accent:#4caf50;
+      --chat-item-bg:#2b442b;
     }
     body.pink {
-      --bg-color: #331024;
-      --text-color: #ffe0f0;
-      --sidebar-color: #441533;
-      --chat-bg: #551a44;
-      --bubble-me: #ff3377;
-      --bubble-them: #773355;
-      --accent: #ff66a2;
-      --chat-item-bg: #442244;
+      --bg-color:#331024;
+      --text-color:#ffe0f0;
+      --sidebar-color:#441533;
+      --chat-bg:#551a44;
+      --bubble-me:#ff3377;
+      --bubble-them:#773355;
+      --accent:#ff66a2;
+      --chat-item-bg:#442244;
     }
 
     body {
@@ -101,17 +101,16 @@
     }
     .reactionBar {
       position:absolute; bottom:100%; left:50%;
-      transform:translateX(-50%);
-      display:none; flex-direction:row; gap:5px;
-      background:rgba(0,0,0,0.6); padding:5px; border-radius:6px; margin-bottom:5px;
+      transform:translateX(-50%); display:none; flex-direction:row;
+      gap:5px; background:rgba(0,0,0,0.6); padding:5px; border-radius:6px;
+      margin-bottom:5px;
     }
     .reactionBar span {
       font-size:22px; cursor:pointer;
     }
     .reactionTag { margin-left:6px; font-size:14px; opacity:0.8; }
     .timestamp {
-      position:absolute; font-size:10px; opacity:0.7;
-      bottom:-14px;
+      position:absolute; font-size:10px; opacity:0.7; bottom:-14px;
     }
     .mineTime { right:10px; }
     .otherTime { left:10px; }
@@ -119,8 +118,7 @@
       font-size:12px; opacity:0.6; margin-top:2px;
     }
     #typingIndicator {
-      display:none; font-style:italic; font-size:14px;
-      margin:0 20px 10px;
+      display:none; font-style:italic; font-size:14px; margin:0 20px 10px;
     }
     #inputArea {
       display:flex; padding:10px; background:var(--sidebar-color);
@@ -130,28 +128,25 @@
     }
     #emojiPicker {
       display:none; position:absolute; bottom:70px; right:15px;
-      background:var(--chat-bg); padding:10px; flex-wrap:wrap;
-      z-index:99; max-width:260px;
+      background:var(--chat-bg); padding:10px; flex-wrap:wrap; z-index:99;
+      max-width:260px;
     }
     #emojiPicker span {
       font-size:22px; margin:6px; cursor:pointer;
     }
     .chatItem {
-      background:var(--chat-item-bg);
-      padding:10px; border-radius:6px; margin-bottom:8px;
-      display:flex; justify-content:space-between; align-items:center;
+      background:var(--chat-item-bg); padding:10px; border-radius:6px;
+      margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;
       cursor:pointer; transition:background 0.2s;
     }
     .chatItem:hover { background:var(--bubble-them); }
     .chatItem.active { outline:2px solid var(--accent); }
     .chatBadge {
-      background:var(--badge);
-      color:#fff; font-size:12px; padding:3px 8px; border-radius:12px;
-      margin-left:5px;
+      background:var(--badge); color:#fff; font-size:12px;
+      padding:3px 8px; border-radius:12px; margin-left:5px;
     }
     .requestItem {
-      background:var(--bubble-them);
-      padding:10px; margin-bottom:5px; border-radius:6px;
+      background:var(--bubble-them); padding:10px; margin-bottom:5px; border-radius:6px;
     }
     #staticMenu {
       position:fixed; bottom:10px; left:10px;
@@ -169,30 +164,37 @@
       0%,100% { opacity:1; }
       50% { opacity:0.6; }
     }
-
-    @media(max-width:768px){
-      body.mobile #sidebar { display:none; }
-    }
-
     /* Centered modals */
     .modal {
       position:fixed; inset:0;
       background:rgba(0,0,0,0.7);
-      display:none; flex-direction:column;
-      align-items:center; justify-content:center;
+      display:none; flex-direction:column; align-items:center; justify-content:center;
       z-index:999;
     }
     .panelContent {
       background:var(--chat-bg);
-      padding:20px; border-radius:10px;
-      max-width:400px;
+      padding:20px; border-radius:10px; max-width:400px;
+    }
+    /* Center the login form too */
+    #login {
+      position:fixed; inset:0; display:flex;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.7);
+      z-index:999;
+    }
+    #login .panelContent {
+      max-width:300px;
+    }
+
+    @media(max-width:768px){
+      body.mobile #sidebar { display:none; }
     }
   </style>
 </head>
 <body>
 <script>
-// Mobile detection
-if(/Android|webOS|iPhone|iPad|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+// mobile detection
+if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
   document.body.classList.add("mobile");
 }
 
@@ -214,7 +216,7 @@ function doLogin(){
 }
 </script>
 
-<!-- Confirm + Notice + Locked Panels -->
+<!-- Confirm + Notice + Locked -->
 <div id="confirmPanel" class="modal">
   <div class="panelContent" id="confirmInner"></div>
 </div>
@@ -229,7 +231,7 @@ function doLogin(){
   </div>
 </div>
 
-<!-- Additional Panels -->
+<!-- More Panels -->
 <div id="friendsPanel" class="modal">
   <div class="panelContent" id="friendsInner"></div>
 </div>
@@ -276,7 +278,7 @@ function doLogin(){
     <h3>Settings</h3>
     <label>Username:</label><br/>
     <input id="editUsername"/><br/>
-    <label>Password (optional):</label><br/>
+    <label>Password (Key used to message people, share it for friend requests):</label><br/>
     <input id="editPassword"/><br/>
     <p>Verification pass (5-min idle lock):</p>
     <input id="lockPass" type="password"/><br/>
@@ -288,15 +290,15 @@ function doLogin(){
   </div>
 </div>
 
-<!-- Login Screen -->
-<div id="login" style="display:flex;">
-  <div class="panelContent" style="max-width:300px;">
+<!-- Login Centered -->
+<div id="login">
+  <div class="panelContent">
     <h2>Static Live Chatting</h2>
-    <p>⚠️ Never share sensitive info</p>
+    <p>⚠️ Do not share sensitive info</p>
     <input id="username" placeholder="Username" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
     <div style="display:flex;align-items:center;">
-      <input id="password" type="password" placeholder="Password (optional)" style="margin:5px 0;flex:1;"
-             onkeypress="if(event.key==='Enter')doLogin()"/>
+      <input id="password" type="password" placeholder="Password (Key used for messaging/friend requests)" 
+             style="margin:5px 0;flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
       <button style="margin:5px 0;" onclick="toggleLoginPass()">👁️</button>
     </div>
     <button onclick="doLogin()">Log In</button>
@@ -311,12 +313,11 @@ function doLogin(){
     <button onclick="showAddChatPanel()">Add Chat</button>
     <h3>Friend Requests</h3>
     <div id="requestsTab"></div>
-    <div id="requestsSentTab" style="margin-top:8px; color: #ccc;"></div>
+    <div id="requestsSentTab" style="margin-top:8px; color:#ccc;"></div>
     <hr/>
     <h3>Chats</h3>
     <div id="chatList"></div>
   </div>
-
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
@@ -347,15 +348,14 @@ function doLogin(){
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
 /*
-  Single-File Chat with:
-  - 5 themes: dark, light, blue, green, pink
-  - Friend requests & requestsSent
-  - Accept => new chat on acceptor & "Accepted" -> remove on sender
-  - "Seen" only for your messages in private, "Seen by X" in group
-  - Typing stops after inactivity
-  - Unread increments if not in that chat, sorted by .last
-  - If presence is permission_denied => fix rules
+   Single-File Chat
+   - Centered login, password is "key"
+   - "Seen" logic in private chats for your messages
+   - Remove old presence listeners to avoid lag
+   - 5 themes: dark->light->blue->green->pink
+   - Idle lock, friend requests, reaction bar, read receipts
 */
+
 const firebaseConfig={
   apiKey:"AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
   authDomain:"static-live-chatting.firebaseapp.com",
@@ -368,18 +368,20 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let presenceRef=null, colorMap={};
+let colorMap={};
 const colorClasses=["nameColor1","nameColor2","nameColor3","nameColor4","nameColor5"];
-let blocked={}, friends={}, chatActive="";
+let blocked={}, friends={};
 let currentChat="", currentType="";
+let chatActive="";
 let chatUnread={};
 
-// Idle lock
 let verificationPass=localStorage.getItem("verificationPass")||"";
-let isLocked=false;
-let idleTimer=null;
+let isLocked=false, idleTimer=null;
 
-// If user stored => skip login
+let userPresenceRef=null; // your presence
+let oldFriendPresenceRef=null; // old presence for private chat
+
+//** If user stored => skip login
 if(user){
   document.addEventListener("DOMContentLoaded",()=>{
     document.getElementById("login").style.display="none";
@@ -393,7 +395,6 @@ if(user){
     setIdleLockTimer();
   });
 }
-
 function startApp(){
   document.getElementById("login").style.display="none";
   document.getElementById("app").style.display="flex";
@@ -406,34 +407,39 @@ function startApp(){
   setIdleLockTimer();
   showNotice(`Logged in as ${user}`);
 }
+window.onbeforeunload=()=>{
+  if(isLocked)return null;
+  return "Are you sure you want to leave?";
+};
 
-//** Presence
+//** presence
 function setupPresence(){
-  presenceRef=db.ref("presence/"+user);
-  presenceRef.set({state:"online",lastOnline:Date.now()})
-    .catch(e=>{
-      console.warn("presence set error:", e.message);
-      showNotice("Presence set error. You might need presence rules in Firebase.\n\n"+e.message);
-    });
-  presenceRef.onDisconnect().set({state:"offline",lastOnline:firebase.database.ServerValue.TIMESTAMP})
-    .catch(e=>{
-      console.warn("presence onDisconnect error:", e.message);
-    });
+  userPresenceRef=db.ref(`presence/${user}`);
+  userPresenceRef.set({state:"online", lastOnline:Date.now()})
+    .catch(e=>showNotice("presence set error: "+e.message));
+  userPresenceRef.onDisconnect().set({state:"offline", lastOnline:firebase.database.ServerValue.TIMESTAMP})
+    .catch(e=>console.warn("onDisconnect error:", e.message));
 }
 
-//** Themes
+function removeFriendPresence(){
+  if(oldFriendPresenceRef){
+    oldFriendPresenceRef.off();
+    oldFriendPresenceRef=null;
+  }
+}
+
+//** theming
 function toggleTheme(){
-  const c= (document.body.classList.contains("light")?"light":
-            document.body.classList.contains("blue")?"blue":
-            document.body.classList.contains("green")?"green":
-            document.body.classList.contains("pink")?"pink":"dark");
+  const c=(document.body.classList.contains("light")?"light":
+           document.body.classList.contains("blue")?"blue":
+           document.body.classList.contains("green")?"green":
+           document.body.classList.contains("pink")?"pink":"dark");
   let next="dark";
   if(c==="dark") next="light";
   else if(c==="light") next="blue";
   else if(c==="blue") next="green";
   else if(c==="green") next="pink";
   else if(c==="pink") next="dark";
-
   document.body.classList.remove("light","blue","green","pink");
   if(next==="light") document.body.classList.add("light");
   if(next==="blue") document.body.classList.add("blue");
@@ -451,7 +457,7 @@ function applyTheme(){
   else if(saved==="pink") document.body.classList.add("pink");
 }
 
-//** Idle Lock
+//** idle lock
 function setIdleLockTimer(){
   clearTimeout(idleTimer);
   if(verificationPass){
@@ -463,12 +469,10 @@ document.onkeypress=setIdleLockTimer;
 
 function lockNow(){
   if(!verificationPass){
-    verificationPass=document.getElementById("lockPass").value.trim();
-    if(!verificationPass){
-      showNotice("No verification pass!");
-      return;
-    }
-    localStorage.setItem("verificationPass", verificationPass);
+    const v=document.getElementById("lockPass").value.trim();
+    if(!v)return showNotice("No verification pass!");
+    verificationPass=v;
+    localStorage.setItem("verificationPass",v);
   }
   lockAccount();
 }
@@ -489,7 +493,7 @@ function tryUnlock(){
   }
 }
 
-//** blocking + friend
+//** block/friends
 function loadBlocked(){
   db.ref(`users/${user}/blocked`).on("value", s=>{
     blocked=s.val()||{};
@@ -503,7 +507,7 @@ function loadFriends(){
 function blockUserUI(){
   showConfirm("Enter user to block/unblock:<br/><input id='blkU' onkeypress='if(event.key===\"Enter\")confirmYes()'/>",()=>{
     const bn=document.getElementById("blkU").value.trim();
-    if(!bn)return showNotice("No user");
+    if(!bn)return showNotice("No user typed!");
     if(blocked[bn]){
       db.ref(`users/${user}/blocked/${bn}`).remove();
       showNotice(`Unblocked ${bn}`);
@@ -520,9 +524,7 @@ function addFriendUI(){
     if(blocked[f])return showNotice("You blocked them. Unblock first.");
     // send request
     db.ref(`users/${f}/requests/${user}`).set({requested:true});
-    // track requestsSent
     db.ref(`users/${user}/requestsSent/${f}`).set(true);
-    // ensure privateChats node
     db.ref(`privateChats/${[user,f].sort().join("_")}`).set({});
     showNotice(`Friend request sent to ${f}`);
   });
@@ -533,15 +535,15 @@ function openFriendsPanel(){
   if(isLocked)return;
   const fi=document.getElementById("friendsInner");
   fi.innerHTML="<h3>Your Friends</h3>";
-
   Object.keys(friends).forEach(fr=>{
-    const row=document.createElement("div");
-    row.style.marginBottom="8px";
-    row.style.background="var(--chat-bg)";
-    row.style.padding="8px";
-    row.style.borderRadius="6px";
-    row.innerHTML=`<b>${fr}</b><br/>`;
+    const div=document.createElement("div");
+    div.style.background="var(--chat-bg)";
+    div.style.padding="8px";
+    div.style.marginBottom="8px";
+    div.style.borderRadius="6px";
+    div.innerHTML=`<b>${fr}</b><br/>`;
 
+    // open chat
     const bOpen=document.createElement("button");
     bOpen.textContent="Open Chat";
     bOpen.onclick=()=>{
@@ -551,18 +553,18 @@ function openFriendsPanel(){
       });
       db.ref(`users/${user}/chats/${cid}`).set({name:fr,type:"private",last:Date.now()});
       closeFriendsPanel();
-      openChat(cid, fr, "private");
+      openChat(cid,fr,"private");
     };
-    row.appendChild(bOpen);
+    div.appendChild(bOpen);
 
-    const bInvite=document.createElement("button");
-    bInvite.textContent="Invite Group";
-    bInvite.onclick=()=>pickGroupForInvite(fr);
-    row.appendChild(bInvite);
+    const bInv=document.createElement("button");
+    bInv.textContent="Invite Group";
+    bInv.onclick=()=>pickGroupForInvite(fr);
+    div.appendChild(bInv);
 
-    const bBlock=document.createElement("button");
-    bBlock.textContent=(blocked[fr])?"Unblock":"Block";
-    bBlock.onclick=()=>{
+    const bBlk=document.createElement("button");
+    bBlk.textContent=(blocked[fr])?"Unblock":"Block";
+    bBlk.onclick=()=>{
       if(blocked[fr]){
         db.ref(`users/${user}/blocked/${fr}`).remove();
         showNotice(`Unblocked ${fr}`);
@@ -571,21 +573,20 @@ function openFriendsPanel(){
         showNotice(`Blocked ${fr}`);
       }
     };
-    row.appendChild(bBlock);
+    div.appendChild(bBlk);
 
-    fi.appendChild(row);
+    fi.appendChild(div);
   });
-
   document.getElementById("friendsPanel").style.display="flex";
 }
 function closeFriendsPanel(){
   document.getElementById("friendsPanel").style.display="none";
 }
 function pickGroupForInvite(friend){
-  db.ref(`users/${user}/chats`).once("value",snap=>{
-    const data=snap.val()||{};
-    const groups=Object.entries(data).filter(([id,inf])=>inf.type==="group");
-    if(!groups.length)return showNotice("No group to invite to!");
+  db.ref(`users/${user}/chats`).once("value", snap=>{
+    const d=snap.val()||{};
+    const groups=Object.entries(d).filter(([id,inf])=>inf.type==="group");
+    if(!groups.length)return showNotice("No group found to invite!");
     let h=`<h3>Pick Group for ${friend}</h3>`;
     groups.forEach(([gid,ginfo])=>{
       h+=`<button onclick='inviteFriendToGroup("${gid}","${friend}")'>${ginfo.name}</button><br/>`;
@@ -607,12 +608,12 @@ function loadChats(){
     const sorted=Object.entries(data).sort((a,b)=>(b[1].last||0)-(a[1].last||0));
     const cList=document.getElementById("chatList");
     cList.innerHTML="";
-    sorted.forEach(([id, info])=>{
+    sorted.forEach(([id,info])=>{
       const div=document.createElement("div");
       div.className="chatItem";
       if(id===chatActive) div.classList.add("active");
       let nm=info.name||id;
-      if(info.type==="private" && blocked[nm]) nm+=" [Blocked]";
+      if(info.type==="private"&&blocked[nm]) nm+=" [Blocked]";
       div.textContent=nm;
 
       const rowRight=document.createElement("div");
@@ -647,7 +648,7 @@ function highlightChat(id){
 function loadRequests(){
   const tab=document.getElementById("requestsTab");
   const st=document.getElementById("requestsSentTab");
-  // Inbound
+  // inbound
   db.ref(`users/${user}/requests`).on("value", snap=>{
     const data=snap.val()||{};
     tab.innerHTML="";
@@ -660,30 +661,23 @@ function loadRequests(){
       g.style.background="green";
       g.onclick=()=>{
         if(blocked[from])return showNotice("You blocked them. Unblock first.");
-        // accept => create chat or ensure chat
-        const cid=[user, from].sort().join("_");
+        const cid=[user,from].sort().join("_");
         db.ref(`privateChats/${cid}`).set({});
         db.ref(`users/${user}/chats/${cid}`).set({name:from,type:"private",last:Date.now()});
-        // remove from inbound
         db.ref(`users/${user}/requests/${from}`).remove();
-        // set friend
         db.ref(`users/${user}/friends/${from}`).set(true);
         db.ref(`users/${from}/friends/${user}`).set(true);
 
-        // also remove from 'requestsSent' on the 'from' side
+        // remove from their requestsSent
         db.ref(`users/${from}/requestsSent/${user}`).once("value", s2=>{
           if(s2.exists()){
             db.ref(`users/${from}/requestsSent/${user}`).remove();
-            // show "Accepted" for them?
-            // We'll do an ephemeral approach: let's store a "acceptedBy" node for them so they see "Accepted"? Then remove it?
             db.ref(`users/${from}/accepted/${user}`).set(true);
-            setTimeout(()=>{
-              db.ref(`users/${from}/accepted/${user}`).remove();
-            }, 3000);
+            setTimeout(()=>db.ref(`users/${from}/accepted/${user}`).remove(),3000);
           }
         });
 
-        // open chat for acceptor
+        // open for acceptor
         openChat(cid, from, "private");
       };
       d.appendChild(g);
@@ -698,7 +692,7 @@ function loadRequests(){
       tab.appendChild(d);
     });
   });
-  // Outbound
+  // outbound
   db.ref(`users/${user}/requestsSent`).on("value", snap2=>{
     const outData=snap2.val()||{};
     st.innerHTML="<strong>Requests Sent:</strong><br/>";
@@ -716,30 +710,25 @@ function loadRequests(){
       st.appendChild(d);
     });
   });
-  // watch 'accepted/*' to show user ephemeral "accepted" msg
+  // watch accepted
   db.ref(`users/${user}/accepted`).on("child_added", s=>{
     const who=s.key;
-    showNotice(`${who} accepted your friend request!`);
-    // remove from requestsSent so it goes away
+    showNotice(`${who} accepted your friend request! Chat unlocked!`);
+    // remove from requestsSent
     db.ref(`users/${user}/requestsSent/${who}`).remove();
     // ensure chat
     const cid=[user,who].sort().join("_");
     db.ref(`privateChats/${cid}`).once("value", s3=>{
-      if(!s3.exists()){
-        db.ref(`privateChats/${cid}`).set({});
-      }
+      if(!s3.exists()) db.ref(`privateChats/${cid}`).set({});
     });
     db.ref(`users/${user}/chats/${cid}`).set({name:who,type:"private",last:Date.now()});
-    // if we have no chat open or "No Chat," let's open it
+    // open if none open
     if(!currentChat) openChat(cid, who, "private");
-    // remove ephemeral
     setTimeout(()=>{
       db.ref(`users/${user}/accepted/${who}`).remove();
-    }, 3000);
+    },3000);
   });
 }
-
-//** confirm delete chat
 function confirmDeleteChat(chatId, info){
   if(info.type==="group"){
     db.ref(`groupChats/${chatId}/createdBy`).once("value", s=>{
@@ -769,7 +758,8 @@ function confirmDeleteChat(chatId, info){
 //** open chat
 function openChat(cid, nm, ty){
   if(isLocked)return;
-  currentChat=cid; currentType=ty;
+  currentChat=cid;
+  currentType=ty;
   chatUnread[cid]=0;
   highlightChat(cid);
 
@@ -777,7 +767,33 @@ function openChat(cid, nm, ty){
   document.getElementById("messages").innerHTML="";
   document.getElementById("groupMembers").style.display=(ty==="group")?"block":"none";
 
-  showPresenceInfo(nm,ty);
+  // remove old presence if private
+  removeFriendPresence();
+
+  if(ty==="private"){
+    // attach presence for friend
+    if(nm!=="No Chat"){
+      const friendName=nm.replace(" [Blocked]","");
+      oldFriendPresenceRef=db.ref(`presence/${friendName}`);
+      oldFriendPresenceRef.on("value", s=>{
+        const val=s.val();
+        const label=document.getElementById("presenceLabel");
+        if(!val){
+          label.textContent="(Offline)";
+        } else if(val.state==="online"){
+          label.textContent="(Online)";
+        } else {
+          const delta=Date.now()-(val.lastOnline||0);
+          const mins=Math.floor(delta/60000);
+          label.textContent=`(Last seen ${mins} min ago)`;
+        }
+      });
+    }
+  } else {
+    // group => no friend presence
+    const label=document.getElementById("presenceLabel");
+    label.textContent="(Group)";
+  }
 
   const path=(ty==="group"?"groupChats":"privateChats")+"/"+cid+"/messages";
   db.ref(path).off();
@@ -791,6 +807,7 @@ function openChat(cid, nm, ty){
     });
     markMessagesRead(Object.keys(data));
   });
+
   if(ty==="group"){
     db.ref(`groupChats/${cid}/members`).on("value", sp=>{
       const mm=Object.keys(sp.val()||{});
@@ -812,9 +829,17 @@ function openChat(cid, nm, ty){
   db.ref(`users/${user}/chats/${cid}/last`).set(Date.now());
 }
 
-function createMessageBubble(msgId,msg,ty){
-  if(ty==="private"&& msg.sender!==user && blocked[msg.sender])return;
-  if(ty==="group"&& msg.sender!==user && blocked[msg.sender])return;
+function removeFriendPresence(){
+  if(oldFriendPresenceRef){
+    oldFriendPresenceRef.off();
+    oldFriendPresenceRef=null;
+  }
+}
+
+function createMessageBubble(msgId, msg, ty){
+  // blocked
+  if(ty==="private" && msg.sender!==user && blocked[msg.sender])return;
+  if(ty==="group" && msg.sender!==user && blocked[msg.sender])return;
 
   const isMe=(msg.sender===user);
   const bubble=document.createElement("div");
@@ -847,7 +872,6 @@ function createMessageBubble(msgId,msg,ty){
   if(msg.reaction) rt.textContent=msg.reaction;
   bubble.appendChild(rt);
 
-  // Reaction bar
   const rBar=document.createElement("div");
   rBar.className="reactionBar";
   ["❤️","👍","😂","😮","😢"].forEach(r=>{
@@ -868,7 +892,7 @@ function createMessageBubble(msgId,msg,ty){
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
   });
 
-  // timestamp
+  // time
   const time=new Date(msg.timestamp||0).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
   const ts=document.createElement("div");
   ts.className="timestamp "+(isMe?"mineTime":"otherTime");
@@ -877,7 +901,7 @@ function createMessageBubble(msgId,msg,ty){
 
   // read receipts
   if(ty==="group"){
-    // group => "Seen by x, y" except sender, if any
+    // "Seen by x,y" except sender
     if(msg.readBy){
       const readList=Object.keys(msg.readBy).filter(u=>u!==msg.sender);
       if(readList.length>0){
@@ -888,8 +912,7 @@ function createMessageBubble(msgId,msg,ty){
       }
     }
   } else {
-    // private => if it's my message, show "Seen" if the other user read it
-    // only show if at least one other user in readBy
+    // private => only show "Seen" if your message is read by them
     if(isMe && msg.readBy){
       const readOthers=Object.keys(msg.readBy).filter(u=>u!==user);
       if(readOthers.length>0){
@@ -903,6 +926,7 @@ function createMessageBubble(msgId,msg,ty){
 
   document.getElementById("messages").appendChild(bubble);
 }
+
 function applyReaction(msgId, reaction){
   if(!currentChat||!currentType)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
@@ -915,34 +939,24 @@ function markMessagesRead(msgIds){
     db.ref(`${path}/${currentChat}/messages/${mId}/readBy/${user}`).set(Date.now());
   });
 }
-
 function sendTyping(){
   if(!currentChat||isLocked)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/typing`).set(user);
-  setTimeout(()=>{
-    db.ref(`${path}/${currentChat}/typing`).set("");
-  },2000);
+  setTimeout(()=>db.ref(`${path}/${currentChat}/typing`).set(""),2000);
 }
-
 function sendMessage(){
   if(isLocked)return;
   const inp=document.getElementById("msgInput");
   const text=inp.value.trim();
   if(!text||!currentChat)return;
   if(currentType==="private"){
-    // check blocked
-    const friend=document.getElementById("chatTitle").textContent;
-    if(blocked[friend]){
-      showNotice("You blocked them. Unblock first!");
-      return;
-    }
+    const frName=document.getElementById("chatTitle").textContent.replace(" [Blocked]","");
+    if(blocked[frName])return showNotice("You blocked user. Unblock first!");
   }
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages`).push({
-    sender:user,
-    text,
-    timestamp:Date.now(),
+    sender:user, text, timestamp:Date.now(),
     reaction:"",
     readBy:{[user]:Date.now()}
   });
@@ -950,18 +964,22 @@ function sendMessage(){
   sendTyping();
 }
 
-function showPresenceInfo(fr,ty){
+function showPresenceInfo(nm,ty){
+  // remove old presence
+  removeFriendPresence();
   const label=document.getElementById("presenceLabel");
   if(ty==="group"){
     label.textContent="(Group)";
     return;
   }
-  if(blocked[fr]){
+  if(blocked[nm]){
     label.textContent="(Blocked)";
     return;
   }
-  db.ref(`presence/${fr}`).off();
-  db.ref(`presence/${fr}`).on("value", s=>{
+  const friend=nm.replace(" [Blocked]","");
+  // add new presence
+  oldFriendPresenceRef=db.ref(`presence/${friend}`);
+  oldFriendPresenceRef.on("value", s=>{
     const val=s.val();
     if(!val){
       label.textContent="(Offline)";
@@ -973,6 +991,13 @@ function showPresenceInfo(fr,ty){
       label.textContent=`(Last seen ${mins} min ago)`;
     }
   });
+}
+
+function getColorClass(u){
+  if(!colorMap[u]){
+    colorMap[u]=colorClasses[Math.floor(Math.random()*colorClasses.length)];
+  }
+  return colorMap[u];
 }
 
 //** Add Chat
@@ -1088,7 +1113,7 @@ function importChatData(file){
         });
       });
       showNotice("Chat data imported!");
-    } catch(err){
+    } catch(e2){
       showNotice("Invalid backup file!");
     }
   };
@@ -1118,7 +1143,7 @@ function saveSettings(){
   verificationPass=lP;
   localStorage.setItem("verificationPass",lP);
 
-  showNotice("Settings saved. For presence, ensure rules if needed.");
+  showNotice("Settings saved. If presence fails, update your rules for /presence.");
   setIdleLockTimer();
 }
 
@@ -1130,7 +1155,7 @@ function showConfirm(html, yesCb){
     <h3 style='margin-top:0'>Confirm</h3>
     <p>${html}</p>
     <div style='display:flex;justify-content:center;gap:10px;'>
-      <button style='background:green;' onclick='confirmYes()' onkeypress='if(event.key===\"Enter\")confirmYes()'>Yes</button>
+      <button style='background:green;' onclick='confirmYes()'>Yes</button>
       <button style='background:red;' onclick='closeConfirm()'>No</button>
     </div>
   `;
@@ -1157,26 +1182,37 @@ function closeNotice(){
   document.getElementById("noticePanel").style.display="none";
 }
 
-console.log("✅ Final Polished Code. For presence 'permission_denied' fix your Firebase rules for /presence. 5 themes, friend accept logic, typed messages, sorted chats, read receipts, etc!");
+console.log("✅ Final Polished No-Lag version loaded. If presence warns permission_denied, fix your /presence rules. Enjoy!");
 </script>
 
-<!-- Example Firebase Rules (be sure to allow /presence):
+<!-- Example rules (presence included):
 {
   "rules": {
-    ".read": "auth == null",
-    ".write": "auth == null",
-
-    "users": {
-      "$username": { ".read":"true",".write":"true" }
+    ".read":"true",
+    ".write":"true",
+    "presence":{
+      "$uid":{
+        ".read":"true",
+        ".write":"true"
+      }
     },
-    "privateChats": {
-      "$chatId": { ".read":"true",".write":"true" }
+    "users":{
+      "$username":{
+        ".read":"true",
+        ".write":"true"
+      }
     },
-    "groupChats": {
-      "$groupId": { ".read":"true",".write":"true" }
+    "privateChats":{
+      "$chatId":{
+        ".read":"true",
+        ".write":"true"
+      }
     },
-    "presence": {
-      "$user": { ".read":"true",".write":"true" }
+    "groupChats":{
+      "$groupId":{
+        ".read":"true",
+        ".write":"true"
+      }
     }
   }
 }

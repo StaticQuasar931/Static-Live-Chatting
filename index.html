@@ -3,63 +3,43 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chat – Child-Added, No Presence</title>
+  <title>Static Live Chat – Expanded Features</title>
   <style>
     :root {
-      --bg-color:#111;
-      --text-color:#fff;
-      --sidebar-color:#1c1c1c;
-      --chat-bg:#222;
-      --bubble-me:#1e90ff;
-      --bubble-them:#444;
-      --accent:#1e90ff;
-      --badge:red;
-      --chat-item-bg:#333;
+      --bg-color:#111; --text-color:#fff;
+      --sidebar-color:#1c1c1c; --chat-bg:#222;
+      --bubble-me:#1e90ff; --bubble-them:#444;
+      --accent:#1e90ff; --badge:red; --chat-item-bg:#333;
     }
     body.light {
-      --bg-color:#f4f4f4;
-      --text-color:#000;
-      --sidebar-color:#ddd;
-      --chat-bg:#eee;
-      --bubble-me:#007aff;
-      --bubble-them:#ccc;
-      --accent:#007acc;
-      --chat-item-bg:#bbb;
+      --bg-color:#f4f4f4; --text-color:#000;
+      --sidebar-color:#ddd; --chat-bg:#eee;
+      --bubble-me:#007aff; --bubble-them:#ccc;
+      --accent:#007acc; --chat-item-bg:#bbb;
     }
     body.blue {
-      --bg-color:#0b1622;
-      --text-color:#f0f8ff;
-      --sidebar-color:#132336;
-      --chat-bg:#1e2d40;
-      --bubble-me:#1f65ff;
-      --bubble-them:#41546a;
-      --accent:#389fff;
-      --chat-item-bg:#2e3d52;
+      --bg-color:#0b1622; --text-color:#f0f8ff;
+      --sidebar-color:#132336; --chat-bg:#1e2d40;
+      --bubble-me:#1f65ff; --bubble-them:#41546a;
+      --accent:#389fff; --chat-item-bg:#2e3d52;
     }
     body.green {
-      --bg-color:#102a10;
-      --text-color:#e8ffe8;
-      --sidebar-color:#224522;
-      --chat-bg:#1a331a;
-      --bubble-me:#28a745;
-      --bubble-them:#375a37;
-      --accent:#4caf50;
-      --chat-item-bg:#2b442b;
+      --bg-color:#102a10; --text-color:#e8ffe8;
+      --sidebar-color:#224522; --chat-bg:#1a331a;
+      --bubble-me:#28a745; --bubble-them:#375a37;
+      --accent:#4caf50; --chat-item-bg:#2b442b;
     }
     body.pink {
-      --bg-color:#331024;
-      --text-color:#ffe0f0;
-      --sidebar-color:#441533;
-      --chat-bg:#551a44;
-      --bubble-me:#ff3377;
-      --bubble-them:#773355;
-      --accent:#ff66a2;
-      --chat-item-bg:#442244;
+      --bg-color:#331024; --text-color:#ffe0f0;
+      --sidebar-color:#441533; --chat-bg:#551a44;
+      --bubble-me:#ff3377; --bubble-them:#773355;
+      --accent:#ff66a2; --chat-item-bg:#442244;
     }
     body {
       margin:0; font-family:Arial,sans-serif;
       background:var(--bg-color); color:var(--text-color);
-      height:100vh; display:flex; flex-direction:column; overflow:hidden;
+      height:100vh; display:flex; flex-direction:column;
+      overflow:hidden;
     }
     input, button {
       padding:10px; font-size:16px; margin:5px;
@@ -67,9 +47,7 @@
     }
     button { background:var(--accent); color:#fff; cursor:pointer; }
 
-    #app {
-      display:flex; flex:1; height:100%;
-    }
+    #app { display:flex; flex:1; height:100%; }
     #sidebar {
       width:280px; background:var(--sidebar-color);
       display:flex; flex-direction:column; padding:10px; overflow-y:auto;
@@ -84,7 +62,13 @@
     }
     #messages {
       flex:1; display:flex; flex-direction:column-reverse;
-      padding:15px; overflow-y:auto;
+      padding:15px; overflow-y:auto; position:relative;
+    }
+    #loadMoreBtn {
+      display:none; position:absolute; top:10px; left:50%;
+      transform:translateX(-50%); z-index:10;
+      background:var(--accent); color:white; padding:8px; border:none;
+      border-radius:6px; cursor:pointer; opacity:0.8;
     }
     .msg {
       max-width:70%; padding:12px 16px; margin:6px 0;
@@ -112,11 +96,10 @@
     }
     .mineTime { right:10px; }
     .otherTime { left:10px; }
-    .readReceipt {
-      font-size:12px; opacity:0.6; margin-top:2px;
-    }
+    .readReceipt { font-size:12px; opacity:0.6; margin-top:2px; }
     #typingIndicator {
-      display:none; font-style:italic; font-size:14px; margin:0 20px 10px;
+      display:none; font-style:italic; font-size:14px;
+      margin:0 20px 10px;
     }
     #inputArea {
       display:flex; padding:10px; background:var(--sidebar-color);
@@ -127,7 +110,7 @@
     #emojiPicker {
       display:none; position:absolute; bottom:70px; right:15px;
       background:var(--chat-bg); padding:10px; flex-wrap:wrap;
-      z-index:99; max-width:260px;
+      z-index:99; max-width:340px; max-height:180px; overflow:auto;
     }
     #emojiPicker span { font-size:22px; margin:6px; cursor:pointer; }
     .chatItem {
@@ -146,9 +129,8 @@
       margin-bottom:5px; border-radius:6px;
     }
     #staticMenu {
-      position:fixed; bottom:10px; left:10px;
-      background:#1e1e1e; color:#fff; padding:5px 8px;
-      border-radius:8px; font-size:13px; box-shadow:0 0 6px #0ff;
+      position:fixed; bottom:10px; left:10px; background:#1e1e1e; color:#fff;
+      padding:5px 8px; border-radius:8px; font-size:13px; box-shadow:0 0 6px #0ff;
       animation:blink 2s infinite; z-index:1000;
     }
     .nameColor1 { color:#ff8888; }
@@ -179,6 +161,16 @@
     }
     #login .panelContent { max-width:300px; }
 
+    /* Slash command autocomplete */
+    #slashAutocomplete {
+      display:none; position:absolute; bottom:120px; right:20px;
+      background:var(--chat-bg); border-radius:6px; padding:8px; z-index:99;
+    }
+    #slashAutocomplete button {
+      display:block; margin:4px 0; padding:6px; width:100%;
+      text-align:left; background:var(--accent);
+    }
+
     @media(max-width:768px){
       body.mobile #sidebar { display:none; }
     }
@@ -186,7 +178,7 @@
 </head>
 <body>
 <script>
-// detect mobile
+// Basic mobile detection
 if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
   document.body.classList.add("mobile");
 }
@@ -202,14 +194,14 @@ function doLogin(){
   const un=document.getElementById("username").value.trim();
   const pw=document.getElementById("password").value.trim();
   if(!un)return;
-  localStorage.setItem("user",un);
-  localStorage.setItem("pass",pw);
+  localStorage.setItem("user", un);
+  localStorage.setItem("pass", pw);
   user=un; pass=pw;
   startApp();
 }
 </script>
 
-<!-- Confirm + Notice + Locked -->
+<!-- Confirm, Notice, Lock Panels -->
 <div id="confirmPanel" class="modal">
   <div class="panelContent" id="confirmInner"></div>
 </div>
@@ -224,7 +216,7 @@ function doLogin(){
   </div>
 </div>
 
-<!-- Friends Panel -->
+<!-- All other modals: friendsPanel, addChatPanel, groupJoinPanel, groupCreatePanel, directoryPanel, editGroupPanel, settingsPanel -->
 <div id="friendsPanel" class="modal">
   <div class="panelContent" id="friendsInner"></div>
 </div>
@@ -264,8 +256,6 @@ function doLogin(){
 <div id="editGroupPanel" class="modal">
   <div class="panelContent" id="editGroupInner"></div>
 </div>
-
-<!-- Settings -->
 <div id="settingsPanel" class="modal">
   <div class="panelContent">
     <h3>Settings</h3>
@@ -278,12 +268,16 @@ function doLogin(){
     <button onclick="lockNow()">Lock Now</button>
     <button onclick="saveSettings()">Save</button>
     <button onclick="closeSettings()">Close</button><br/>
+    <button onclick="requestNotificationPermission()">Enable Notifications</button><br/>
     <button onclick="openImportExportPanel()">📤 Import/Export</button><br/>
     <button onclick="blockUserUI()">Block/Unblock Users</button>
   </div>
 </div>
 
-<!-- Login -->
+<!-- Slash command autocomplete -->
+<div id="slashAutocomplete"></div>
+
+<!-- Login Screen -->
 <div id="login">
   <div class="panelContent">
     <h2>Static Live Chatting</h2>
@@ -311,7 +305,6 @@ function doLogin(){
     <h3>Chats</h3>
     <div id="chatList"></div>
   </div>
-
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
@@ -322,11 +315,15 @@ function doLogin(){
       </div>
     </div>
     <div id="groupMembers" style="padding:5px 15px;display:none;font-size:14px;"></div>
-    <div id="messages"></div>
+    <div style="flex:1; position:relative;">
+      <button id="loadMoreBtn" onclick="loadOlderMessages()">Load Older</button>
+      <div id="messages" style="height:100%;"></div>
+    </div>
     <div id="typingIndicator"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type..."
-             oninput="sendTyping()" onkeypress="if(event.key==='Enter')sendMessage();"/>
+      <input id="msgInput" placeholder="Type... (try '/' for commands!)"
+             oninput="inputSlashCommands(event)"
+             onkeypress="if(event.key==='Enter')sendMessage();"/>
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>
@@ -341,6 +338,16 @@ function doLogin(){
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
+/*
+   Adds:
+   1) "Load More" button for older messages
+   4) Expanded emoji set
+   6) Push Notifications (requestPermission, show local notifs)
+   8) Owner-only admin tools in group (can remove messages)
+   9) Bot commands: /tod truth, /tod dare, /title ...
+     + Slash command autocomplete
+*/
+
 const firebaseConfig={
   apiKey:"AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
   authDomain:"static-live-chatting.firebaseapp.com",
@@ -353,34 +360,63 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let colorMap={}, blocked={}, friends={};
-let currentChat="", currentType="";
-let chatActive="";
-let chatUnread={};
+let colorMap={}; let blocked={}; let friends={};
+let currentChat=""; let currentType="";
+let chatActive=""; let chatUnread={};
 
 let verificationPass=localStorage.getItem("verificationPass")||"";
 let isLocked=false, idleTimer=null;
 
-//** If user stored => skip login
-if(user){
-  document.addEventListener("DOMContentLoaded",()=>{
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="flex";
-    applyTheme(); loadBlocked(); loadFriends(); loadChats(); loadRequests();
-    setIdleLockTimer();
+// "Load More" state
+let oldestKey=null; // store the oldest message key in the loaded batch
+let hasMoreOld=true; // whether more older messages exist
+
+// Bot commands
+const truths=[
+  "What is your favorite memory from the last year?",
+  "What is your biggest fear?",
+  "If you could have any superpower, what would it be?",
+  "What is something embarrassing that has happened to you?",
+  "Have you ever told a lie you regret?",
+  "What was your worst date experience?",
+  "What is your secret talent?",
+  "Have you ever broken a rule and gotten caught?",
+  "What's the hardest challenge you've overcome?",
+  "What is one thing you wish you could change about yourself?",
+  "Do you have a secret crush on someone?",
+  "What's the weirdest thing you've ever eaten?",
+  "What is one thing you can't live without?",
+  "What is something you wish your parents knew about you?",
+  "Have you ever said “I love you” without meaning it?"
+];
+const dares=[
+  "Sing a chorus of your favorite song out loud.",
+  "Do 10 push-ups in front of everyone.",
+  "Let another person style your hair (or pretend to!).",
+  "Attempt your best celebrity impression.",
+  "Walk across the room like a runway model.",
+  "Text the first person in your contacts “You’re amazing!”",
+  "Pretend to be a cat for the next 1 minute.",
+  "Do an impression of your teacher for 30 seconds.",
+  "Swap an item of clothing with someone for the rest of the game.",
+  "Try to lick your elbow (spoiler: it's almost impossible!).",
+  "Do a silly dance for 15 seconds.",
+  "Let someone draw on your face with lipstick (or pretend).",
+  "Speak in a fake accent until your next turn.",
+  "Balance a book on your head for 1 minute.",
+  "Say the alphabet backwards as fast as you can."
+];
+
+function requestNotificationPermission(){
+  if(!("Notification" in window)){
+    showNotice("Browser does not support notifications!");
+    return;
+  }
+  Notification.requestPermission().then((perm)=>{
+    if(perm==="granted") showNotice("Notifications enabled!");
+    else showNotice("Notifications not granted.");
   });
 }
-function startApp(){
-  document.getElementById("login").style.display="none";
-  document.getElementById("app").style.display="flex";
-  applyTheme(); loadBlocked(); loadFriends(); loadChats(); loadRequests();
-  setIdleLockTimer();
-  showNotice(`Logged in as ${user}`);
-}
-window.onbeforeunload=()=>{
-  if(isLocked)return null;
-  return "Are you sure you want to leave?";
-};
 
 //** Idle Lock
 document.onmousemove=setIdleLockTimer;
@@ -395,8 +431,7 @@ function lockNow(){
   if(!verificationPass){
     const p=document.getElementById("lockPass").value.trim();
     if(!p)return showNotice("No verification pass!");
-    verificationPass=p;
-    localStorage.setItem("verificationPass", p);
+    verificationPass=p; localStorage.setItem("verificationPass",p);
   }
   lockAccount();
 }
@@ -414,6 +449,10 @@ function tryUnlock(){
     setIdleLockTimer();
   } else showNotice("Wrong verification pass!");
 }
+window.onbeforeunload=()=>{
+  if(isLocked)return null;
+  return "Are you sure you want to leave?";
+};
 
 //** Theming
 function toggleTheme(){
@@ -444,15 +483,29 @@ function applyTheme(){
   else if(saved==="pink") document.body.classList.add("pink");
 }
 
-//** Blocking + Friends
-function loadBlocked(){
-  db.ref(`users/${user}/blocked`).on("value", s=>{
-    blocked=s.val()||{};
+//** Start App
+function startApp(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="flex";
+  applyTheme();
+  loadBlocked(); loadFriends(); loadChats(); loadRequests();
+  setIdleLockTimer();
+  showNotice(`Logged in as ${user}`);
+}
+if(user){
+  document.addEventListener("DOMContentLoaded",()=>{
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="flex";
+    applyTheme();
+    loadBlocked(); loadFriends(); loadChats(); loadRequests();
+    setIdleLockTimer();
   });
 }
-function loadFriends(){
-  db.ref(`users/${user}/friends`).on("value", s=>{
-    friends=s.val()||{};
+
+//** BLOCK
+function loadBlocked(){
+  db.ref(`users/${user}/blocked`).on("value", snap=>{
+    blocked=snap.val()||{};
   });
 }
 function blockUserUI(){
@@ -466,6 +519,14 @@ function blockUserUI(){
       db.ref(`users/${user}/blocked/${bn}`).set(true);
       showNotice(`Blocked ${bn}`);
     }
+  });
+}
+
+//** FRIENDS
+let friends={};
+function loadFriends(){
+  db.ref(`users/${user}/friends`).on("value", snap=>{
+    friends=snap.val()||{};
   });
 }
 function addFriendUI(){
@@ -485,9 +546,8 @@ function openFriendsPanel(){
   fi.innerHTML="<h3>Your Friends</h3>";
   Object.keys(friends).forEach(fr=>{
     const div=document.createElement("div");
-    div.style.background="var(--chat-bg)";
-    div.style.marginBottom="8px";
-    div.style.padding="8px"; div.style.borderRadius="6px";
+    div.style.background="var(--chat-bg)"; div.style.padding="8px";
+    div.style.marginBottom="8px"; div.style.borderRadius="6px";
     div.innerHTML=`<b>${fr}</b><br/>`;
 
     const bOpen=document.createElement("button");
@@ -499,7 +559,7 @@ function openFriendsPanel(){
       });
       db.ref(`users/${user}/chats/${cid}`).set({name:fr,type:"private",last:Date.now()});
       closeFriendsPanel();
-      openChat(cid, fr, "private");
+      openChat(cid,fr,"private");
     };
     div.appendChild(bOpen);
 
@@ -532,7 +592,7 @@ function pickGroupForInvite(friend){
   db.ref(`users/${user}/chats`).once("value", snap=>{
     const data=snap.val()||{};
     const groups=Object.entries(data).filter(([id,inf])=>inf.type==="group");
-    if(!groups.length)return showNotice("No group found!");
+    if(!groups.length)return showNotice("No group found to invite!");
     let h=`<h3>Pick Group for ${friend}</h3>`;
     groups.forEach(([gid,ginfo])=>{
       h+=`<button onclick='inviteFriendToGroup("${gid}","${friend}")'>${ginfo.name}</button><br/>`;
@@ -547,11 +607,8 @@ function inviteFriendToGroup(gid, friend){
   showNotice(`Invited ${friend} to group ${gid}`);
 }
 
-//** load chats + requests
+//** CHATS / REQUESTS
 function loadChats(){
-  // Instead of on("value"), we can do child_added, child_changed, child_removed
-  // But for the user’s chat list, child_added is good. We also handle changed "last" so we can re-sort.
-  // For simplicity, we still do on("value") but we only have a small set of user’s chats. Typically not huge.
   db.ref(`users/${user}/chats`).on("value", snap=>{
     const data=snap.val()||{};
     const sorted=Object.entries(data).sort((a,b)=>(b[1].last||0)-(a[1].last||0));
@@ -575,23 +632,26 @@ function loadChats(){
       }
       const delBtn=document.createElement("button");
       delBtn.textContent="🗑";
-      delBtn.onclick=(e)=>{
-        e.stopPropagation();
-        confirmDeleteChat(id,info);
+      delBtn.onclick=(ev)=>{
+        ev.stopPropagation();
+        confirmDeleteChat(id, info);
       };
       rowRight.appendChild(delBtn);
       div.appendChild(rowRight);
 
       div.onclick=()=>{
-        openChat(id,nm,info.type);
+        openChat(id, nm, info.type);
         highlightChat(id);
       };
       cList.appendChild(div);
     });
   });
 }
+function highlightChat(id){
+  chatActive=id;
+  document.querySelectorAll(".chatItem").forEach(i=>i.classList.remove("active"));
+}
 function loadRequests(){
-  // Similar logic, or child_added approach. We'll do on("value") for simplicity, since the requests node is small
   const tab=document.getElementById("requestsTab");
   const st=document.getElementById("requestsSentTab");
   db.ref(`users/${user}/requests`).on("value", snap=>{
@@ -613,7 +673,6 @@ function loadRequests(){
         db.ref(`users/${user}/friends/${from}`).set(true);
         db.ref(`users/${from}/friends/${user}`).set(true);
 
-        // remove from their requestsSent
         db.ref(`users/${from}/requestsSent/${user}`).once("value", s2=>{
           if(s2.exists()){
             db.ref(`users/${from}/requestsSent/${user}`).remove();
@@ -653,10 +712,9 @@ function loadRequests(){
       st.appendChild(di);
     });
   });
-  // watch accepted
   db.ref(`users/${user}/accepted`).on("child_added", s=>{
     const who=s.key;
-    showNotice(`${who} accepted your request! Chat unlocked.`);
+    showNotice(`${who} accepted your friend request! Chat unlocked.`);
     db.ref(`users/${user}/requestsSent/${who}`).remove();
     const cid=[user,who].sort().join("_");
     db.ref(`privateChats/${cid}`).once("value", s3=>{
@@ -693,72 +751,121 @@ function confirmDeleteChat(chatId, info){
   }
 }
 
-//** open chat - child_added approach for messages
-let messagesRef=null; // store reference
-let messagesChildListeners={}; // store for reaction/read changes
+//** open chat with child-added watchers
+let messagesRef=null;
+let childAdded=null, childChanged=null;
 function openChat(cid,nm,ty){
   if(isLocked)return;
   currentChat=cid; currentType=ty;
   chatUnread[cid]=0;
   highlightChat(cid);
-
   document.getElementById("chatTitle").textContent=nm||cid;
   document.getElementById("messages").innerHTML="";
+  oldestKey=null; hasMoreOld=true;
+  document.getElementById("loadMoreBtn").style.display="none";
   document.getElementById("groupMembers").style.display=(ty==="group")?"block":"none";
 
-  // Off old watchers
-  if(messagesRef) messagesRef.off();
-  Object.keys(messagesChildListeners).forEach(k=>{
-    messagesChildListeners[k].off();
-  });
-  messagesChildListeners={};
-
-  // watchers
-  const path=(ty==="group"?"groupChats":"privateChats")+"/"+cid+"/messages";
-  messagesRef=db.ref(path);
-
-  // child_added for new messages
-  messagesRef.orderByKey().limitToLast(100).on("child_added",(snap)=>{
-    createMessageBubble(snap.key, snap.val(), ty);
-    markMessagesRead([snap.key]);
-  });
-
-  // child_changed for reaction or readBy changes
-  messagesRef.orderByKey().limitToLast(100).on("child_changed",(snap)=>{
-    // update existing bubble
-    updateMessageBubble(snap.key, snap.val(), ty);
-  });
-
-  if(ty==="group"){
-    db.ref(`groupChats/${cid}/members`).on("value", sp=>{
-      const mm=Object.keys(sp.val()||{});
-      document.getElementById("groupMembers").textContent="Members: "+mm.join(", ");
-    });
+  if(messagesRef){
+    messagesRef.off();
+    if(childAdded) messagesRef.off("child_added",childAdded);
+    if(childChanged) messagesRef.off("child_changed",childChanged);
   }
-  db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/typing`).off();
-  db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/typing`).on("value", s=>{
-    const val=s.val();
-    const t=document.getElementById("typingIndicator");
-    if(val && val!==user){
-      t.style.display="block";
-      t.textContent=`${val} is typing...`;
-    } else {
-      t.style.display="none";
+  messagesRef=db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/messages`);
+
+  // fetch the last 100 in descending order, then attach watchers
+  fetchLatestMessages(()=>{
+    attachTypingListener();
+    if(ty==="group"){
+      db.ref(`groupChats/${cid}/members`).on("value", sp=>{
+        const mm=Object.keys(sp.val()||{});
+        document.getElementById("groupMembers").textContent="Members: "+mm.join(", ");
+      });
     }
   });
   db.ref(`users/${user}/chats/${cid}/last`).set(Date.now());
 }
 
-function createMessageBubble(msgId, msg, ty){
+//** load older messages
+function loadOlderMessages(){
+  if(!currentChat||!hasMoreOld||!oldestKey)return;
+  document.getElementById("loadMoreBtn").disabled=true;
+  // fetch older 100
+  const ref=messagesRef.orderByKey().endAt(oldestKey).limitToLast(101);
+  ref.once("value", snap=>{
+    const data=snap.val()||{};
+    const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
+    if(keys.length<=1){
+      // no more older
+      hasMoreOld=false;
+      document.getElementById("loadMoreBtn").style.display="none";
+    } else {
+      // skip the first one because it's the oldestKey we already have
+      const slice=keys.slice(1);
+      slice.forEach(mId=>{
+        createMessageBubble(mId, data[mId], currentType, false); // prepend
+      });
+      oldestKey=slice[slice.length-1]; // new oldest
+      if(slice.length<100){
+        hasMoreOld=false;
+        document.getElementById("loadMoreBtn").style.display="none";
+      }
+    }
+    document.getElementById("loadMoreBtn").disabled=false;
+  });
+}
+
+function fetchLatestMessages(cb){
+  const ref=messagesRef.orderByKey().limitToLast(100);
+  ref.once("value", snap=>{
+    const data=snap.val()||{};
+    const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
+    // render from newest to oldest
+    keys.forEach(k=>{
+      createMessageBubble(k, data[k], currentType, true);
+    });
+    oldestKey=(keys.length)? keys[keys.length-1]: null;
+    if(keys.length>=100) document.getElementById("loadMoreBtn").style.display="inline";
+    else hasMoreOld=false;
+
+    attachChildWatchers();
+    if(cb) cb();
+  });
+}
+function attachChildWatchers(){
+  childAdded=messagesRef.orderByKey().startAfter((oldestKey||"")).on("child_added",(snap)=>{
+    // new message
+    createMessageBubble(snap.key, snap.val(), currentType, true);
+    markMessagesRead([snap.key]);
+    // push notification if from someone else
+    if(snap.val().sender!==user&&Notification.permission==="granted"){
+      new Notification("New Message", {body:`${snap.val().sender}: ${snap.val().text.slice(0,30)}`});
+    }
+  });
+  childChanged=messagesRef.on("child_changed",(snap)=>{
+    updateMessageBubble(snap.key, snap.val(), currentType);
+  });
+}
+
+function createMessageBubble(msgId, msg, ty, isNewest){
   if(ty==="private"&&msg.sender!==user&&blocked[msg.sender])return;
   if(ty==="group"&&msg.sender!==user&&blocked[msg.sender])return;
 
   const isMe=(msg.sender===user);
+  const container=document.getElementById("messages");
+  // if it already exists
+  if(document.getElementById("msg_"+msgId)) return;
+
   const bubble=document.createElement("div");
   bubble.className="msg "+(isMe?"me":"them");
   bubble.id="msg_"+msgId;
 
-  // if large text
+  // check if group owner is user => can remove messages
+  bubble.dataset.sender=msg.sender||"";
+  bubble.dataset.msgId=msgId;
+
+  // in group chat, if user===groupChats[ chatId ].createdBy => owner => can remove
+  // We'll do it simpler: "Owner can remove any message" in group. We'll handle it in double-click or context menu ?
+
   const lines=msg.text.split("\n");
   if(lines.length>6){
     bubble.textContent=lines.slice(0,4).join("\n")+"\n(view full raw message)";
@@ -770,17 +877,16 @@ function createMessageBubble(msgId, msg, ty){
   } else {
     bubble.textContent=msg.text;
   }
-
-  if(ty==="group" && msg.sender!=="_system" && !isMe){
-    const cClass=getColorClass(msg.sender);
-    bubble.innerHTML=`<span class='${cClass}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span>`+bubble.innerHTML;
+  // if group, attach name color
+  if(ty==="group"&&msg.sender!=="_system"&&!isMe){
+    const cc=getColorClass(msg.sender);
+    bubble.innerHTML=`<span class='${cc}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span>`+bubble.innerHTML;
   }
   if(msg.sender==="_system"){
     bubble.style.fontStyle="italic";
     bubble.style.opacity="0.7";
   }
 
-  // reaction
   const rt=document.createElement("span");
   rt.className="reactionTag";
   if(msg.reaction) rt.textContent=msg.reaction;
@@ -800,10 +906,27 @@ function createMessageBubble(msgId, msg, ty){
   });
   bubble.appendChild(rBar);
 
+  // double-click to show reaction or remove if group owner
   bubble.addEventListener("dblclick", e=>{
     e.stopPropagation();
     if(isLocked)return;
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
+  });
+  // right-click maybe to remove if group owner. We'll do a "contextmenu" event
+  bubble.addEventListener("contextmenu", e=>{
+    e.preventDefault();
+    if(currentType==="group"){
+      // check if user=owner => groupChats/chatId/createdBy
+      db.ref(`groupChats/${currentChat}/createdBy`).once("value",snap=>{
+        const creator=snap.val();
+        if(creator===user){
+          showConfirm("Remove this message?",()=>{
+            db.ref(`groupChats/${currentChat}/messages/${msgId}`).remove();
+            document.getElementById("msg_"+msgId)?.remove();
+          });
+        }
+      });
+    }
   });
 
   const time=new Date(msg.timestamp||0).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
@@ -824,7 +947,8 @@ function createMessageBubble(msgId, msg, ty){
       }
     }
   } else {
-    if(isMe && msg.readBy){
+    // private => show "Seen" if your message read by others
+    if(isMe&&msg.readBy){
       const others=Object.keys(msg.readBy).filter(u=>u!==user);
       if(others.length>0){
         const rd=document.createElement("div");
@@ -835,16 +959,16 @@ function createMessageBubble(msgId, msg, ty){
     }
   }
 
-  document.getElementById("messages").prepend(bubble);
+  if(isNewest) container.prepend(bubble);
+  else container.appendChild(bubble);
 }
 function updateMessageBubble(msgId, msg, ty){
   const bubble=document.getElementById("msg_"+msgId);
-  if(!bubble)return; // not in last 100 or wasn't loaded yet
-  // update reaction
+  if(!bubble)return; // not in loaded set
   const rt=bubble.querySelector(".reactionTag");
   if(rt) rt.textContent=msg.reaction||"";
 
-  // update read receipts
+  // read receipts
   const rec=bubble.querySelector(".readReceipt");
   if(ty==="group"){
     if(msg.readBy){
@@ -861,7 +985,8 @@ function updateMessageBubble(msgId, msg, ty){
       } else if(rec) rec.remove();
     } else if(rec) rec.remove();
   } else {
-    if(bubble.classList.contains("me") && msg.readBy){
+    // private => if bubble is .me => show "Seen"
+    if(bubble.classList.contains("me")&&msg.readBy){
       const others=Object.keys(msg.readBy).filter(u=>u!==user);
       if(others.length>0){
         if(!rec){
@@ -875,29 +1000,63 @@ function updateMessageBubble(msgId, msg, ty){
   }
 }
 
+//** load older messages
+function loadOlderMessages(){
+  const container=document.getElementById("messages");
+  if(!currentChat)return;
+  if(!oldestKey)return showNotice("No older messages found!");
+  document.getElementById("loadMoreBtn").disabled=true;
+  messagesRef.orderByKey().endAt(oldestKey).limitToLast(101).once("value",(snap)=>{
+    const data=snap.val()||{};
+    const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
+    if(keys.length<=1){
+      // no more older
+      document.getElementById("loadMoreBtn").style.display="none";
+    } else {
+      // skip the first cause it's the existing oldestKey
+      const slice=keys.slice(1);
+      slice.forEach(k=>{
+        if(!document.getElementById("msg_"+k)){
+          createMessageBubble(k, data[k], currentType, false);
+        }
+      });
+      oldestKey=slice[slice.length-1]; // new oldest
+      if(slice.length<100) document.getElementById("loadMoreBtn").style.display="none";
+    }
+    document.getElementById("loadMoreBtn").disabled=false;
+  });
+}
+
+//** Mark read
 function markMessagesRead(msgIds){
   if(!currentChat||!currentType||!user)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
-  msgIds.forEach(mId=>{
-    db.ref(`${path}/${currentChat}/messages/${mId}/readBy/${user}`).set(Date.now());
+  msgIds.forEach(m=>{
+    db.ref(`${path}/${currentChat}/messages/${m}/readBy/${user}`).set(Date.now());
   });
 }
-function applyReaction(msgId, reaction){
-  if(!currentChat||!currentType)return;
-  const path=(currentType==="group"?"groupChats":"privateChats");
-  db.ref(`${path}/${currentChat}/messages/${msgId}/reaction`).set(reaction);
-}
+
+//** typing
 function sendTyping(){
   if(!currentChat||isLocked)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/typing`).set(user);
-  setTimeout(()=>db.ref(`${path}/${currentChat}/typing`).set(""),2000);
+  setTimeout(()=> db.ref(`${path}/${currentChat}/typing`).set(""),2000);
 }
+
+//** send
 function sendMessage(){
   if(isLocked)return;
   const inp=document.getElementById("msgInput");
   const text=inp.value.trim();
   if(!text||!currentChat)return;
+  // slash commands
+  if(text.startsWith("/")){
+    processSlashCommand(text);
+    inp.value="";
+    return;
+  }
+  // normal message
   if(currentType==="private"){
     const nm=document.getElementById("chatTitle").textContent.replace(" [Blocked]","");
     if(blocked[nm])return showNotice("You blocked them. Unblock first!");
@@ -910,6 +1069,130 @@ function sendMessage(){
   });
   inp.value="";
   sendTyping();
+}
+
+function processSlashCommand(cmd){
+  const [full, ...rest]=cmd.split(" ");
+  if(full==="/tod"){
+    if(rest[0]==="truth"){
+      // pick random truth
+      const t=truths[Math.floor(Math.random()*truths.length)];
+      sendSystemMessage(t);
+    } else if(rest[0]==="dare"){
+      const d=dares[Math.floor(Math.random()*dares.length)];
+      sendSystemMessage(d);
+    } else {
+      showNotice("Usage: /tod truth or /tod dare");
+    }
+  } else if(full==="/title"){
+    // everything after /title
+    const txt=rest.join(" ");
+    if(!txt) return showNotice("Usage: /title <something>");
+    sendSystemMessage(`<< ${txt} >>`);
+  } else {
+    showNotice(`Unknown command: ${cmd}`);
+  }
+}
+
+function sendSystemMessage(msg){
+  if(!currentChat||!currentType)return;
+  const path=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${path}/${currentChat}/messages`).push({
+    sender:"_system",
+    text:msg,
+    timestamp:Date.now(),
+    reaction:"",
+    readBy:{}
+  });
+}
+
+const truths=[
+  "What is your favorite memory from the last year?",
+  "What is your biggest fear?",
+  "If you could have any superpower, what would it be?",
+  "What is something embarrassing that has happened to you?",
+  "Have you ever told a lie you regret?",
+  "What was your worst date experience?",
+  "What is your secret talent?",
+  "Have you ever broken a rule and gotten caught?",
+  "What's the hardest challenge you've overcome?",
+  "What is one thing you wish you could change about yourself?",
+  "Do you have a secret crush on someone?",
+  "What's the weirdest thing you've ever eaten?",
+  "What is one thing you can't live without?",
+  "What is something you wish your parents knew about you?",
+  "Have you ever said “I love you” without meaning it?"
+];
+const dares=[
+  "Sing a chorus of your favorite song out loud.",
+  "Do 10 push-ups in front of everyone.",
+  "Let another person style your hair (or pretend to!).",
+  "Attempt your best celebrity impression.",
+  "Walk across the room like a runway model.",
+  "Text the first person in your contacts “You’re amazing!”",
+  "Pretend to be a cat for the next 1 minute.",
+  "Do an impression of your teacher for 30 seconds.",
+  "Swap an item of clothing with someone for the rest of the game.",
+  "Try to lick your elbow (spoiler: it's almost impossible!).",
+  "Do a silly dance for 15 seconds.",
+  "Let someone draw on your face with lipstick (or pretend).",
+  "Speak in a fake accent until your next turn.",
+  "Balance a book on your head for 1 minute.",
+  "Say the alphabet backwards as fast as you can."
+];
+
+//** Expand emojis
+function toggleEmojiPicker(){
+  const picker=document.getElementById("emojiPicker");
+  picker.innerHTML="";
+  const bigEmojis=[... "😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑😯😦😧😮😲🥱😴😪😵😵‍💫😷🤒🤕🤢🤮🤧😇😈👿👻💀☠️👽🤖🎃😺😸😹😻😼😽🙀😿😾..."];
+  picker.style.display=(picker.style.display==="flex")?"none":"flex";
+  bigEmojis.forEach(e=>{
+    const s=document.createElement("span");
+    s.textContent=e;
+    s.onclick=()=>{
+      document.getElementById("msgInput").value+=e;
+      picker.style.display="none";
+    };
+    picker.appendChild(s);
+  });
+}
+
+//** slash command autocomplete
+function inputSlashCommands(e){
+  const val=e.target.value;
+  const sc=document.getElementById("slashAutocomplete");
+  if(val.startsWith("/")){
+    sc.style.display="block";
+    sc.innerHTML="";
+    const commands=["tod truth","tod dare","title"];
+    commands.forEach(c=>{
+      const b=document.createElement("button");
+      b.textContent=`/${c}`;
+      b.onclick=()=>{
+        e.target.value="/"+c+" ";
+        sc.style.display="none";
+      };
+      sc.appendChild(b);
+    });
+  } else {
+    sc.style.display="none";
+  }
+}
+
+//** notifications
+function requestNotificationPermission(){
+  if(!("Notification" in window)){
+    showNotice("This browser does not support notifications");
+    return;
+  }
+  Notification.requestPermission().then(perm=>{
+    if(perm==="granted"){
+      showNotice("Notifications enabled!");
+    } else {
+      showNotice("Notifications not granted.");
+    }
+  });
 }
 
 //** group invites
@@ -932,9 +1215,6 @@ function closeJoinPanel(){
 }
 function closeCreatePanel(){
   document.getElementById("groupCreatePanel").style.display="none";
-}
-function closeDirectory(){
-  document.getElementById("directoryPanel").style.display="none";
 }
 function createGroupChat(){
   if(isLocked)return;
@@ -1046,14 +1326,14 @@ function saveSettings(){
   const np=document.getElementById("editPassword").value.trim();
   if(!nu)return;
   user=nu; pass=np;
-  localStorage.setItem("user", nu);
-  localStorage.setItem("pass", np);
+  localStorage.setItem("user",nu);
+  localStorage.setItem("pass",np);
 
   const lP=document.getElementById("lockPass").value.trim()||"";
   verificationPass=lP;
-  localStorage.setItem("verificationPass", lP);
+  localStorage.setItem("verificationPass",lP);
 
-  showNotice("Settings saved. Presence removed for minimal lag.");
+  showNotice("Settings saved!");
   setIdleLockTimer();
 }
 
@@ -1092,15 +1372,23 @@ function closeNotice(){
   document.getElementById("noticePanel").style.display="none";
 }
 
-console.log("✅ Child-added approach. No presence watchers. Minimal watchers => reduces lag drastically!");
+//** color map
+function getColorClass(u){
+  if(!colorMap[u]){
+    const classes=["nameColor1","nameColor2","nameColor3","nameColor4","nameColor5"];
+    colorMap[u]=classes[Math.floor(Math.random()*classes.length)];
+  }
+  return colorMap[u];
+}
+
+console.log("✅ Single-file: 1) Load More, 4) Big emojis, 6) Notif requests, 8) Owner mod, 9) /tod & /title commands – final version!");
 </script>
 
-<!-- Example fully open rules, no presence:
+<!-- Example rules, no presence:
 {
   "rules": {
     ".read": true,
     ".write": true,
-
     "users": {
       "$username": { ".read": true, ".write": true }
     },

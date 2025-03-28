@@ -101,6 +101,12 @@
       margin: 5px;
       cursor: pointer;
     }
+    #chatPassword {
+      margin: 5px;
+      font-size: 12px;
+      text-align: right;
+      padding-right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -125,11 +131,11 @@
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
-      <button onclick="openSettings()">⚙️</button>
+      <div id="chatPassword"><span id="chatPassDisplay" style="display:none;"></span><button onclick="revealPassword()">🔓 Show</button></div>
     </div>
     <div id="messages"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type message..." />
+      <input id="msgInput" placeholder="Type message..." onkeypress="if(event.key==='Enter')sendMessage();" />
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>
@@ -163,6 +169,7 @@ let user = localStorage.getItem("user") || "";
 let pass = localStorage.getItem("pass") || "";
 let currentChat = "";
 let currentType = "private";
+let currentPassword = "";
 
 if (user && !localStorage.getItem("locked")) {
   document.getElementById("login").style.display = "none";
@@ -196,17 +203,20 @@ function loadChats() {
       const div = document.createElement("div");
       div.className = "chatItem";
       div.textContent = info.name || id;
-      div.onclick = () => openChat(id, info.name, info.type);
+      div.onclick = () => openChat(id, info.name, info.type, info.password);
       list.appendChild(div);
     });
   });
 }
 
-function openChat(id, name, type = "private") {
+function openChat(id, name, type = "private", password = "") {
   if (!id || typeof name === 'undefined' || typeof type === 'undefined') return;
   currentChat = id;
   currentType = type;
+  currentPassword = password || "";
   document.getElementById("chatTitle").textContent = name || id;
+  document.getElementById("chatPassDisplay").textContent = password ? `Password: ${password}` : "";
+  document.getElementById("chatPassDisplay").style.display = "none";
   document.getElementById("messages").innerHTML = "";
   const ref = db.ref(`${type}Chats/${id}/messages`);
   ref.off();
@@ -216,6 +226,11 @@ function openChat(id, name, type = "private") {
     const html = `<div class='msg'><span>${msg.sender}</span> (${time}): ${msg.text}</div>`;
     document.getElementById("messages").innerHTML += html;
   });
+}
+
+function revealPassword() {
+  const display = document.getElementById("chatPassDisplay");
+  display.style.display = display.style.display === "none" ? "inline" : "none";
 }
 
 function sendMessage() {
@@ -250,17 +265,20 @@ function toggleEmojiPicker() {
 
 function openGroup() {
   const groupName = prompt("Enter group name:");
+  const groupPassword = prompt("Enter a password for this group chat (share with friends):");
   if (!groupName) return;
   const id = "group_" + Date.now();
   db.ref(`groupChats/${id}`).set({
     name: groupName,
-    createdBy: user
+    createdBy: user,
+    password: groupPassword || ""
   });
   db.ref(`users/${user}/chats/${id}`).set({
     name: groupName,
-    type: "group"
+    type: "group",
+    password: groupPassword || ""
   });
-  openChat(id, groupName, "group");
+  openChat(id, groupName, "group", groupPassword);
 }
 
 function addFriendChat() {

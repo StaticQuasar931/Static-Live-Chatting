@@ -85,35 +85,31 @@
       flex: 1;
       margin-right: 6px;
     }
-    #staticMenu {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: #1e90ff;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 10px;
-      animation: twinkle 3s infinite;
+    #emojiPicker {
+      display: none;
+      flex-wrap: wrap;
+      max-width: 250px;
+      background: #333;
+      padding: 10px;
+      position: absolute;
+      bottom: 70px;
+      right: 20px;
+      z-index: 10;
     }
-    @keyframes twinkle {
-      0%, 100% { box-shadow: 0 0 5px #1e90ff; }
-      50% { box-shadow: 0 0 15px #1e90ff; }
+    #emojiPicker span {
+      font-size: 20px;
+      margin: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<div id="staticMenu">
-  <a href="https://sites.google.com/view/staticquasar931/gm3z" style="color:white;text-decoration:none;">
-    More Unblocked Games by Static
-  </a>
-</div>
-
 <div id="login">
   <h2>Static Live Chatting</h2>
   <p>⚠️ Do not chat sensitive info.</p>
   <input id="username" placeholder="Your nickname" />
-  <input id="password" type="password" placeholder="Password (chat key)" />
+  <input id="password" type="password" placeholder="Password (optional, used as key)" />
   <button onclick="togglePassword()">👁 Show Password</button>
   <button onclick="login()">Log In</button>
 </div>
@@ -133,25 +129,11 @@
     <div id="messages"></div>
     <div id="inputArea">
       <input id="msgInput" placeholder="Type message..." />
+      <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>
-    <div id="typing" style="padding:5px;color:gray;"></div>
+    <div id="emojiPicker"></div>
   </div>
-</div>
-
-<div id="groupCreate" style="display:none;">
-  <h3>Create Group Chat</h3>
-  <input id="groupName" placeholder="Group Name" />
-  <button onclick="createGroup()">Create</button>
-  <button onclick="closeGroup()">Cancel</button>
-</div>
-
-<div id="settings" style="display:none;">
-  <h3>Settings</h3>
-  <input id="newName" placeholder="New Display Name" />
-  <button onclick="changeName()">Change Name</button>
-  <button onclick="logout()">Lock + Log Out</button>
-  <button onclick="closeSettings()">Close</button>
 </div>
 
 <!-- Firebase CDN Setup -->
@@ -173,9 +155,9 @@ const db = firebase.database();
 let user = localStorage.getItem("user");
 let pass = localStorage.getItem("pass");
 let currentChat = "";
-let currentType = "private"; // or 'group'
+let currentType = "private";
 
-if (user && pass) {
+if (user && !localStorage.getItem("locked")) {
   document.getElementById("login").style.display = "none";
   document.getElementById("app").style.display = "flex";
   loadChats();
@@ -189,7 +171,7 @@ function togglePassword() {
 function login() {
   user = document.getElementById("username").value.trim();
   pass = document.getElementById("password").value.trim();
-  if (!user || !pass) return alert("Fill in all fields.");
+  if (!user) return alert("Enter a username.");
   localStorage.setItem("user", user);
   localStorage.setItem("pass", pass);
   document.getElementById("login").style.display = "none";
@@ -222,7 +204,7 @@ function openChat(id, name, type = "private") {
   ref.on("child_added", snap => {
     const msg = snap.val();
     const time = new Date(msg.timestamp).toLocaleTimeString();
-    const html = `<div class="msg"><span>${msg.sender}</span> (${time}): ${msg.text}</div>`;
+    const html = `<div class='msg'><span>${msg.sender}</span> (${time}): ${msg.text}</div>`;
     document.getElementById("messages").innerHTML += html;
   });
 }
@@ -238,50 +220,20 @@ function sendMessage() {
   document.getElementById("msgInput").value = "";
 }
 
-function openGroup() {
-  document.getElementById("groupCreate").style.display = "flex";
-}
-
-function closeGroup() {
-  document.getElementById("groupCreate").style.display = "none";
-}
-
-function createGroup() {
-  const gName = document.getElementById("groupName").value.trim();
-  if (!gName) return alert("Enter group name.");
-  const id = "group_" + Date.now();
-  db.ref(`groupChats/${id}`).set({
-    name: gName,
-    createdBy: user,
-    members: { [user]: true }
+function toggleEmojiPicker() {
+  const picker = document.getElementById("emojiPicker");
+  picker.style.display = picker.style.display === "flex" ? "none" : "flex";
+  if (picker.innerHTML) return;
+  const emojis = [..."😀😎😂🔥❤️👍😢😡🥳🎉💯🤖💀😭🙃👏✨🧠😴🫡🚀🌈🎮🍕📱📧📌💬💡🧡🥺👀✅📣🕹️😆😍🤩🫶🤓🗨️🔒💭💻📚💤🐸😺🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🐮🦁🐷🐸🐵🦄🐔🐧🐦🐤🐣🐺🦖🦕"];
+  emojis.forEach(e => {
+    const span = document.createElement("span");
+    span.textContent = e;
+    span.onclick = () => {
+      document.getElementById("msgInput").value += e;
+      picker.style.display = "none";
+    };
+    picker.appendChild(span);
   });
-  db.ref(`users/${user}/chats/${id}`).set({
-    name: gName,
-    type: "group"
-  });
-  closeGroup();
-  loadChats();
-  openChat(id, gName, "group");
-}
-
-function openSettings() {
-  document.getElementById("settings").style.display = "flex";
-}
-function closeSettings() {
-  document.getElementById("settings").style.display = "none";
-}
-function changeName() {
-  const newName = document.getElementById("newName").value.trim();
-  if (!newName) return;
-  user = newName;
-  localStorage.setItem("user", user);
-  alert("Name changed.");
-  closeSettings();
-  loadChats();
-}
-function logout() {
-  localStorage.clear();
-  location.reload();
 }
 </script>
 </body>

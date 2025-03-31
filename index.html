@@ -3,64 +3,43 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chat – Final Bugfix</title>
+  <title>Static Live Chatting – Final Fix</title>
   <style>
     :root {
-      /* Default (Dark) theme variables */
-      --bg-color:#111;
-      --text-color:#fff;
-      --sidebar-color:#1c1c1c;
-      --chat-bg:#222;
-      --bubble-me:#1e90ff;
-      --bubble-them:#444;
-      --accent:#1e90ff;
-      --badge:red;
-      --chat-item-bg:#333;
+      --bg-color:#111; --text-color:#fff;
+      --sidebar-color:#1c1c1c; --chat-bg:#222;
+      --bubble-me:#1e90ff; --bubble-them:#444;
+      --accent:#1e90ff; --badge:red; --chat-item-bg:#333;
     }
     body.light {
-      --bg-color:#f4f4f4;
-      --text-color:#000;
-      --sidebar-color:#ddd;
-      --chat-bg:#eee;
-      --bubble-me:#007aff;
-      --bubble-them:#ccc;
-      --accent:#007acc;
-      --chat-item-bg:#bbb;
+      --bg-color:#f4f4f4; --text-color:#000;
+      --sidebar-color:#ddd; --chat-bg:#eee;
+      --bubble-me:#007aff; --bubble-them:#ccc;
+      --accent:#007acc; --chat-item-bg:#bbb;
     }
     body.blue {
-      --bg-color:#0b1622;
-      --text-color:#f0f8ff;
-      --sidebar-color:#132336;
-      --chat-bg:#1e2d40;
-      --bubble-me:#1f65ff;
-      --bubble-them:#41546a;
-      --accent:#389fff;
-      --chat-item-bg:#2e3d52;
+      --bg-color:#0b1622; --text-color:#f0f8ff;
+      --sidebar-color:#132336; --chat-bg:#1e2d40;
+      --bubble-me:#1f65ff; --bubble-them:#41546a;
+      --accent:#389fff; --chat-item-bg:#2e3d52;
     }
     body.green {
-      --bg-color:#102a10;
-      --text-color:#e8ffe8;
-      --sidebar-color:#224522;
-      --chat-bg:#1a331a;
-      --bubble-me:#28a745;
-      --bubble-them:#375a37;
-      --accent:#4caf50;
-      --chat-item-bg:#2b442b;
+      --bg-color:#102a10; --text-color:#e8ffe8;
+      --sidebar-color:#224522; --chat-bg:#1a331a;
+      --bubble-me:#28a745; --bubble-them:#375a37;
+      --accent:#4caf50; --chat-item-bg:#2b442b;
     }
     body.pink {
-      --bg-color:#331024;
-      --text-color:#ffe0f0;
-      --sidebar-color:#441533;
-      --chat-bg:#551a44;
-      --bubble-me:#ff3377;
-      --bubble-them:#773355;
-      --accent:#ff66a2;
-      --chat-item-bg:#442244;
+      --bg-color:#331024; --text-color:#ffe0f0;
+      --sidebar-color:#441533; --chat-bg:#551a44;
+      --bubble-me:#ff3377; --bubble-them:#773355;
+      --accent:#ff66a2; --chat-item-bg:#442244;
     }
     body {
       margin:0; font-family:Arial,sans-serif;
       background:var(--bg-color); color:var(--text-color);
-      height:100vh; display:flex; flex-direction:column; overflow:hidden;
+      height:100vh; display:flex; flex-direction:column;
+      overflow:hidden;
     }
     input, button {
       padding:10px; font-size:16px; margin:5px;
@@ -90,7 +69,7 @@
     #loadMoreBtn {
       display:none; position:absolute; top:10px; left:50%;
       transform:translateX(-50%); z-index:10;
-      background:var(--accent); color:#fff;
+      background:var(--accent); color:white;
       padding:8px; border:none; border-radius:6px;
       cursor:pointer; opacity:0.8;
     }
@@ -110,13 +89,14 @@
     .reactionBar {
       position:absolute; bottom:100%; left:50%;
       transform:translateX(-50%); display:none; flex-direction:row;
-      gap:5px; background:rgba(0,0,0,0.6);
-      padding:5px; border-radius:6px; margin-bottom:5px;
+      gap:5px; background:rgba(0,0,0,0.6); padding:5px; border-radius:6px;
+      margin-bottom:5px;
     }
     .reactionBar span { font-size:22px; cursor:pointer; }
     .reactionTag { margin-left:6px; font-size:14px; opacity:0.8; }
     .timestamp {
-      position:absolute; font-size:10px; opacity:0.7; bottom:-14px;
+      position:absolute; font-size:10px; opacity:0.7;
+      bottom:-14px;
     }
     .mineTime { right:10px; }
     .otherTime { left:10px; }
@@ -173,8 +153,8 @@
     /* center modals */
     .modal {
       position:fixed; inset:0; background:rgba(0,0,0,0.7);
-      display:none; flex-direction:column; align-items:center;
-      justify-content:center; z-index:999;
+      display:none; flex-direction:column; align-items:center; justify-content:center;
+      z-index:999;
     }
     .panelContent {
       background:var(--chat-bg); padding:20px;
@@ -195,19 +175,33 @@
 </head>
 <body>
 <script>
-// Basic mobile detection
+// mobile detection
 if(/Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
   document.body.classList.add("mobile");
 }
 
-// user & pass from localStorage
+// user/pass from localStorage
 let user=localStorage.getItem("user")||"";
 let pass=localStorage.getItem("pass")||"";
 
+// define startApp so doLogin can call it
+function startApp(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="flex";
+  applyTheme();
+  loadBlocked();
+  loadFriends();
+  loadChats();
+  loadRequests();
+  setIdleLockTimer();
+  showNotice(`Logged in as ${user}`);
+}
+
 function toggleLoginPass(){
   const pw=document.getElementById("password");
-  pw.type = (pw.type==="password")?"text":"password";
+  pw.type=(pw.type==="password")?"text":"password";
 }
+
 function doLogin(){
   const un=document.getElementById("username").value.trim();
   const pw=document.getElementById("password").value.trim();
@@ -234,7 +228,7 @@ function doLogin(){
   </div>
 </div>
 
-<!-- Various modals: friendsPanel, addChatPanel, groupJoinPanel, groupCreatePanel, directoryPanel, editGroupPanel, settingsPanel ... omitted in HTML but will be references in code for show/hide. -->
+<!-- Additional modals: friendsPanel, addChatPanel, groupJoinPanel, groupCreatePanel, directoryPanel, editGroupPanel, settingsPanel omitted for brevity, but we’ll define the logic referencing them. -->
 <div id="friendsPanel" class="modal"><div class="panelContent" id="friendsInner"></div></div>
 <div id="addChatPanel" class="modal"><div class="panelContent" id="addChatInner"></div></div>
 <div id="groupJoinPanel" class="modal"><div class="panelContent">
@@ -244,7 +238,7 @@ function doLogin(){
   <button onclick="joinGroupChat()">Join</button>
   <button onclick="closeJoinPanel()">Close</button>
 </div></div>
-<div id="groupCreatePanel" class="modal"><div class="panelContent" id="groupCreateInner">
+<div id="groupCreatePanel" class="modal"><div class="panelContent">
   <h3>Create Group</h3>
   <input id="groupName" placeholder="Group Name" onkeypress="if(event.key==='Enter')createGroupChat()"/><br/>
   <select id="groupType">
@@ -304,7 +298,6 @@ function doLogin(){
     <h3>Chats</h3>
     <div id="chatList"></div>
   </div>
-
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
@@ -321,8 +314,7 @@ function doLogin(){
     </div>
     <div id="typingIndicator"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type... (try '/' for slash commands!)"
-             onkeypress="if(event.key==='Enter')sendMessage();"/>
+      <input id="msgInput" placeholder="Type... (try '/' for slash commands!)" onkeypress="if(event.key==='Enter')sendMessage();"/>
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>
@@ -337,7 +329,7 @@ function doLogin(){
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
 <script>
-// Initialize Firebase
+// Firebase init
 const firebaseConfig={
   apiKey:"AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
   authDomain:"static-live-chatting.firebaseapp.com",
@@ -350,55 +342,20 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let colorMap={}, blocked={}, friends={};
+// declare global references
+let colorMap={};
 let currentChat="", currentType="";
 let chatActive="";
 let chatUnread={};
-
-let verificationPass=localStorage.getItem("verificationPass")||"";
-let isLocked=false, idleTimer=null;
 
 // "Load More" state
 let oldestKey=null;
 let hasMoreOld=true;
 
-// BOT arrays
-const truths=[
-  "What is your favorite memory from the last year?",
-  "What is your biggest fear?",
-  "If you could have any superpower, what would it be?",
-  "What is something embarrassing that has happened to you?",
-  "Have you ever told a lie you regret?",
-  "What was your worst date experience?",
-  "What is your secret talent?",
-  "Have you ever broken a rule and gotten caught?",
-  "What's the hardest challenge you've overcome?",
-  "What is one thing you wish you could change about yourself?",
-  "Do you have a secret crush on someone?",
-  "What's the weirdest thing you've ever eaten?",
-  "What is one thing you can't live without?",
-  "What is something you wish your parents knew about you?",
-  "Have you ever said “I love you” without meaning it?"
-];
-const dares=[
-  "Sing a chorus of your favorite song out loud.",
-  "Do 10 push-ups in front of everyone.",
-  "Let another person style your hair (or pretend to!).",
-  "Attempt your best celebrity impression.",
-  "Walk across the room like a runway model.",
-  "Text the first person in your contacts “You’re amazing!”",
-  "Pretend to be a cat for the next 1 minute.",
-  "Do an impression of your teacher for 30 seconds.",
-  "Swap an item of clothing with someone for the rest of the game.",
-  "Try to lick your elbow (spoiler: it's almost impossible!).",
-  "Do a silly dance for 15 seconds.",
-  "Let someone draw on your face with lipstick (or pretend).",
-  "Speak in a fake accent until your next turn.",
-  "Balance a book on your head for 1 minute.",
-  "Say the alphabet backwards as fast as you can."
-];
+// Idle Lock
+let verificationPass=localStorage.getItem("verificationPass")||"";
+let isLocked=false, idleTimer=null;
 
-//** IDLE LOCK
 document.onmousemove=setIdleLockTimer;
 document.onkeypress=setIdleLockTimer;
 function setIdleLockTimer(){
@@ -412,7 +369,7 @@ function lockNow(){
     const p=document.getElementById("lockPass").value.trim();
     if(!p)return showNotice("No verification pass!");
     verificationPass=p;
-    localStorage.setItem("verificationPass",p);
+    localStorage.setItem("verificationPass", p);
   }
   lockAccount();
 }
@@ -435,7 +392,7 @@ window.onbeforeunload=()=>{
   return "Are you sure you want to leave?";
 };
 
-//** THEME
+// Theming
 function toggleTheme(){
   const c=(document.body.classList.contains("light")?"light":
            document.body.classList.contains("blue")?"blue":
@@ -464,32 +421,8 @@ function applyTheme(){
   else if(saved==="pink") document.body.classList.add("pink");
 }
 
-//** START
-function startApp(){
-  document.getElementById("login").style.display="none";
-  document.getElementById("app").style.display="flex";
-  applyTheme();
-  loadBlocked();
-  loadFriends();
-  loadChats();
-  loadRequests();
-  setIdleLockTimer();
-  showNotice(`Logged in as ${user}`);
-}
-if(user){
-  document.addEventListener("DOMContentLoaded",()=>{
-    document.getElementById("login").style.display="none";
-    document.getElementById("app").style.display="flex";
-    applyTheme();
-    loadBlocked();
-    loadFriends();
-    loadChats();
-    loadRequests();
-    setIdleLockTimer();
-  });
-}
-
-//** BLOCK / FRIENDS
+//** REQUESTS / BLOCK / FRIENDS
+let blocked={};
 function loadBlocked(){
   db.ref(`users/${user}/blocked`).on("value", snap=>{
     blocked=snap.val()||{};
@@ -531,8 +464,10 @@ function openFriendsPanel(){
   fi.innerHTML="<h3>Your Friends</h3>";
   Object.keys(friends).forEach(fr=>{
     const div=document.createElement("div");
-    div.style.background="var(--chat-bg)"; div.style.padding="8px";
-    div.style.marginBottom="8px"; div.style.borderRadius="6px";
+    div.style.background="var(--chat-bg)";
+    div.style.padding="8px";
+    div.style.marginBottom="8px";
+    div.style.borderRadius="6px";
     div.innerHTML=`<b>${fr}</b><br/>`;
 
     const bOpen=document.createElement("button");
@@ -592,7 +527,7 @@ function inviteFriendToGroup(gid, friend){
   showNotice(`Invited ${friend} to group ${gid}`);
 }
 
-//** LOAD CHATS / REQUESTS
+//** CHATS / REQUESTS
 function loadChats(){
   db.ref(`users/${user}/chats`).on("value", snap=>{
     const data=snap.val()||{};
@@ -604,7 +539,7 @@ function loadChats(){
       div.className="chatItem";
       if(id===chatActive) div.classList.add("active");
       let nm=info.name||id;
-      if(info.type==="private" && blocked[nm]) nm+=" [Blocked]";
+      if(info.type==="private"&&blocked[nm]) nm+=" [Blocked]";
       div.textContent=nm;
 
       const rowRight=document.createElement("div");
@@ -702,10 +637,8 @@ function loadRequests(){
     showNotice(`${who} accepted your friend request! Chat unlocked.`);
     db.ref(`users/${user}/requestsSent/${who}`).remove();
     const cid=[user,who].sort().join("_");
-    db.ref(`privateChats/${cid}`).once("value", s3=>{
-      if(!s3.exists()){
-        db.ref(`privateChats/${cid}`).set({});
-      }
+    db.ref(`privateChats/${cid}`).once("value",(s3)=>{
+      if(!s3.exists()) db.ref(`privateChats/${cid}`).set({});
     });
     db.ref(`users/${user}/chats/${cid}`).set({name:who,type:"private",last:Date.now()});
     if(!currentChat) openChat(cid,who,"private");
@@ -739,56 +672,42 @@ function confirmDeleteChat(chatId, info){
 }
 
 //** MESSAGES watchers
-let messagesRef=null;
-let childAddedListener=null;
-let childChangedListener=null;
-
-function openChat(cid, nm, ty){
+let messagesRef=null, childAddedListener=null, childChangedListener=null;
+function openChat(cid,nm,ty){
   if(isLocked)return;
   currentChat=cid; currentType=ty;
   chatUnread[cid]=0;
   highlightChat(cid);
-
   document.getElementById("chatTitle").textContent=nm||cid;
   document.getElementById("messages").innerHTML="";
-  oldestKey=null;
-  hasMoreOld=true;
+  oldestKey=null; hasMoreOld=true;
   document.getElementById("loadMoreBtn").style.display="none";
   document.getElementById("groupMembers").style.display=(ty==="group")?"block":"none";
 
-  // turn off old watchers
   if(messagesRef){
-    if(childAddedListener) messagesRef.off("child_added", childAddedListener);
-    if(childChangedListener) messagesRef.off("child_changed", childChangedListener);
+    if(childAddedListener) messagesRef.off("child_added",childAddedListener);
+    if(childChangedListener) messagesRef.off("child_changed",childChangedListener);
   }
-
   messagesRef=db.ref(`${(ty==="group"?"groupChats":"privateChats")}/${cid}/messages`);
-  fetchLatestMessages(()=>{
-    // group membership
-    if(ty==="group"){
-      db.ref(`groupChats/${cid}/members`).on("value",(sp)=>{
-        const mm=Object.keys(sp.val()||{});
-        document.getElementById("groupMembers").textContent="Members: "+mm.join(", ");
-      });
-    }
-    attachTypingListener();
-  });
+  fetchLatestMessages();
   db.ref(`users/${user}/chats/${cid}/last`).set(Date.now());
+  if(ty==="group"){
+    db.ref(`groupChats/${cid}/members`).on("value",(sp)=>{
+      const mm=Object.keys(sp.val()||{});
+      document.getElementById("groupMembers").textContent="Members: "+mm.join(", ");
+    });
+  }
+  attachTypingListener();
 }
-
-function fetchLatestMessages(cb){
+function fetchLatestMessages(){
   messagesRef.orderByKey().limitToLast(100).once("value",(snap)=>{
     const data=snap.val()||{};
-    const keys=Object.keys(data).sort((a,b)=>(b> a)?1:-1);
-    keys.forEach(k=>{
-      createMessageBubble(k, data[k], currentType, true);
-    });
+    const keys=Object.keys(data).sort((a,b)=>(b>a)?1:-1);
+    keys.forEach(k=>createMessageBubble(k, data[k], currentType, true));
     if(keys.length>0) oldestKey=keys[keys.length-1];
     if(keys.length>=100) document.getElementById("loadMoreBtn").style.display="inline";
     else hasMoreOld=false;
-
     attachChildWatchers();
-    if(cb) cb();
   });
 }
 function attachChildWatchers(){
@@ -803,41 +722,40 @@ function attachChildWatchers(){
     updateMessageBubble(snap.key, snap.val(), currentType);
   });
 }
-
-//** load older
 function loadOlderMessages(){
   if(!currentChat||!hasMoreOld||!oldestKey)return;
-  document.getElementById("loadMoreBtn").disabled=true;
+  const loadBtn=document.getElementById("loadMoreBtn");
+  loadBtn.disabled=true;
   messagesRef.orderByKey().endAt(oldestKey).limitToLast(101).once("value",(snap)=>{
     const data=snap.val()||{};
     const keys=Object.keys(data).sort((a,b)=>(b>a)?1:-1);
     if(keys.length<=1){
       hasMoreOld=false;
-      document.getElementById("loadMoreBtn").style.display="none";
+      loadBtn.style.display="none";
     } else {
-      const slice=keys.slice(1); // skip the existing oldest
+      const slice=keys.slice(1);
       slice.forEach(k=>{
         if(!document.getElementById("msg_"+k)){
           createMessageBubble(k, data[k], currentType, false);
         }
       });
       oldestKey=slice[slice.length-1];
-      if(slice.length<100) document.getElementById("loadMoreBtn").style.display="none";
+      if(slice.length<100) loadBtn.style.display="none";
     }
-    document.getElementById("loadMoreBtn").disabled=false;
+    loadBtn.disabled=false;
   });
 }
+
+//** create/update bubbles
 function createMessageBubble(msgId, msg, ty, isNewest){
   if(ty==="private"&&msg.sender!==user&&blocked[msg.sender])return;
   if(ty==="group"&&msg.sender!==user&&blocked[msg.sender])return;
-
-  if(document.getElementById("msg_"+msgId))return; // already loaded
-  const isMe=(msg.sender===user);
-  const bubble=document.createElement("div");
-  bubble.className="msg "+(isMe?"me":"them");
-  bubble.id="msg_"+msgId;
+  if(document.getElementById("msg_"+msgId))return;
 
   const container=document.getElementById("messages");
+  const bubble=document.createElement("div");
+  bubble.className="msg "+((msg.sender===user)?"me":"them");
+  bubble.id="msg_"+msgId;
 
   const lines=msg.text.split("\n");
   if(lines.length>6){
@@ -847,10 +765,9 @@ function createMessageBubble(msgId, msg, ty, isNewest){
       const url=URL.createObjectURL(blob);
       window.open(url,"_blank");
     };
-  } else {
-    bubble.textContent=msg.text;
-  }
-  if(ty==="group" && msg.sender!=="_system" && !isMe){
+  } else bubble.textContent=msg.text;
+
+  if(ty==="group"&&msg.sender!=="_system"&&msg.sender!==user){
     const cc=getColorClass(msg.sender);
     bubble.innerHTML=`<span class='${cc}' style='font-weight:bold;margin-right:6px;'>${msg.sender}:</span>`+bubble.innerHTML;
   }
@@ -883,13 +800,11 @@ function createMessageBubble(msgId, msg, ty, isNewest){
     if(isLocked)return;
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
   });
-  // contextmenu => if group owner, can remove
   bubble.addEventListener("contextmenu", e=>{
     e.preventDefault();
     if(currentType==="group"){
       db.ref(`groupChats/${currentChat}/createdBy`).once("value",(snap)=>{
-        const owner=snap.val();
-        if(owner===user){
+        if(snap.val()===user){
           showConfirm("Remove this message?",()=>{
             db.ref(`groupChats/${currentChat}/messages/${msgId}`).remove();
             document.getElementById("msg_"+msgId)?.remove();
@@ -901,10 +816,11 @@ function createMessageBubble(msgId, msg, ty, isNewest){
 
   const time=new Date(msg.timestamp||0).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
   const ts=document.createElement("div");
-  ts.className="timestamp "+(isMe?"mineTime":"otherTime");
+  ts.className="timestamp "+((msg.sender===user)?"mineTime":"otherTime");
   ts.textContent=time;
   bubble.appendChild(ts);
 
+  // read receipts
   if(ty==="group"){
     if(msg.readBy){
       const readList=Object.keys(msg.readBy).filter(u=>u!==msg.sender);
@@ -916,8 +832,7 @@ function createMessageBubble(msgId, msg, ty, isNewest){
       }
     }
   } else {
-    // private => show "Seen" if your message read by them
-    if(isMe&&msg.readBy){
+    if(bubble.classList.contains("me")&&msg.readBy){
       const others=Object.keys(msg.readBy).filter(u=>u!==user);
       if(others.length>0){
         const rd=document.createElement("div");
@@ -936,6 +851,7 @@ function updateMessageBubble(msgId, msg, ty){
   if(!bubble)return;
   const rt=bubble.querySelector(".reactionTag");
   if(rt) rt.textContent=msg.reaction||"";
+
   const rec=bubble.querySelector(".readReceipt");
   if(ty==="group"){
     if(msg.readBy){
@@ -964,37 +880,12 @@ function updateMessageBubble(msgId, msg, ty){
   }
 }
 
-//** Mark read
+//** mark read
 function markMessagesRead(msgIds){
   if(!currentChat||!currentType||!user)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   msgIds.forEach(m=>{
     db.ref(`${path}/${currentChat}/messages/${m}/readBy/${user}`).set(Date.now());
-  });
-}
-
-//** load older
-function loadOlderMessages(){
-  if(!currentChat||!hasMoreOld||!oldestKey)return;
-  const loadBtn=document.getElementById("loadMoreBtn");
-  loadBtn.disabled=true;
-  messagesRef.orderByKey().endAt(oldestKey).limitToLast(101).once("value",(snap)=>{
-    const data=snap.val()||{};
-    const keys=Object.keys(data).sort((a,b)=>(b>a)?1:-1);
-    if(keys.length<=1){
-      hasMoreOld=false;
-      loadBtn.style.display="none";
-    } else {
-      const slice=keys.slice(1);
-      slice.forEach(k=>{
-        if(!document.getElementById("msg_"+k)){
-          createMessageBubble(k, data[k], currentType, false);
-        }
-      });
-      oldestKey=slice[slice.length-1];
-      if(slice.length<100) loadBtn.style.display="none";
-    }
-    loadBtn.disabled=false;
   });
 }
 
@@ -1005,7 +896,7 @@ function attachTypingListener(){
   db.ref(`${path}/${currentChat}/typing`).on("value",(s)=>{
     const val=s.val();
     const t=document.getElementById("typingIndicator");
-    if(val && val!==user){
+    if(val&&val!==user){
       t.style.display="block";
       t.textContent=`${val} is typing...`;
     } else {
@@ -1020,7 +911,7 @@ function sendTyping(){
   setTimeout(()=> db.ref(`${path}/${currentChat}/typing`).set(""),2000);
 }
 
-//** SEND
+//** SENDING
 function sendMessage(){
   if(isLocked)return;
   const inp=document.getElementById("msgInput");
@@ -1032,14 +923,15 @@ function sendMessage(){
     inp.value="";
     return;
   }
-  // normal msg
   if(currentType==="private"){
     const nm=document.getElementById("chatTitle").textContent.replace(" [Blocked]","");
     if(blocked[nm])return showNotice("You blocked them. Unblock first!");
   }
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages`).push({
-    sender:user, text, timestamp:Date.now(),
+    sender:user,
+    text,
+    timestamp:Date.now(),
     reaction:"",
     readBy:{[user]:Date.now()}
   });
@@ -1047,7 +939,7 @@ function sendMessage(){
   sendTyping();
 }
 function processSlashCommand(cmd){
-  const [slash, ...rest]=cmd.split(" ");
+  const [slash,...rest]=cmd.split(" ");
   if(slash==="/tod"){
     if(rest[0]==="truth"){
       const t=truths[Math.floor(Math.random()*truths.length)];
@@ -1060,18 +952,55 @@ function processSlashCommand(cmd){
     }
   } else if(slash==="/title"){
     const txt=rest.join(" ");
-    if(!txt) return showNotice("Usage: /title <text>");
+    if(!txt)return showNotice("Usage: /title <text>");
     sendSystemMessage(`<< ${txt} >>`);
   } else {
     showNotice(`Unknown command: ${cmd}`);
   }
 }
+const truths=[
+  "What is your favorite memory from the last year?",
+  "What is your biggest fear?",
+  "If you could have any superpower, what would it be?",
+  "What is something embarrassing that has happened to you?",
+  "Have you ever told a lie you regret?",
+  "What was your worst date experience?",
+  "What is your secret talent?",
+  "Have you ever broken a rule and gotten caught?",
+  "What's the hardest challenge you've overcome?",
+  "What is one thing you wish you could change about yourself?",
+  "Do you have a secret crush on someone?",
+  "What's the weirdest thing you've ever eaten?",
+  "What is one thing you can't live without?",
+  "What is something you wish your parents knew about you?",
+  "Have you ever said “I love you” without meaning it?"
+];
+const dares=[
+  "Sing a chorus of your favorite song out loud.",
+  "Do 10 push-ups in front of everyone.",
+  "Let another person style your hair (or pretend to!).",
+  "Attempt your best celebrity impression.",
+  "Walk across the room like a runway model.",
+  "Text the first person in your contacts “You’re amazing!”",
+  "Pretend to be a cat for the next 1 minute.",
+  "Do an impression of your teacher for 30 seconds.",
+  "Swap an item of clothing with someone for the rest of the game.",
+  "Try to lick your elbow (spoiler: it's almost impossible!).",
+  "Do a silly dance for 15 seconds.",
+  "Let someone draw on your face with lipstick (or pretend).",
+  "Speak in a fake accent until your next turn.",
+  "Balance a book on your head for 1 minute.",
+  "Say the alphabet backwards as fast as you can."
+];
 function sendSystemMessage(msg){
   if(!currentChat||!currentType)return;
   const path=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${path}/${currentChat}/messages`).push({
-    sender:"_system", text:msg, timestamp:Date.now(),
-    reaction:"", readBy:{}
+    sender:"_system",
+    text:msg,
+    timestamp:Date.now(),
+    reaction:"",
+    readBy:{}
   });
 }
 function applyReaction(msgId, reaction){
@@ -1080,7 +1009,7 @@ function applyReaction(msgId, reaction){
   db.ref(`${path}/${currentChat}/messages/${msgId}/reaction`).set(reaction);
 }
 
-//** Big Emojis
+//** EMOJIS
 function toggleEmojiPicker(){
   const picker=document.getElementById("emojiPicker");
   if(picker.style.display==="flex"){
@@ -1088,9 +1017,8 @@ function toggleEmojiPicker(){
     return;
   }
   picker.innerHTML="";
-  // Large set
-  const bigEmojis=[... "😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑🙄😯😦😧😮😲🥱😴😪😵😵‍💫😷🤒🤕🤢🤮🤧😇😈👿👻💀☠️👽🤖🎃😺😸😹😻😼😽🙀😿😾"];
   picker.style.display="flex";
+  const bigEmojis=[... "😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑🙄😯😦😧😮😲🥱😴😪😵😵‍💫😷🤒🤕🤢🤮🤧😇😈👿👻💀☠️👽🤖🎃😺😸😹😻😼😽🙀😿😾"];
   bigEmojis.forEach(e=>{
     const sp=document.createElement("span");
     sp.textContent=e;
@@ -1102,10 +1030,10 @@ function toggleEmojiPicker(){
   });
 }
 
-//** Notification
+//** push notifications
 function requestNotificationPermission(){
   if(!("Notification" in window)){
-    showNotice("Browser does not support notifications!");
+    showNotice("This browser does not support notifications!");
     return;
   }
   Notification.requestPermission().then(perm=>{
@@ -1245,12 +1173,12 @@ function saveSettings(){
   const np=document.getElementById("editPassword").value.trim();
   if(!nu)return;
   user=nu; pass=np;
-  localStorage.setItem("user", nu);
-  localStorage.setItem("pass", np);
+  localStorage.setItem("user",nu);
+  localStorage.setItem("pass",np);
 
   const lP=document.getElementById("lockPass").value.trim()||"";
   verificationPass=lP;
-  localStorage.setItem("verificationPass", lP);
+  localStorage.setItem("verificationPass",lP);
 
   showNotice("Settings saved!");
   setIdleLockTimer();
@@ -1291,7 +1219,7 @@ function closeNotice(){
   document.getElementById("noticePanel").style.display="none";
 }
 
-//** color class
+//** colorMap
 function getColorClass(u){
   if(!colorMap[u]){
     const classes=["nameColor1","nameColor2","nameColor3","nameColor4","nameColor5"];
@@ -1300,37 +1228,34 @@ function getColorClass(u){
   return colorMap[u];
 }
 
-//** Notification
+//** notifications
 function requestNotificationPermission(){
   if(!("Notification" in window)){
-    showNotice("This browser does not support notifications.");
+    showNotice("Browser does not support notifications!");
     return;
   }
-  Notification.requestPermission().then((perm)=>{
-    if(perm==="granted"){
-      showNotice("Notifications enabled!");
-    } else {
-      showNotice("Notifications not granted.");
-    }
+  Notification.requestPermission().then(perm=>{
+    if(perm==="granted") showNotice("Notifications enabled!");
+    else showNotice("Notifications not granted.");
   });
 }
 
-console.log("✅ Final single-file code with load more, emojis, notifications, slash commands, group owner admin, all references are defined. Enjoy!");
+console.log("✅ Final single-file code. Freed from 'redeclaration of let friends' + 'startApp not defined' + all watchers correct. Enjoy!");
 </script>
 
-<!-- Example fully open rules (no presence):
+<!-- Example wide-open rules (no presence):
 {
   "rules": {
     ".read": true,
     ".write": true,
-    "users": {
-      "$username": { ".read": true, ".write": true }
+    "users":{
+      "$username":{".read":true,".write":true}
     },
-    "privateChats": {
-      "$chatId": { ".read": true, ".write": true }
+    "privateChats":{
+      "$chatId":{".read":true,".write":true}
     },
-    "groupChats": {
-      "$groupId": { ".read": true, ".write": true }
+    "groupChats":{
+      "$groupId":{".read":true,".write":true}
     }
   }
 }

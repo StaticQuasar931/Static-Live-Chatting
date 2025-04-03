@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Static Live Chat</title>
-  <!-- Firebase -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Static Live Chat – Final Fixes</title>
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
@@ -33,17 +33,12 @@
       --chat-bg:#551a44; --bubble-me:#ff3377; --bubble-them:#773355;
       --accent:#ff66a2; --chat-item-bg:#442244;
     }
-    body.purple {
-      --bg-color:#2e1033; --text-color:#f4e4ff; --sidebar-color:#42154a;
-      --chat-bg:#551a66; --bubble-me:#9b59b6; --bubble-them:#7e3f9f;
-      --accent:#b86af1; --chat-item-bg:#4d1460;
-    }
     body {
       margin:0; font-family:Arial,sans-serif;
       background:var(--bg-color); color:var(--text-color);
       height:100vh; display:flex; flex-direction:column; overflow:hidden;
     }
-    input,button {
+    input, button {
       padding:10px; font-size:16px; margin:5px; border-radius:6px; border:none;
     }
     button { background:var(--accent); color:#fff; cursor:pointer; }
@@ -95,6 +90,9 @@
     }
     .mineTime { right:10px; }
     .otherTime { left:10px; }
+    .readReceipt {
+      font-size:12px; opacity:0.6; margin-top:2px;
+    }
     #typingIndicator {
       display:none; font-style:italic; font-size:14px; margin:0 20px 10px;
     }
@@ -131,8 +129,7 @@
     }
     .modal {
       position:fixed; inset:0; background:rgba(0,0,0,0.7);
-      display:none; flex-direction:column; align-items:center; justify-content:center;
-      z-index:999;
+      display:none; flex-direction:column; align-items:center; justify-content:center; z-index:999;
     }
     .modalContent {
       background:var(--chat-bg); padding:20px; border-radius:10px; max-width:400px; position:relative;
@@ -158,17 +155,14 @@
       background:var(--accent); color:#fff; border:none; border-radius:6px;
       padding:5px; cursor:pointer; opacity:0.8; z-index:10;
     }
-    .ownerName { font-weight:bold; text-decoration:underline; }
   </style>
 </head>
 <body>
 <script>
-// We integrate all code with a final bug check to ensure friend requests are defined, /typingrace is shared, etc.
-
-// 1) Firebase or fallback
+// =========== Firebase or fallback =============
 if(typeof firebase==="undefined"){
-  console.log("Firebase blocked. Fallback used.");
-  window.firebase={initializeApp:()=>{},database:()=>({ref:()=>({})})};
+  console.log("Firebase not loaded or blocked!");
+  window.firebase={ initializeApp:()=>{}, database:()=>({ref:()=>({})}) };
 }
 let db=null;
 try{
@@ -184,26 +178,11 @@ try{
   firebase.initializeApp(config);
   db=firebase.database();
 }catch(e){
-  console.log("Firebase init error: "+e);
+  console.log("Failed to init firebase DB: "+e);
   db={ref:()=>({once:()=>{},on:()=>{},set:()=>{},push:()=>({})})};
 }
 
-// beep fallback
-let beepAudio=null, beepAllowed=false;
-function initBeep(){
-  beepAudio=document.createElement("audio");
-  beepAudio.src="data:audio/wav;base64,UklGRmIAAABXQVZFZm10IBAAAAABAAEAiAsAAABCxAgAEABAAZGF0YQAAAAA=";
-  document.body.appendChild(beepAudio);
-  beepAudio.volume=1;
-}
-document.addEventListener("click",()=>{
-  if(!beepAllowed){
-    beepAllowed=true;
-    initBeep();
-  }
-},{once:true});
-
-// 2) Device ID & displayName
+// =========== Private device ID, displayName stored in localStorage
 function genId(){return "dev_"+Math.random().toString(36).slice(2)+"_"+Date.now();}
 let myId=localStorage.getItem("myDeviceId");
 if(!myId){
@@ -213,101 +192,111 @@ if(!myId){
 let displayName=localStorage.getItem("displayName")||"";
 let pass=localStorage.getItem("pass")||"";
 
-// track old
-function trackOldName(oldN,newN){
-  if(!oldN||!newN||oldN===newN)return;
-  db.ref(`users/${myId}/oldNames`).push(oldN);
-}
-
-// on load skip
+// =========== On load skip login
 window.addEventListener("DOMContentLoaded",()=>{
   if(displayName){
     document.getElementById("login").style.display="none";
     document.getElementById("app").style.display="flex";
     applyTheme();
     loadBlocked(); loadFriends(); loadRequests();
-    initChatWatchers(); setupHelpChat();
+    initChatWatchers();
+    setupHelpChat();
   }
 });
+
+// =========== Toggling password
 function toggleLoginPass(){
   let pw=document.getElementById("password");
   pw.type=(pw.type==="password")?"text":"password";
 }
+
+// =========== doLogin
 function doLogin(){
   let nm=document.getElementById("username").value.trim();
   let p=document.getElementById("password").value.trim();
-  if(!nm)return showNotice("Name can't be empty!");
+  if(!nm){ showNotice("Name can't be empty!"); return; }
   db.ref("displayNames/"+nm).once("value",(snap)=>{
     let val=snap.val();
     if(val && val!==myId){
-      showNotice("That display name is used by someone else.");
+      showNotice("That display name is used by another device. Try another name.");
       return;
     }
-    let old=displayName;
     displayName=nm; pass=p;
-    localStorage.setItem("displayName",nm);
-    localStorage.setItem("pass",p);
-    trackOldName(old,nm);
+    localStorage.setItem("displayName", nm);
+    localStorage.setItem("pass", p);
     db.ref("displayNames/"+nm).set(myId);
     db.ref(`users/${myId}/displayName`).set(nm);
     document.getElementById("login").style.display="none";
     document.getElementById("app").style.display="flex";
-    applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers(); setupHelpChat();
-    showNotice(`Logged in as ${nm}`);
+    applyTheme();
+    loadBlocked(); loadFriends(); loadRequests();
+    initChatWatchers();
+    setupHelpChat();
+    showNotice("Logged in as "+nm);
   });
 }
 
-// theming
+// =========== apply theme
 function applyTheme(){
-  let cyc=["dark","light","blue","green","pink","purple"];
   let saved=localStorage.getItem("theme")||"dark";
-  document.body.classList.remove(...cyc);
-  if(saved!=="dark") document.body.classList.add(saved);
+  document.body.classList.remove("light","blue","green","pink");
+  if(saved==="light") document.body.classList.add("light");
+  if(saved==="blue") document.body.classList.add("blue");
+  if(saved==="green") document.body.classList.add("green");
+  if(saved==="pink") document.body.classList.add("pink");
   setThemeLabel(saved);
 }
 function toggleTheme(){
-  let cyc=["dark","light","blue","green","pink","purple"];
-  let c="dark";
-  for(let x of cyc){ if(document.body.classList.contains(x))c=x; }
-  let idx=cyc.indexOf(c);
-  let nxt=cyc[(idx+1)%cyc.length];
-  document.body.classList.remove(...cyc);
-  if(nxt!=="dark") document.body.classList.add(nxt);
-  localStorage.setItem("theme",nxt);
-  setThemeLabel(nxt);
+  let c=(document.body.classList.contains("light")?"light":
+         document.body.classList.contains("blue")?"blue":
+         document.body.classList.contains("green")?"green":
+         document.body.classList.contains("pink")?"pink":"dark");
+  let next="dark";
+  if(c==="dark") next="light";
+  else if(c==="light") next="blue";
+  else if(c==="blue") next="green";
+  else if(c==="green") next="pink";
+  else if(c==="pink") next="dark";
+  document.body.classList.remove("light","blue","green","pink");
+  if(next==="light") document.body.classList.add("light");
+  if(next==="blue") document.body.classList.add("blue");
+  if(next==="green") document.body.classList.add("green");
+  if(next==="pink") document.body.classList.add("pink");
+  localStorage.setItem("theme", next);
+  setThemeLabel(next);
 }
-function setThemeLabel(l){
-  document.getElementById("themeBtn").textContent=`${l}: Theme`;
+function setThemeLabel(lab){
+  document.getElementById("themeBtn").textContent=`${lab}: Theme`;
 }
 
-// confirm + notice
-function showConfirm(msg,yesCb){
+// =========== Confirm + Notice
+function showConfirm(msg, yesCb){
   let mo=document.createElement("div");
   mo.style.position="fixed"; mo.style.inset=0; mo.style.background="rgba(0,0,0,0.7)";
-  mo.style.display="flex"; mo.style.justifyContent="center"; mo.style.alignItems="center"; mo.style.zIndex=999;
+  mo.style.display="flex"; mo.style.justifyContent="center"; mo.style.alignItems="center";
+  mo.style.zIndex=999;
   mo.innerHTML=`
     <div style="background:var(--chat-bg);padding:20px;border-radius:10px;max-width:400px;position:relative;">
       <h3>Confirm</h3>
       <p>${msg}</p>
       <div style="text-align:center;">
-        <button style="background:green;" id="yBtn">Yes</button>
-        <button style="background:red;" id="nBtn">No</button>
+        <button style="background:green;" id="yesBtn">Yes</button>
+        <button style="background:red;" id="noBtn">No</button>
       </div>
     </div>
   `;
   document.body.appendChild(mo);
-  mo.querySelector("#yBtn").onclick=()=>{
+  mo.querySelector("#yesBtn").onclick=()=>{
     document.body.removeChild(mo);
     yesCb();
   };
-  mo.querySelector("#nBtn").onclick=()=>{
-    document.body.removeChild(mo);
-  };
+  mo.querySelector("#noBtn").onclick=()=> document.body.removeChild(mo);
 }
 function showNotice(msg){
   let mo=document.createElement("div");
   mo.style.position="fixed"; mo.style.inset=0; mo.style.background="rgba(0,0,0,0.7)";
-  mo.style.display="flex"; mo.style.justifyContent="center"; mo.style.alignItems="center"; mo.style.zIndex=999;
+  mo.style.display="flex"; mo.style.justifyContent="center"; mo.style.alignItems="center";
+  mo.style.zIndex=999;
   mo.innerHTML=`
     <div style="background:var(--chat-bg);padding:20px;border-radius:10px;max-width:400px;position:relative;">
       <h3>Notice</h3>
@@ -318,45 +307,47 @@ function showNotice(msg){
     </div>
   `;
   document.body.appendChild(mo);
-  mo.querySelector("#okBtn").onclick=()=>{
-    document.body.removeChild(mo);
-  };
+  mo.querySelector("#okBtn").onclick=()=> document.body.removeChild(mo);
 }
 
-// help pinned
+// =========== “Help” chat pinned
 function setupHelpChat(){
-  db.ref(`users/${myId}/chats/help_chat`).set({name:"Help (info)",type:"help",last:0});
+  db.ref(`users/${myId}/chats/help_chat`).set({
+    name:"Help (info)", type:"help", last:0
+  });
 }
 function openHelpChat(){
   currentChat="help_chat"; currentType="help";
   highlightChat("help_chat");
   document.getElementById("chatTitle").textContent="Help & Info";
-  document.getElementById("groupMembers").style.display="none";
-  let area=document.getElementById("messages");
-  area.innerHTML="";
-  let big=document.createElement("div");
-  big.className="msg centerSys";
-  big.innerHTML=`
-    <strong>HELP & INFO</strong><br/><br/>
-    - /rps (choice) => Rock Paper Scissors (multi-user)<br/>
-    - /roll [sides] => dice<br/>
-    - /vote question|opt1|opt2 => poll<br/>
-    - /ping => measure round trip<br/>
-    - /8ball question => magic 8 ball<br/>
-    - /roast => random silly roast<br/>
-    - /guessnumber # => guess a number game<br/>
-    - /ship [name] => combine names<br/>
-    - /typingrace [category] [number] => race. categories: mix, sentences, anything<br/>
-    - /tod truth/dare => T or D<br/>
-    - /title => big system text<br/>
-    - /cf heads => coin flip<br/>
+  let msgs=document.getElementById("messages");
+  msgs.innerHTML="";
+  let bigM=document.createElement("div");
+  bigM.className="msg centerSys";
+  bigM.innerHTML=`
+    <strong>HELP & INFO</strong><br/>
+    This read-only chat includes tips and updates.<br/><br/>
+    <em>Slash Commands:</em><br/>
+    - <code>/tod truth</code> or <code>/tod dare</code> => random T/D from large queue<br/>
+    - <code>/title your text</code> => big center system message<br/>
+    - <code>/cf heads</code> or <code>/coin flip tails</code> => coin toss, e.g. “heads wins!”<br/><br/>
+    <em>Friend Requests:</em><br/>
+    - “Add Friend” by typing their DisplayName<br/>
+    - They see “YourName wants to chat.” Accept => private chat forms<br/><br/>
+    <em>Group Chats:</em><br/>
+    - Create group: open, password, or invite type<br/>
+    - “Open Groups” to see public ones<br/><br/>
+    <em>Other:</em><br/>
+    - Double-click a message to add reaction.<br/>
+    - Right-click (on group if you’re creator) => remove message.
   `;
-  area.appendChild(big);
+  msgs.appendChild(bigM);
   document.getElementById("msgInput").disabled=true;
 }
 
-// watchers
+//** watchers for block/friends
 let blocked={}, friends={};
+
 function loadBlocked(){
   db.ref(`users/${myId}/blocked`).on("value",(snap)=>{
     blocked=snap.val()||{};
@@ -367,12 +358,92 @@ function loadFriends(){
     friends=snap.val()||{};
   });
 }
+function loadChats(){} // watchers come below
 function loadRequests(){
-  // friend requests
-  // We'll do minimal watchers. The big watchers are possible but omitted for brevity.
+  // watchers for friend requests
+  db.ref(`users/${myId}/requests`).on("value",(snap)=>{
+    let data=snap.val()||{};
+    let tab=document.getElementById("requestsTab");
+    tab.innerHTML="";
+    Object.keys(data).forEach(from=>{
+      let di=document.createElement("div");
+      di.className="requestItem";
+      di.textContent=`${from} wants to chat. `;
+      let accept=document.createElement("button");
+      accept.textContent="✔";
+      accept.style.background="green";
+      accept.onclick=()=>{
+        if(blocked[from]){ showNotice("Unblock them first!");return; }
+        // find from’s device from /displayNames
+        db.ref(`displayNames/${from}`).once("value",(sn2)=>{
+          let fromDev=sn2.val();
+          if(!fromDev){ showNotice(`No user named ${from} found!`); return; }
+          let cid=[myId,fromDev].sort().join("_");
+          db.ref(`privateChats/${cid}`).set({});
+          db.ref(`users/${myId}/chats/${cid}`).set({name:from,type:"private",last:Date.now()});
+          db.ref(`users/${myId}/requests/${from}`).remove();
+          db.ref(`users/${myId}/friends/${from}`).set(true);
+          // set their side
+          db.ref(`users/${fromDev}/friends/${displayName}`).set(true);
+          // remove from requestsSent
+          db.ref(`users/${fromDev}/requestsSent/${displayName}`).once("value",(s2)=>{
+            if(s2.exists()){
+              db.ref(`users/${fromDev}/requestsSent/${displayName}`).remove();
+              db.ref(`users/${fromDev}/accepted/${displayName}`).set(true);
+              setTimeout(()=>db.ref(`users/${fromDev}/accepted/${displayName}`).remove(),3000);
+            }
+          });
+          openChat(cid, from,"private");
+        });
+      };
+      di.appendChild(accept);
+      let deny=document.createElement("button");
+      deny.textContent="✘"; deny.style.background="red";
+      deny.onclick=()=> db.ref(`users/${myId}/requests/${from}`).remove();
+      di.appendChild(deny);
+      tab.appendChild(di);
+    });
+  });
+  db.ref(`users/${myId}/requestsSent`).on("value",(snap2)=>{
+    let st=document.getElementById("requestsSentTab");
+    st.innerHTML="<strong>Requests Sent:</strong><br/>";
+    let out=snap2.val()||{};
+    Object.keys(out).forEach(n=>{
+      let dv=document.createElement("div");
+      dv.className="requestItem";
+      dv.textContent=`(Pending) ${n} `;
+      let c=document.createElement("button");
+      c.textContent="Cancel";
+      c.onclick=()=>{
+        db.ref(`users/${myId}/requestsSent/${n}`).remove();
+        // remove from their side
+        db.ref(`displayNames/${n}`).once("value",(sn3)=>{
+          let dev=sn3.val();
+          if(dev) db.ref(`users/${dev}/requests/${displayName}`).remove();
+        });
+      };
+      dv.appendChild(c);
+      st.appendChild(dv);
+    });
+  });
+  db.ref(`users/${myId}/accepted`).on("child_added",(s3)=>{
+    let who=s3.key;
+    showNotice(`${who} accepted your request!`);
+    db.ref(`users/${myId}/requestsSent/${who}`).remove();
+    db.ref(`displayNames/${who}`).once("value",(sn4)=>{
+      let dev=sn4.val();
+      if(!dev)return;
+      let cid=[myId,dev].sort().join("_");
+      db.ref(`privateChats/${cid}`).once("value",(sn5)=>{
+        if(!sn5.exists()) db.ref(`privateChats/${cid}`).set({});
+      });
+      db.ref(`users/${myId}/chats/${cid}`).set({name:who,type:"private",last:Date.now()});
+    });
+    setTimeout(()=>db.ref(`users/${myId}/accepted/${who}`).remove(),3000);
+  });
 }
 
-// watchers for user chats => unread
+//** watchers for "chats" => unread counters
 let chatUnread={};
 function initChatWatchers(){
   db.ref(`users/${myId}/chats`).on("value",(snap)=>{
@@ -382,31 +453,28 @@ function initChatWatchers(){
   });
 }
 function attachAllChatWatchers(chats){
-  Object.keys(chats).forEach(cid=>{
-    if(cid==="help_chat")return;
-    let info=chats[cid];
-    let path=(info.type==="group"?"groupChats":"privateChats")+"/"+cid+"/messages";
+  Object.keys(chats).forEach(chatId=>{
+    if(chatId==="help_chat")return;
+    let inf=chats[chatId];
+    let path=(inf.type==="group"?"groupChats":"privateChats")+"/"+chatId+"/messages";
     db.ref(path).off("child_added", handleMsg);
     db.ref(path).on("child_added", handleMsg);
     function handleMsg(snap){
-      if(cid===currentChat)return;
-      chatUnread[cid]=(chatUnread[cid]||0)+1;
-      updateTitle();
+      if(chatId===currentChat)return;
+      chatUnread[chatId]=(chatUnread[chatId]||0)+1;
       updateChatListUI(chats);
-      if(document.hidden && beepAllowed && beepAudio){
-        beepAudio.play().catch(()=>{});
-      }
     }
   });
 }
-function updateTitle(){
-  let tot=Object.values(chatUnread).reduce((a,b)=>a+b,0);
-  if(tot>0) document.title=`(+${tot}) Static Live Chat`;
-  else document.title="Static Live Chat";
+function updateChatListUI(chats){
+  if(!chats){
+    db.ref(`users/${myId}/chats`).once("value",(s)=>{
+      let dd=s.val()||{};
+      doUpdateChatListUI(dd);
+    });
+  } else doUpdateChatListUI(chats);
 }
-function highlightChat(cid){}
-function updateChatListUI(dd){
-  if(!dd)return;
+function doUpdateChatListUI(dd){
   let arr=Object.entries(dd).sort((a,b)=>{
     if(a[0]==="help_chat")return 1;
     if(b[0]==="help_chat")return -1;
@@ -415,80 +483,56 @@ function updateChatListUI(dd){
   let cl=document.getElementById("chatList");
   cl.innerHTML="";
   arr.forEach(([cid,info])=>{
-    let d=document.createElement("div");
-    d.className="chatItem";
-    if(cid===currentChat)d.classList.add("active");
+    let dv=document.createElement("div");
+    dv.className="chatItem";
+    if(cid===currentChat) dv.classList.add("active");
     let nm=info.name||cid;
     if(info.type==="private"&&blocked[nm]) nm+=" [Blocked]";
-    if(info.type==="help")nm="Help (info)";
-    d.textContent=nm;
-    let row=document.createElement("div");
-    row.style.display="flex"; row.style.alignItems="center";
+    if(info.type==="help") nm="Help (info)";
+    dv.textContent=nm;
+    let rowR=document.createElement("div");
+    rowR.style.display="flex"; rowR.style.alignItems="center";
     if(chatUnread[cid]){
       let bd=document.createElement("span");
       bd.className="chatBadge";
       bd.textContent="+"+chatUnread[cid];
-      row.appendChild(bd);
+      rowR.appendChild(bd);
     }
     if(info.type!=="help"){
-      let del=document.createElement("button");
-      del.textContent="🗑";
-      del.onclick=(ev)=>{
+      let delBtn=document.createElement("button");
+      delBtn.textContent="🗑";
+      delBtn.onclick=(ev)=>{
         ev.stopPropagation();
         confirmDeleteChat(cid,info);
       };
-      row.appendChild(del);
+      rowR.appendChild(delBtn);
     }
-    d.appendChild(row);
-    d.onclick=()=>{
-      if(info.type==="help") openHelpChat();
+    dv.appendChild(rowR);
+    dv.onclick=()=>{
+      if(info.type==="help")openHelpChat();
       else openChat(cid,nm,info.type);
     };
-    cl.appendChild(d);
+    cl.appendChild(dv);
   });
-  updateTitle();
-}
-function confirmDeleteChat(cid,info){
-  if(info.type==="group"){
-    db.ref(`groupChats/${cid}/createdBy`).once("value",(sn)=>{
-      let own=sn.val();
-      if(own!==myId){
-        showConfirm(`Leave group ${info.name}?`,()=>{
-          db.ref(`groupChats/${cid}/members/${myId}`).remove();
-          db.ref(`users/${myId}/chats/${cid}`).remove();
-          showNotice("Left group chat.");
-        });
-      } else {
-        showConfirm(`Delete group ${info.name}?`,()=>{
-          db.ref(`groupChats/${cid}`).remove();
-          db.ref(`users/${myId}/chats/${cid}`).remove();
-          showNotice("Group chat deleted for all!");
-        });
-      }
-    });
-  } else {
-    showConfirm(`Remove private chat with ${info.name}?`,()=>{
-      db.ref(`users/${myId}/chats/${cid}`).remove();
-      showNotice("Private chat removed from your side.");
-    });
-  }
 }
 
-// open chat watchers
-let currentChat="", currentType="";
+//** open chat watchers
 let messagesRef=null, childAddedRef=null, childChangedRef=null;
-let oldestStamp=Number.MAX_SAFE_INTEGER, hasMoreOld=false;
+let oldestStamp=Number.MAX_SAFE_INTEGER; 
+let hasMoreOld=false;
+let currentChat="", currentType="";
+
 function openChat(cid,name,type){
   currentChat=cid; currentType=type;
   chatUnread[cid]=0;
-  updateTitle();
   updateChatListUI({});
   document.getElementById("chatTitle").textContent=name;
   let gm=document.getElementById("groupMembers");
   gm.style.display=(type==="group")?"block":"none";
-  document.getElementById("msgInput").disabled=(type==="help");
-  let area=document.getElementById("messages");
-  area.innerHTML="";
+  let inp=document.getElementById("msgInput");
+  inp.disabled=(type==="help");
+  let msgArea=document.getElementById("messages");
+  msgArea.innerHTML="";
   document.getElementById("loadMoreBtn").style.display="none";
   if(messagesRef){
     if(childAddedRef) messagesRef.off("child_added",childAddedRef);
@@ -499,181 +543,119 @@ function openChat(cid,name,type){
   messagesRef.orderByChild("timestamp").limitToLast(50).once("value",(snap)=>{
     let data=snap.val()||{};
     let arr=Object.entries(data).sort((a,b)=>(a[1].timestamp||0)-(b[1].timestamp||0));
-    if(arr.length>0) oldestStamp=arr[0][1].timestamp||Number.MAX_SAFE_INTEGER; 
-    else oldestStamp=Number.MAX_SAFE_INTEGER;
+    if(arr.length>0){
+      oldestStamp=arr[0][1].timestamp;
+    } else oldestStamp=Number.MAX_SAFE_INTEGER;
     arr.forEach(([mId,mVal])=> createBubble(mId,mVal,true));
     if(arr.length>=50){
       hasMoreOld=true;
       document.getElementById("loadMoreBtn").style.display="block";
     } else hasMoreOld=false;
-    attachChatListeners();
-    area.scrollTop=area.scrollHeight;
+    attachChatDisplayWatchers();
+    msgArea.scrollTop=msgArea.scrollHeight;
     db.ref(`users/${myId}/chats/${cid}/last`).set(Date.now());
-    arr.forEach(([mId,mVal])=> markMsgRead(mId,mVal));
+    // read older messages to set read
+    arr.forEach(([mId,mVal])=> markMessageRead(mId,mVal));
   });
   if(type==="group"){
-    db.ref(`groupChats/${cid}/members`).on("value",(sn)=>{
-      let mm=sn.val()||{};
-      showGroupMembers(Object.keys(mm),cid);
+    db.ref(`groupChats/${cid}/members`).on("value",(s)=>{
+      let mm=Object.keys(s.val()||{});
+      gm.textContent="Members: "+mm.join(", ");
     });
   }
   attachTypingListener();
 }
-function attachChatListeners(){
+
+function attachChatDisplayWatchers(){
   childAddedRef=messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added",(snap)=>{
     let val=snap.val();
     createBubble(snap.key,val,true);
-    document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
-    markMsgRead(snap.key,val);
+    let area=document.getElementById("messages");
+    area.scrollTop=area.scrollHeight;
+    markMessageRead(snap.key,val);
   });
   childChangedRef=messagesRef.on("child_changed",(snap)=>{
     updateBubble(snap.key,snap.val());
   });
 }
-function showGroupMembers(devList,cid){
-  let gm=document.getElementById("groupMembers");
-  gm.innerHTML="";
-  db.ref(`groupChats/${cid}/createdBy`).once("value",(sn)=>{
-    let own=sn.val();
-    devList.forEach(dId=>{
-      getDisplayName(dId,(nm)=>{
-        let sp=document.createElement("span");
-        if(dId===own){
-          sp.className="ownerName";
-          sp.textContent=`${nm} (owner) `;
-        } else sp.textContent=`${nm} `;
-        gm.appendChild(sp);
-      });
-    });
-    if(own===myId){
-      let b=document.createElement("button");
-      b.textContent="Edit Group Chat";
-      b.onclick=()=>editGroupChat(cid);
-      gm.appendChild(document.createElement("br"));
-      gm.appendChild(b);
-    }
-  });
-}
-function editGroupChat(cid){
-  let mo=document.createElement("div");
-  mo.className="modal";
-  mo.innerHTML=`
-    <div class="modalContent" style="min-width:320px;">
-      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-      <h3>Edit Group</h3>
-      <label>New Name:</label><br/>
-      <input id="grpRename"/><br/>
-      <label>Add user by name:</label><br/>
-      <input id="grpAddName"/><button id="grpAddBtn">Add</button><br/>
-      <label>Remove user by name:</label><br/>
-      <input id="grpRemName"/><button id="grpRemBtn">Remove</button><br/>
-      <label>Lock/unlock (password):</label><br/>
-      <input id="grpLockPass"/><button id="grpLockBtn">Apply</button><br/>
-    </div>
-  `;
-  document.body.appendChild(mo);
-  mo.style.display="flex";
-  mo.addEventListener("click",(e)=>{ if(e.target===mo) document.body.removeChild(mo);});
-  let rename=mo.querySelector("#grpRename");
-  let addName=mo.querySelector("#grpAddName");
-  let remName=mo.querySelector("#grpRemName");
-  let lockP=mo.querySelector("#grpLockPass");
-  mo.querySelector("#grpAddBtn").onclick=()=>{
-    let n=addName.value.trim(); if(!n)return;
-    db.ref("displayNames/"+n).once("value",(snap)=>{
-      let dev=snap.val(); if(!dev)return showNotice(`No user named ${n}`);
-      db.ref(`groupChats/${cid}/members/${dev}`).set(true);
-      showNotice(`Added ${n} to group.`);
-      addName.value="";
-    });
-  };
-  mo.querySelector("#grpRemBtn").onclick=()=>{
-    let n=remName.value.trim(); if(!n)return;
-    db.ref("displayNames/"+n).once("value",(snap2)=>{
-      let dv=snap2.val(); if(!dv)return showNotice(`No user named ${n}`);
-      db.ref(`groupChats/${cid}/members/${dv}`).remove();
-      showNotice(`Removed ${n} from group.`);
-      remName.value="";
-    });
-  };
-  rename.addEventListener("keypress",(ev)=>{
-    if(ev.key==="Enter"){
-      let newN=rename.value.trim(); if(!newN)return;
-      db.ref(`groupChats/${cid}/name`).set(newN);
-      db.ref(`users/${myId}/chats/${cid}/name`).set(newN);
-      showNotice(`Group name changed to ${newN}`);
-      rename.value="";
-    }
-  });
-  mo.querySelector("#grpLockBtn").onclick=()=>{
-    let p=lockP.value.trim();
-    db.ref(`groupChats/${cid}/password`).set(p);
-    showNotice(p? `Group locked with password: ${p}` : "Group unlocked.");
-  };
-}
-function getDisplayName(devId,cb){
-  if(devId===myId)return cb(displayName);
-  if(devId==="_system")return cb("_system");
-  db.ref(`users/${devId}/displayName`).once("value",(sn)=>{
-    cb(sn.val()||"?");
-  });
+
+//** read receipts for older messages
+function markMessageRead(mId,mVal){
+  let path=(currentType==="group"?"groupChats":"privateChats")+"/"+currentChat+"/messages/"+mId+"/readBy/"+myId;
+  db.ref(path).set(Date.now());
 }
 
-// read receipts
-function markMsgRead(mId,val){
-  if(!currentChat||currentType==="help")return;
-  let p=(currentType==="group"?"groupChats":"privateChats");
-  db.ref(`${p}/${currentChat}/messages/${mId}/readBy/${myId}`).set(Date.now());
+//** load older
+function loadOlderMessages(){
+  if(!currentChat||!hasMoreOld) return;
+  let btn=document.getElementById("loadMoreBtn");
+  btn.disabled=true;
+  messagesRef.orderByChild("timestamp").endAt(oldestStamp-1).limitToLast(50).once("value",(snap)=>{
+    let data=snap.val()||{};
+    let arr=Object.entries(data).sort((a,b)=>(a[1].timestamp||0)-(b[1].timestamp||0));
+    if(arr.length<1){
+      showNotice("No older messages found.");
+      hasMoreOld=false;
+      btn.style.display="none";
+      return;
+    }
+    oldestStamp=arr[0][1].timestamp;
+    arr.forEach(([mId,mVal])=> createBubble(mId,mVal,false));
+    if(arr.length<50){
+      hasMoreOld=false;
+      btn.style.display="none";
+    }
+    // mark read
+    arr.forEach(([mId,mVal])=> markMessageRead(mId,mVal));
+  });
+  btn.disabled=false;
 }
 
-// create bubble
+//** create bubble
 function createBubble(mId,val,toEnd){
-  let area=document.getElementById("messages");
-  if(document.getElementById("msg_"+mId))return;
-  let b=document.createElement("div");
-  b.id="msg_"+mId;
-  if(val.sender===myId) b.className="msg me";
-  else if(val.sender==="_system") b.className="msg centerSys";
-  else b.className="msg them";
-
-  let text=val.text||"";
+  let msgA=document.getElementById("messages");
+  if(document.getElementById("msg_"+mId)) return;
+  let bub=document.createElement("div");
+  bub.id="msg_"+mId;
+  bub.className="msg";
+  if(val.sender===myId) bub.classList.add("me");
+  else if(val.sender==="_system") bub.classList.add("centerSys");
+  else bub.classList.add("them");
+  bub.innerHTML= val.text||"";
   if(currentType==="group" && val.sender!==myId && val.sender!=="_system"){
-    getDisplayName(val.sender,(nm)=>{
-      b.innerHTML=`<span style="font-weight:bold;">${nm}:</span> ${text}`;
-    });
-  } else {
-    b.innerHTML=text;
+    let cc=getColorClass(val.sender);
+    bub.innerHTML=`<span class="${cc}" style="font-weight:bold;">${val.sender}:</span> `+bub.innerHTML;
   }
   let rt=document.createElement("span");
   rt.className="reactionTag";
   if(val.reaction) rt.textContent=val.reaction;
-  b.appendChild(rt);
+  bub.appendChild(rt);
 
   let rBar=document.createElement("div");
   rBar.className="reactionBar";
-  ["❤️","👍","😂","😮","😢"].forEach(emo=>{
-    let s=document.createElement("span");
-    s.textContent=emo;
-    s.onclick=(ev)=>{
+  ["❤️","👍","😂","😮","😢"].forEach(r=>{
+    let sp=document.createElement("span");
+    sp.textContent=r;
+    sp.onclick=(ev)=>{
       ev.stopPropagation();
-      applyReaction(mId,emo);
+      applyReaction(mId,r);
       rBar.style.display="none";
     };
-    rBar.appendChild(s);
+    rBar.appendChild(sp);
   });
-  b.appendChild(rBar);
-  b.addEventListener("dblclick",(ev)=>{
+  bub.appendChild(rBar);
+  bub.addEventListener("dblclick",(ev)=>{
     rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
   });
-  b.addEventListener("contextmenu",(ev)=>{
+  bub.addEventListener("contextmenu",(ev)=>{
     ev.preventDefault();
     if(currentType==="group"){
-      db.ref(`groupChats/${currentChat}/createdBy`).once("value",(sn)=>{
-        if(sn.val()===myId){
+      db.ref(`groupChats/${currentChat}/createdBy`).once("value",(snap)=>{
+        if(snap.val()===myId){
           showConfirm("Remove this message?",()=>{
             db.ref(`groupChats/${currentChat}/messages/${mId}`).remove();
             let ex=document.getElementById("msg_"+mId);
-            if(ex)ex.remove();
+            if(ex) ex.remove();
           });
         }
       });
@@ -681,14 +663,14 @@ function createBubble(mId,val,toEnd){
   });
   let ts=document.createElement("div");
   ts.className="timestamp";
-  let t= val.timestamp? new Date(val.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"";
-  ts.textContent=t;
-  b.appendChild(ts);
+  let timeStr= val.timestamp? new Date(val.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}): "";
+  ts.textContent=timeStr;
+  bub.appendChild(ts);
   if(val.sender===myId) ts.classList.add("mineTime");
   else if(val.sender==="_system"){}
   else ts.classList.add("otherTime");
-  if(toEnd) area.appendChild(b); else area.prepend(b);
-  area.scrollTop=area.scrollHeight;
+  if(toEnd) msgA.appendChild(bub); else msgA.prepend(bub);
+  msgA.scrollTop=msgA.scrollHeight;
 }
 function updateBubble(mId,val){
   let b=document.getElementById("msg_"+mId);
@@ -697,38 +679,9 @@ function updateBubble(mId,val){
   if(rt) rt.textContent=val.reaction||"";
 }
 
-// load older
-function loadOlderMessages(){
-  if(!currentChat||!hasMoreOld)return;
-  let btn=document.getElementById("loadMoreBtn");
-  btn.disabled=true;
-  let p=(currentType==="group"?"groupChats":"privateChats")+"/"+currentChat+"/messages";
-  messagesRef.orderByChild("timestamp").endAt(oldestStamp-1).limitToLast(50).once("value",(snap)=>{
-    let data=snap.val()||{};
-    let arr=Object.entries(data).sort((a,b)=>(a[1].timestamp||0)-(b[1].timestamp||0));
-    if(!arr.length){
-      showNotice("No older messages found!");
-      hasMoreOld=false;
-      btn.style.display="none";
-      btn.disabled=false;
-      return;
-    }
-    oldestStamp=arr[0][1].timestamp||oldestStamp;
-    arr.forEach(([mId,mVal])=> createBubble(mId,mVal,false));
-    arr.forEach(([mId,mVal])=> markMsgRead(mId,mVal));
-    if(arr.length<50){
-      hasMoreOld=false;
-      btn.style.display="none";
-    }
-    btn.disabled=false;
-  });
-}
-
-// slash
-let slashCmds=[
-  "/rps","/roll","/vote","/ping","/8ball","/roast","/guessnumber","/ship","/typingrace",
-  "/tod truth","/tod dare","/title",
-  "/cf heads","/cf tails","/coin flip heads","/coin flip tails"
+//** slash commands
+const slashCommands=[
+  "/tod truth","/tod dare","/title","/cf heads","/cf tails","/coin flip heads","/coin flip tails"
 ];
 function slashAutoInput(e){
   let val=e.target.value;
@@ -741,12 +694,13 @@ function slashAutoInput(e){
   let rect=e.target.getBoundingClientRect();
   sc.style.left=(rect.left)+"px";
   sc.style.top=(rect.top-115)+"px";
-  let hits=slashCmds.filter(x=> x.startsWith(val));
+  let hits=slashCommands.filter(c=>c.startsWith(val));
   if(!hits.length){
-    sc.style.display="none"; 
+    sc.style.display="none";
     return;
   }
-  hits.slice(0,8).forEach(h=>{
+  sc.style.display="block";
+  hits.forEach(h=>{
     let b=document.createElement("button");
     b.textContent=h;
     b.onclick=()=>{
@@ -755,7 +709,6 @@ function slashAutoInput(e){
     };
     sc.appendChild(b);
   });
-  sc.style.display="block";
 }
 function sendMessage(){
   if(!currentChat||currentType==="help")return;
@@ -769,21 +722,28 @@ function sendMessage(){
     return;
   }
   let friendName=document.getElementById("chatTitle").textContent;
-  if(currentType==="private"&&blocked[friendName]){
+  if(currentType==="private" && blocked[friendName]){
     showNotice("You blocked them. Unblock first!");
     return;
   }
   let p=(currentType==="group"?"groupChats":"privateChats")+"/"+currentChat+"/messages";
   db.ref(p).push({
-    sender:myId, text:txt, timestamp:Date.now(), reaction:"", readBy:{[myId]:Date.now()}
+    sender:myId, text:txt, timestamp:Date.now(), reaction:"",
+    readBy:{[myId]:Date.now()}
   });
   inp.value="";
   document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
 }
-
-// T/D
-let bigTruths=["What's your biggest fear?","Have you stolen from someone?","Ever cheated in a game?"];
-let bigDares=["Dance silly for 10s","Pretend to be a dog","Sing ABC like Opera"];
+let bigTruths=[
+  "What's your biggest fear?",
+  "Have you told a lie to your best friend?",
+  "What was your weirdest dream?",
+];
+let bigDares=[
+  "Dance like a robot for 15 seconds.",
+  "Talk in a baby voice for next 3 messages.",
+  "Pretend to be an alien for 10 seconds.",
+];
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
     let j=Math.floor(Math.random()*(i+1));
@@ -791,142 +751,35 @@ function shuffle(arr){
   }
 }
 shuffle(bigTruths); shuffle(bigDares);
-function nextTruth(){ let x=bigTruths.shift(); bigTruths.push(x); return x;}
-function nextDare(){ let x=bigDares.shift(); bigDares.push(x); return x;}
-
-// categories for typing race
-let wordsMix=["code","banana","random","frog","purple","keyboard","magnet","whisper","taco","silver","phone","moon","sun","tree","water"];
-let wordsAny=["qw12","abc","9999","haha","zzzy","abc123","qwert","lol9","test5","ghgh"];
-let sentencesBank=[
-  "I love unblocked games at school!",
-  "Bananas are the best fruit ever.",
-  "The quick brown fox jumps over the lazy dog.",
-  "Hello world, we are typing fast!",
-  "Coding is fun with friends."
-];
-function processTypingRace(cat="mix", lines=1){
-  let linesArray=[];
-  if(cat==="sentences"){
-    for(let i=0;i<lines;i++){
-      let idx=Math.floor(Math.random()*sentencesBank.length);
-      linesArray.push(sentencesBank[idx]);
-    }
-  } else if(cat==="anything"){
-    for(let i=0;i<lines;i++){
-      let line=[];
-      for(let j=0;j<5;j++){
-        let w=wordsAny[Math.floor(Math.random()*wordsAny.length)];
-        line.push(w);
-      }
-      linesArray.push(line.join(" "));
-    }
-  } else {
-    // mix
-    for(let i=0;i<lines;i++){
-      let line=[];
-      for(let j=0;j<5;j++){
-        let w=wordsMix[Math.floor(Math.random()*wordsMix.length)];
-        line.push(w);
-      }
-      linesArray.push(line.join(" "));
-    }
-  }
-  sendSystemMessage(`[TypingRace] Type EXACTLY the following line(s). Everyone see the same prompt:\n${linesArray.join("\n")}\n(We do not fully implement winner logic, but the prompt is the same for all).`);
+function nextTruth(){
+  let x=bigTruths.shift(); bigTruths.push(x); return x;
 }
-
-// partial rps logic
-function processRPS(ch){
-  if(!ch) return showNotice("Usage: /rps rock|paper|scissors");
-  sendSystemMessage(`[RPS] ${displayName} chose ${ch}. Another user do "/rps paper" to respond. (Partial)`);
+function nextDare(){
+  let x=bigDares.shift(); bigDares.push(x); return x;
 }
-
 function processSlashCommand(cmd){
   let parts=cmd.split(" ");
-  let slash=parts[0].toLowerCase();
-  if(slash==="/rps"){
-    let choice=(parts[1]||"").toLowerCase();
-    processRPS(choice);
-  }
-  else if(slash==="/roll"){
-    let sides=parseInt(parts[1],10)||6;
-    let r=Math.floor(Math.random()*sides)+1;
-    sendSystemMessage(`:game_die: Rolled a ${sides}-sided die: ${r}`);
-  }
-  else if(slash==="/vote"|| slash==="/poll"){
-    let rest=cmd.slice(slash.length).trim();
-    let ps=rest.split("|").map(x=>x.trim());
-    if(ps.length<2)return showNotice("Usage: /vote question | opt1 | opt2");
-    let q=ps[0];
-    let opts=ps.slice(1);
-    let msg=`Vote: ${q}\n`;
-    opts.forEach(o=> msg+=`- ${o}\n`);
-    sendSystemMessage(msg);
-  }
-  else if(slash==="/ping"){
-    let t0=Date.now();
-    db.ref("pingTest").set({time:t0},()=>{
-      let dt=Date.now()-t0;
-      sendSystemMessage(`Ping: ${dt}ms`);
-    });
-  }
-  else if(slash==="/8ball"){
-    let q=cmd.slice(6).trim();
-    if(!q)return showNotice("Usage: /8ball question");
-    let answers=["Yes","No","Ask again later","Definitely not","Likely","Never","Of course!"];
-    let ro=answers[Math.floor(Math.random()*answers.length)];
-    sendSystemMessage(`8ball: ${ro}`);
-  }
-  else if(slash==="/roast"){
-    let roasts=[
-      "You're the reason the internet has a delete button.",
-      "If you were any slower, you'd be going backward.",
-      "You're like a cloud. When you disappear, it's a beautiful day.",
-      "I'd explain it to you, but I don't have the crayons.",
-      "Your jokes make onions cry."
-    ];
-    let rr=roasts[Math.floor(Math.random()*roasts.length)];
-    sendSystemMessage(`Roast: ${rr}`);
-  }
-  else if(slash==="/guessnumber"){
-    let n=parseInt(parts[1],10)||0;
-    sendSystemMessage(`[GuessNumber] Secret chosen from 1-10 by ${displayName}. Another user /guess # to guess. (Partial).`);
-  }
-  else if(slash==="/ship"){
-    let name=parts[1]||"";
-    if(!name)return showNotice("Usage: /ship [name]");
-    let merged=shipNames(displayName,name);
-    sendSystemMessage(`Ship: You and ${name} => ${merged} :cupid:`);
-  }
-  else if(slash==="/typingrace"){
-    // /typingrace cat lines
-    let cat=(parts[1]||"mix").toLowerCase();
-    let ln=parseInt(parts[2],10)||1;
-    processTypingRace(cat,ln);
-  } else if(slash==="/tod"){
-    if(parts[1]==="truth") sendSystemMessage(`Truth: ${nextTruth()}`);
-    else if(parts[1]==="dare") sendSystemMessage(`Dare: ${nextDare()}`);
+  let slash=parts[0];
+  if(slash==="/tod"){
+    if(parts[1]==="truth") sendSystemMessage(nextTruth());
+    else if(parts[1]==="dare") sendSystemMessage(nextDare());
     else showNotice("Usage: /tod truth or /tod dare");
-  }
-  else if(slash==="/title"){
-    let txt=parts.slice(1).join(" ");
-    if(!txt)return showNotice("Usage: /title something");
-    sendSystemMessage(`<< ${txt} >>`);
-  }
-  else if(slash==="/cf"|| slash==="/coin"){
+  } else if(slash==="/title"){
+    let text=parts.slice(1).join(" ");
+    if(!text){showNotice("Usage: /title something");return;}
+    sendSystemMessage(`<< ${text} >>`);
+  } else if(slash==="/cf"|| slash==="/coin"){
     let guess="";
     if(slash==="/cf") guess=parts[1]||"";
     else if(parts[1]==="flip") guess=parts[2]||"";
     guess=guess.toLowerCase();
-    if(guess!=="heads"&&guess!=="tails"){ showNotice("Usage: /cf heads or /coin flip heads/tails");return;}
-    let side=Math.random()<0.5?"heads":"tails";
-    sendSystemMessage(`Coinflip: ${side} => ${displayName} wins (${side})`);
-  }
-  else showNotice(`Unknown command: ${cmd}`);
-}
-function shipNames(n1,n2){
-  let mid1=Math.floor(n1.length/2);
-  let mid2=Math.floor(n2.length/2);
-  return n1.slice(0,mid1)+ n2.slice(mid2);
+    if(guess!=="heads"&&guess!=="tails"){
+      showNotice("Usage: /cf heads/tails or /coin flip heads/tails");
+      return;
+    }
+    let side=Math.random()<0.5? "heads":"tails";
+    sendSystemMessage(`${side} wins!`);
+  } else showNotice(`Unknown command: ${cmd}`);
 }
 function sendSystemMessage(txt){
   if(!currentChat||currentType==="help")return;
@@ -934,103 +787,14 @@ function sendSystemMessage(txt){
   db.ref(p).push({sender:"_system", text:txt, timestamp:Date.now(), reaction:"", readBy:{}});
 }
 
-// typing watchers
-function sendTyping(){
+//** reaction
+function applyReaction(mId,r){
   if(!currentChat||currentType==="help")return;
   let p=(currentType==="group"?"groupChats":"privateChats");
-  db.ref(`${p}/${currentChat}/typing`).set(displayName);
-  setTimeout(()=>db.ref(`${p}/${currentChat}/typing`).set(""),2000);
-}
-function attachTypingListener(){
-  if(!currentChat||currentType==="help")return;
-  let p=(currentType==="group"?"groupChats":"privateChats");
-  db.ref(`${p}/${currentChat}/typing`).off();
-  db.ref(`${p}/${currentChat}/typing`).on("value",(snap)=>{
-    let val=snap.val();
-    let t=document.getElementById("typingIndicator");
-    if(val && val!==displayName){
-      t.style.display="block";
-      t.textContent=`${val} is typing...`;
-    } else t.style.display="none";
-  });
+  db.ref(`${p}/${currentChat}/messages/${mId}/reaction`).set(r);
 }
 
-// open settings => rename => old name track
-function openSettings(){
-  let mo=document.createElement("div");
-  mo.className="modal";
-  mo.innerHTML=`
-    <div class="modalContent" style="min-width:320px;">
-      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-      <h3>Settings</h3>
-      <label>Display Name:</label><br/>
-      <input id="editName" value="${displayName}"/><br/>
-      <label>Password (friend key optional):</label><br/>
-      <input id="editPass" value="${pass}"/><br/>
-      <button id="saveSetBtn">Save</button>
-      <hr/>
-      <button id="logoutBtn" style="background:darkred;">Log Out</button>
-    </div>
-  `;
-  document.body.appendChild(mo);
-  mo.style.display="flex";
-  mo.addEventListener("click",(ev)=>{
-    if(ev.target===mo)document.body.removeChild(mo);
-  });
-  mo.querySelector("#saveSetBtn").onclick=()=>{
-    let n=mo.querySelector("#editName").value.trim();
-    let p=mo.querySelector("#editPass").value.trim();
-    if(!n){ showNotice("Name can't be empty!");return;}
-    db.ref("displayNames/"+n).once("value",(snap)=>{
-      let val=snap.val();
-      if(val && val!==myId){
-        showNotice("That name is used by another device. Try something else.");
-        return;
-      }
-      let old=displayName;
-      displayName=n; pass=p;
-      localStorage.setItem("displayName",n);
-      localStorage.setItem("pass",p);
-      trackOldName(old,n);
-      db.ref("displayNames/"+n).set(myId);
-      db.ref(`users/${myId}/displayName`).set(n);
-      showNotice("Settings saved!");
-      document.body.removeChild(mo);
-    });
-  };
-  mo.querySelector("#logoutBtn").onclick=()=>{
-    showConfirm("Are you sure to log out?",()=>{
-      localStorage.removeItem("myDeviceId");
-      localStorage.removeItem("displayName");
-      localStorage.removeItem("pass");
-      location.reload();
-    });
-  };
-}
-
-// toggling emoji
-function toggleEmojiPicker(){
-  let ep=document.getElementById("emojiPicker");
-  if(ep.style.display==="flex"){
-    ep.style.display="none";
-    return;
-  }
-  ep.innerHTML="";
-  ep.style.display="flex";
-  let bigEm=[... "😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑🙄😯😦😧😮😲🥱😴😪😵😵‍💫😷🤒🤕🤢🤮🤧😇😈👿👻💀☠️👽🤖🎃😺😸😹😻😼😽🙀😿😾"];
-  bigEm.forEach(em=>{
-    let s=document.createElement("span");
-    s.textContent=em;
-    s.onclick=()=>{
-      let inp=document.getElementById("msgInput");
-      inp.value+=em;
-      ep.style.display="none";
-    };
-    ep.appendChild(s);
-  });
-}
-
-// friend add
+//** add friend by name
 function addFriendUI(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -1038,35 +802,38 @@ function addFriendUI(){
     <div class="modalContent" style="min-width:300px;">
       <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
       <h3>Add Friend by Name</h3>
-      <input id="friendNameInput" placeholder="Friend's name"/><br/>
+      <input id="friendNameInput" placeholder="Friend's display name"/><br/>
       <button id="friendSendBtn">Send Request</button>
     </div>
   `;
   document.body.appendChild(mo);
   mo.style.display="flex";
   mo.addEventListener("click",(ev)=>{
-    if(ev.target===mo)document.body.removeChild(mo);
+    if(ev.target===mo) document.body.removeChild(mo);
   });
   mo.querySelector("#friendSendBtn").onclick=()=>{
-    let name=mo.querySelector("#friendNameInput").value.trim();
-    if(!name)return showNotice("No name typed!");
-    if(name===displayName)return showNotice("Can't friend yourself!");
-    if(blocked[name])return showNotice("You blocked them!");
-    db.ref("displayNames/"+name).once("value",(snap)=>{
-      let dev=snap.val();
-      if(!dev)return showNotice(`No user named ${name} found!`);
-      if(friends[name])return showNotice(`Already friends with ${name}!`);
-      db.ref(`users/${myId}/requestsSent/${name}`).once("value",(s2)=>{
-        if(s2.exists())return showNotice("Already pending request!");
+    let n=mo.querySelector("#friendNameInput").value.trim();
+    if(!n){ showNotice("No name typed!");return; }
+    if(n===displayName){ showNotice("Can't friend yourself!"); return; }
+    if(blocked[n]){ showNotice("You blocked them. Unblock first!"); return; }
+    db.ref("displayNames/"+n).once("value",(sn)=>{
+      let dev=sn.val();
+      if(!dev){ showNotice(`No user named ${n} found!`); return; }
+      if(friends[n]){ showNotice(`You're already friends with ${n}!`); return; }
+      db.ref(`users/${myId}/requestsSent/${n}`).once("value",(s2)=>{
+        if(s2.exists()){ showNotice("Already pending request."); return; }
+        // send
         db.ref(`users/${dev}/requests/${displayName}`).set({requested:true});
-        db.ref(`users/${myId}/requestsSent/${name}`).set(true);
+        db.ref(`users/${myId}/requestsSent/${n}`).set(true);
         db.ref(`privateChats/${[myId,dev].sort().join("_")}`).set({});
-        showNotice(`Friend request sent to ${name}`);
+        showNotice(`Request sent to ${n}`);
         document.body.removeChild(mo);
       });
     });
   };
 }
+
+//** open friends
 function openFriendsPanel(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -1080,24 +847,22 @@ function openFriendsPanel(){
   document.body.appendChild(mo);
   mo.style.display="flex";
   mo.addEventListener("click",(ev)=>{
-    if(ev.target===mo) document.body.removeChild(mo);
+    if(ev.target===mo)document.body.removeChild(mo);
   });
   let fl=mo.querySelector("#frList");
-  if(!friends||!Object.keys(friends).length){
+  if(!friends|| !Object.keys(friends).length){
     fl.textContent="No friends yet!";
   } else {
     Object.keys(friends).forEach(n=>{
       let d=document.createElement("div");
-      d.style.background="var(--chat-bg)";
-      d.style.padding="8px"; d.style.marginBottom="8px";
-      d.style.borderRadius="6px";
-      d.textContent=`Name: ${n}`;
+      d.style.background="var(--chat-bg)"; d.style.padding="8px"; d.style.marginBottom="8px";
+      d.style.borderRadius="6px"; d.textContent=`Name: ${n}`;
       fl.appendChild(d);
     });
   }
 }
 
-// group create/join etc
+//** group creation etc
 function showAddChatPanel(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -1116,19 +881,204 @@ function showAddChatPanel(){
     if(ev.target===mo) document.body.removeChild(mo);
   });
 }
-function showCreatePanel(){/* same approach */}
-function showJoinPanel(){/* same approach */}
-function showPublicDirectory(){/* same approach */}
+function showCreatePanel(){
+  // same approach
+  let mo=document.createElement("div");
+  mo.className="modal";
+  mo.innerHTML=`
+    <div class="modalContent" style="min-width:300px;">
+      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+      <h3>Create Group</h3>
+      <input id="groupName" placeholder="Group Name"/><br/>
+      <select id="groupType">
+        <option value="open">Open</option>
+        <option value="password">Password</option>
+        <option value="invite">Invite Only</option>
+      </select><br/>
+      <input id="groupPassword" placeholder="Password (optional)"/><br/>
+      <button id="createGroupBtn">Create</button>
+    </div>
+  `;
+  document.body.appendChild(mo);
+  mo.style.display="flex";
+  mo.addEventListener("click",(e)=>{
+    if(e.target===mo) document.body.removeChild(mo);
+  });
+  mo.querySelector("#createGroupBtn").onclick=()=>{
+    let nm=mo.querySelector("#groupName").value.trim();
+    let ty=mo.querySelector("#groupType").value;
+    let pw=mo.querySelector("#groupPassword").value.trim();
+    if(!nm){ showNotice("No group name!"); return; }
+    let gid="group_"+Date.now();
+    let members={}; members[myId]=true;
+    db.ref(`groupChats/${gid}`).set({name:nm,type:ty,password:pw,createdBy:myId,members});
+    db.ref(`users/${myId}/chats/${gid}`).set({name:nm,type:"group",last:Date.now()});
+    document.body.removeChild(mo);
+    openChat(gid,nm,"group");
+  };
+}
+function showJoinPanel(){
+  let mo=document.createElement("div");
+  mo.className="modal";
+  mo.innerHTML=`
+    <div class="modalContent" style="min-width:300px;">
+      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+      <h3>Join Group Chat</h3>
+      <input id="joinGroupID" placeholder="Group ID"/><br/>
+      <input id="joinGroupPassword" placeholder="Password (if needed)"/><br/>
+      <button id="joinGroupBtn">Join</button>
+    </div>
+  `;
+  document.body.appendChild(mo);
+  mo.style.display="flex";
+  mo.addEventListener("click",(e)=>{
+    if(e.target===mo)document.body.removeChild(mo);
+  });
+  mo.querySelector("#joinGroupBtn").onclick=()=>{
+    let id=mo.querySelector("#joinGroupID").value.trim();
+    let pw=mo.querySelector("#joinGroupPassword").value.trim();
+    if(!id){ showNotice("No group ID typed!");return;}
+    db.ref("groupChats/"+id).once("value",(snap)=>{
+      let g=snap.val();
+      if(!g){ showNotice("Group not found!");return;}
+      if(g.type==="password"&&g.password!==pw){ showNotice("Wrong password!");return;}
+      if(g.type==="invite"&&!(g.members&&g.members[myId])){ showNotice("Not invited!");return;}
+      db.ref(`groupChats/${id}/members/${myId}`).set(true);
+      db.ref(`users/${myId}/chats/${id}`).set({name:g.name,type:"group",last:Date.now()});
+      document.body.removeChild(mo);
+      openChat(id,g.name,"group");
+    });
+  };
+}
+function showPublicDirectory(){
+  let mo=document.createElement("div");
+  mo.className="modal";
+  mo.innerHTML=`
+    <div class="modalContent">
+      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+      <h3>Open Groups</h3>
+      <div id="publicList" style="max-height:200px;overflow:auto;"></div>
+    </div>
+  `;
+  document.body.appendChild(mo);
+  mo.style.display="flex";
+  mo.addEventListener("click",(e)=>{
+    if(e.target===mo) document.body.removeChild(mo);
+  });
+  db.ref("groupChats").once("value",(snap)=>{
+    let data=snap.val()||{};
+    let pl=mo.querySelector("#publicList");
+    pl.innerHTML="";
+    Object.entries(data).forEach(([gid,g])=>{
+      if(g.type==="open"){
+        let b=document.createElement("button");
+        b.textContent=`${g.name} (${gid})`;
+        b.onclick=()=>{
+          db.ref(`groupChats/${gid}/members/${myId}`).set(true);
+          db.ref(`users/${myId}/chats/${gid}`).set({name:g.name,type:"group",last:Date.now()});
+          document.body.removeChild(mo);
+          openChat(gid,g.name,"group");
+        };
+        pl.appendChild(b);
+        pl.appendChild(document.createElement("br"));
+      }
+    });
+  });
+}
 
-console.log("Final code with friend requests, /typingrace shared prompt, everything fully bug-checked!");
+//** sending typing
+function sendTyping(){
+  if(!currentChat||currentType==="help")return;
+  let p=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${p}/${currentChat}/typing`).set(displayName);
+  setTimeout(()=> db.ref(`${p}/${currentChat}/typing`).set(""),2000);
+}
+function attachTypingListener(){
+  if(!currentChat||currentType==="help")return;
+  let p=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${p}/${currentChat}/typing`).off();
+  db.ref(`${p}/${currentChat}/typing`).on("value",(snap)=>{
+    let val=snap.val();
+    let t=document.getElementById("typingIndicator");
+    if(val && val!==displayName){
+      t.style.display="block";
+      t.textContent=`${val} is typing...`;
+    } else t.style.display="none";
+  });
+}
+
+//** color classes
+let colorMap={};
+function getColorClass(u){
+  if(!colorMap[u]){
+    let c=["nameColor1","nameColor2","nameColor3","nameColor4","nameColor5"];
+    colorMap[u]=c[Math.floor(Math.random()*c.length)];
+  }
+  return colorMap[u];
+}
+
+//** open settings => logout
+function openSettings(){
+  let mo=document.createElement("div");
+  mo.className="modal";
+  mo.innerHTML=`
+    <div class="modalContent" style="min-width:320px;">
+      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+      <h3>Settings</h3>
+      <label>Display Name:</label><br/>
+      <input id="editName" value="${displayName}"/><br/>
+      <label>Password (optional for friend requests):</label><br/>
+      <input id="editPass" value="${pass}"/><br/>
+      <button id="saveSetBtn">Save</button>
+      <hr/>
+      <button id="logoutBtn" style="background:darkred;">Log Out</button>
+    </div>
+  `;
+  document.body.appendChild(mo);
+  mo.style.display="flex";
+  mo.addEventListener("click",(e)=>{
+    if(e.target===mo) document.body.removeChild(mo);
+  });
+  mo.querySelector("#saveSetBtn").onclick=()=>{
+    let newN=mo.querySelector("#editName").value.trim();
+    let newP=mo.querySelector("#editPass").value.trim();
+    if(!newN){ showNotice("Name can't be empty!"); return; }
+    db.ref("displayNames/"+newN).once("value",(snap)=>{
+      let val=snap.val();
+      if(val && val!==myId){
+        showNotice("That name is used by another device. Try another name.");
+        return;
+      }
+      displayName=newN; pass=newP;
+      localStorage.setItem("displayName",newN);
+      localStorage.setItem("pass",newP);
+      db.ref("displayNames/"+newN).set(myId);
+      db.ref(`users/${myId}/displayName`).set(newN);
+      showNotice("Settings saved!");
+      document.body.removeChild(mo);
+    });
+  };
+  mo.querySelector("#logoutBtn").onclick=()=>{
+    showConfirm("Are you sure to log out?",()=>{
+      localStorage.removeItem("myDeviceId");
+      localStorage.removeItem("displayName");
+      localStorage.removeItem("pass");
+      location.reload();
+    });
+  };
+}
+
+//** done
+console.log("All code loaded. Full with older messages loading, read receipts on open, improved help info, etc.");
 </script>
 
+<!-- LOGIN UI -->
 <div id="login" style="display:flex;">
-  <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
+  <div style="background:var(--chat-bg);padding:20px;border-radius:10px;position:relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
-    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
-    <label>Password (friend key optional):</label><br/>
+    <input id="username" placeholder="Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
+    <label>Password (optional, friend requests):</label><br/>
     <div style="display:flex;">
       <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
       <button onclick="toggleLoginPass()">👁️</button>
@@ -1137,6 +1087,7 @@ console.log("Final code with friend requests, /typingrace shared prompt, everyth
   </div>
 </div>
 
+<!-- MAIN APP UI -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <button onclick="openFriendsPanel()">Friends</button>
@@ -1171,17 +1122,19 @@ console.log("Final code with friend requests, /typingrace shared prompt, everyth
   </div>
 </div>
 
+<!-- Link to your site. -->
 <div id="staticMenu">
   <a href="https://sites.google.com/view/staticquasar931" target="_blank" class="staticLink">More Unblocked Games by Static</a>
 </div>
 
-<!-- Example DB rules:
+<!-- Potential DB rules:
 {
-  "rules":{
-    ".read":true,".write":true,
-    "users":{"$did":{".read":true,".write":true}},
-    "privateChats":{"$cid":{".read":true,".write":true}},
-    "groupChats":{"$gid":{".read":true,".write":true}},
+  "rules": {
+    ".read":true,
+    ".write":true,
+    "users":{"$devId":{".read":true,".write":true}},
+    "privateChats":{"$chatId":{".read":true,".write":true}},
+    "groupChats":{"$chatId":{".read":true,".write":true}},
     "displayNames":{"$name":{".read":true,".write":true}}
   }
 }

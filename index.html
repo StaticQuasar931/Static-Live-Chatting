@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Static Live Chat</title>
-  <!-- Firebase Scripts (using compat libraries) -->
+  <!-- Firebase Scripts (compat libraries) -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;       /* your messages */
-      --bubble-from: #444;        /* others' messages */
+      --bubble-to: #1e90ff;
+      --bubble-from: #444;
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -351,7 +351,6 @@
   function showNotice(msg) { alert(msg); }
   function showConfirm(msg, callback) { if (confirm(msg)) callback(); }
   
-  // Simple debounce to reduce frequent UI updates
   function debounce(func, delay) {
     let timeoutId;
     return function(...args) {
@@ -504,38 +503,264 @@
     });
   }
   
-  // ----- Theming -----
-  function applyTheme() {
-    const themes = ["dark", "light", "blue", "green", "pink", "purple"];
-    const saved = localStorage.getItem("theme") || "dark";
-    document.body.classList.remove(...themes);
-    if (saved !== "dark") document.body.classList.add(saved);
-    setThemeLabel(saved);
-  }
-  function toggleTheme() {
-    const themes = ["dark", "light", "blue", "green", "pink", "purple"];
-    const current = themes.find(t => document.body.classList.contains(t)) || "dark";
-    const idx = themes.indexOf(current);
-    const next = themes[(idx + 1) % themes.length];
-    document.body.classList.remove(...themes);
-    if (next !== "dark") document.body.classList.add(next);
-    localStorage.setItem("theme", next);
-    setThemeLabel(next);
-  }
-  function setThemeLabel(lab) {
-    document.getElementById("themeBtn").textContent = `${lab}: Theme`;
+  // ----- Friends & Chat Panels (Fully Implemented) -----
+  function openFriendsPanel() {
+    const mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-height:400px; overflow:auto; min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Your Friends</h3>
+        <div id="frList"></div>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.addEventListener("click", ev => { if (ev.target === mo) document.body.removeChild(mo); });
+    const fl = mo.querySelector("#frList");
+    if (!friends || !Object.keys(friends).length) {
+      fl.textContent = "No friends yet!";
+    } else {
+      Object.keys(friends).forEach(n => {
+        const d = document.createElement("div");
+        d.style.background = "var(--chat-bg)";
+        d.style.padding = "8px";
+        d.style.marginBottom = "8px";
+        d.style.borderRadius = "6px";
+        d.textContent = n;
+        const btn = document.createElement("button");
+        btn.textContent = "...";
+        btn.style.marginLeft = "10px";
+        btn.onclick = ev => { ev.stopPropagation(); };
+        // Friend options menu near the dots
+        const menu = document.createElement("div");
+        menu.className = "friendMenu";
+        const openBtn = document.createElement("button");
+        openBtn.textContent = "Open Chat";
+        openBtn.onclick = () => {
+          db.ref("displayNames/" + n).once("value", snap => {
+            const dev = snap.val();
+            if (!dev) { showNotice("User not found!"); return; }
+            const cid = [myId, dev].sort().join("_");
+            db.ref("privateChats/" + cid).once("value", snap2 => {
+              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
+            });
+            db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
+            openChat(cid, n, "private");
+          });
+          menu.style.display = "none";
+        };
+        menu.appendChild(openBtn);
+        const unfriendBtn = document.createElement("button");
+        unfriendBtn.textContent = "Unfriend";
+        unfriendBtn.onclick = () => {
+          showConfirm("Unfriend " + n + "?", () => {
+            db.ref("users/" + myId + "/friends/" + n).remove();
+            db.ref("displayNames/" + n).once("value", snap => {
+              const dev = snap.val();
+              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
+            });
+            showNotice("Unfriended " + n);
+            document.body.removeChild(mo);
+          });
+          menu.style.display = "none";
+        };
+        menu.appendChild(unfriendBtn);
+        d.appendChild(btn);
+        d.appendChild(menu);
+        btn.onclick = ev => {
+          ev.stopPropagation();
+          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+          const rect = btn.getBoundingClientRect();
+          menu.style.left = rect.left + "px";
+          menu.style.top = (rect.bottom + 2) + "px";
+        };
+        fl.appendChild(d);
+      });
+    }
   }
   
-  // ----- Stub Functions for Friends & Group Chat Panels -----
-  // You can later expand these functions as needed.
-  function openFriendsPanel() {
-    alert("Open Friends Panel (stub)");
-  }
   function addFriendUI() {
-    alert("Add Friend UI (stub)");
+    const mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Add Friend by Name</h3>
+        <input id="friendNameInput" placeholder="Friend's display name"/><br/>
+        <button id="friendSendBtn">Send Request</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.addEventListener("click", ev => { if (ev.target === mo) document.body.removeChild(mo); });
+    mo.querySelector("#friendSendBtn").onclick = () => {
+      const friendName = mo.querySelector("#friendNameInput").value.trim();
+      if (!friendName) { showNotice("Please enter a name."); return; }
+      if (friendName === displayName) { showNotice("You cannot friend yourself."); return; }
+      if (blocked[friendName]) { showNotice("Unblock the user first."); return; }
+      db.ref("displayNames/" + friendName).once("value", snap => {
+        const dev = snap.val();
+        if (!dev) { showNotice("No user with that name found."); return; }
+        db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
+        db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
+        db.ref("privateChats/" + [myId, dev].sort().join("_")).set({});
+        showNotice("Friend request sent to " + friendName);
+        document.body.removeChild(mo);
+      });
+    };
   }
+  
   function showAddChatPanel() {
-    alert("Show Add Chat Panel (stub)");
+    const mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:320px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Add Chat</h3>
+        <button id="createGroupBtn">Create Group Chat</button><br/>
+        <button id="joinGroupBtn">Join Group Chat</button><br/>
+        <button id="openGroupsBtn">Open Public Groups</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.addEventListener("click", ev => { if (ev.target === mo) document.body.removeChild(mo); });
+    mo.querySelector("#createGroupBtn").onclick = () => {
+      createGroupChat();
+      document.body.removeChild(mo);
+    };
+    mo.querySelector("#joinGroupBtn").onclick = () => {
+      joinGroupChat();
+      document.body.removeChild(mo);
+    };
+    mo.querySelector("#openGroupsBtn").onclick = () => {
+      openPublicGroups();
+      document.body.removeChild(mo);
+    };
+  }
+  
+  // ----- Group Chat Functions -----
+  function createGroupChat() {
+    const mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:320px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Create Group Chat</h3>
+        <label>Group Name:</label><br/>
+        <input id="groupName" placeholder="Group Name"/><br/>
+        <label>Type:</label><br/>
+        <select id="groupType">
+          <option value="open">Open</option>
+          <option value="password">Password</option>
+          <option value="invite">Invite Only</option>
+        </select><br/>
+        <label>Password (if applicable):</label><br/>
+        <input id="groupPass" placeholder="Group Password"/><br/>
+        <button id="createGroupConfirm">Create Group</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#createGroupConfirm").onclick = () => {
+      const name = mo.querySelector("#groupName").value.trim();
+      const type = mo.querySelector("#groupType").value;
+      const password = mo.querySelector("#groupPass").value.trim();
+      if (!name) { showNotice("Group name cannot be empty."); return; }
+      const gid = "group_" + Date.now();
+      const members = {};
+      members[myId] = true;
+      db.ref("groupChats/" + gid).set({
+        name: name,
+        type: type,
+        password: password,
+        createdBy: myId,
+        members: members
+      });
+      db.ref("users/" + myId + "/chats/" + gid).set({ name: name, type: "group", last: Date.now() });
+      showNotice("Group chat created.");
+      document.body.removeChild(mo);
+    };
+  }
+  
+  function joinGroupChat() {
+    const mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:320px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Join Group Chat</h3>
+        <label>Group ID:</label><br/>
+        <input id="joinGroupID" placeholder="Group ID"/><br/>
+        <label>Password (if required):</label><br/>
+        <input id="joinGroupPass" placeholder="Group Password"/><br/>
+        <button id="joinGroupConfirm">Join Group</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#joinGroupConfirm").onclick = () => {
+      const gid = mo.querySelector("#joinGroupID").value.trim();
+      const passInput = mo.querySelector("#joinGroupPass").value.trim();
+      if (!gid) { showNotice("Group ID is required."); return; }
+      db.ref("groupChats/" + gid).once("value", snap => {
+        const group = snap.val();
+        if (!group) { showNotice("Group not found."); return; }
+        if (group.type === "password" && group.password !== passInput) {
+          showNotice("Incorrect password.");
+          return;
+        }
+        if (group.type === "invite" && !group.members[myId]) {
+          showNotice("You are not invited to this group.");
+          return;
+        }
+        db.ref("groupChats/" + gid + "/members/" + myId).set(true);
+        db.ref("users/" + myId + "/chats/" + gid).set({ name: group.name, type: "group", last: Date.now() });
+        showNotice("Joined group " + group.name);
+        document.body.removeChild(mo);
+      });
+    };
+  }
+  
+  function openPublicGroups() {
+    const mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:320px; max-height:300px; overflow:auto;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Public Groups</h3>
+        <div id="publicList"></div>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    db.ref("groupChats").once("value", snap => {
+      const data = snap.val() || {};
+      const list = [];
+      Object.entries(data).forEach(([gid, group]) => {
+        if (group.type === "open") {
+          list.push({ id: gid, name: group.name });
+        }
+      });
+      const pl = mo.querySelector("#publicList");
+      if (!list.length) {
+        pl.textContent = "No public groups available.";
+      } else {
+        list.forEach(group => {
+          const btn = document.createElement("button");
+          btn.textContent = group.name + " (" + group.id + ")";
+          btn.onclick = () => {
+            db.ref("groupChats/" + group.id + "/members/" + myId).set(true);
+            db.ref("users/" + myId + "/chats/" + group.id).set({ name: group.name, type: "group", last: Date.now() });
+            showNotice("Joined group " + group.name);
+            document.body.removeChild(mo);
+            openChat(group.id, group.name, "group");
+          };
+          pl.appendChild(btn);
+        });
+      }
+    });
   }
   
   // ----- Chat & Message Watchers -----
@@ -650,7 +875,6 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Update local "last" without a DB write
         if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
         debouncedUpdateChatListUI(chats);
         debouncedUpdateTitle();

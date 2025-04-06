@@ -15,7 +15,7 @@
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
       --bubble-to: #1e90ff;          /* your messages */
-      --bubble-from: #444;           /* messages from others */
+      --bubble-from: #444;           /* others' messages */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -106,7 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is not a button – it’s available in the chat list */
+    /* No separate Help button – Help chat is in the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -122,12 +122,12 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
-    /* Settings & Theme button container on top right */
+    /* Top-right container for Settings & Theme */
     #topBar .top-right {
       display: flex;
       gap: 5px;
     }
-    /* In group chats, show group name (left) and your display name */
+    /* For group chats: show group name (left) and your name */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -154,11 +154,11 @@
       cursor: pointer;
       box-shadow: var(--shadow-msg);
     }
-    /* "to" messages (your messages) aligned right */
+    /* "to" messages (your messages) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
-    /* "from" messages (other user's messages) aligned left */
+    /* "from" messages (others) left-aligned */
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
-    /* "console" messages (system/command messages) centered */
+    /* "console" messages centered */
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
     .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
@@ -212,7 +212,7 @@
     .chatItem.active { outline: 2px solid var(--accent); }
     .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
     .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
-    /* Friend menu: three-dots options */
+    /* Friend menu: three-dots options appear next to the dots */
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -323,9 +323,7 @@
 </head>
 <body>
 <script>
-  /*******************
-   * Firebase Setup
-   *******************/
+  // Firebase Setup
   if (typeof firebase === "undefined") {
     console.error("Firebase not loaded – check your network.");
     window.firebase = { initializeApp: () => { }, database: () => ({ ref: () => ({ }) }) };
@@ -348,40 +346,32 @@
     db = { ref: () => ({ once: () => { }, on: () => { }, set: () => { }, push: () => ({ }) }) };
   }
   
-  /*******************
-   * Device & User Setup
-   *******************/
+  // Device & User Setup
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
   let myId = localStorage.getItem("myDeviceId");
   if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
   let displayName = localStorage.getItem("displayName") || "";
   let pass = localStorage.getItem("pass") || "";
   
-  /*******************
-   * Global Variables
-   *******************/
+  // Global Variables
   let currentChat = "", currentType = "";
   let messagesRef = null, childAddedRef = null, childChangedRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
   
-  /*******************
-   * On Load Initialization
-   *******************/
+  // On Load Initialization
   window.addEventListener("DOMContentLoaded", () => {
     if (displayName) {
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
       applyTheme();
       loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      // Help Chat is available via chat list
+      // Help Chat is available via chat list.
     }
   });
   
-  /*******************
-   * Login & Settings
-   *******************/
+  // Login & Settings
   function toggleLoginPass() {
     let pw = document.getElementById("password");
     pw.type = (pw.type === "password") ? "text" : "password";
@@ -485,9 +475,7 @@
     });
   }
   
-  /*******************
-   * Theming
-   *******************/
+  // Theming
   function applyTheme() {
     let themes = ["dark", "light", "blue", "green", "pink", "purple"];
     let saved = localStorage.getItem("theme") || "dark";
@@ -509,9 +497,7 @@
     document.getElementById("themeBtn").textContent = `${lab}: Theme`;
   }
   
-  /*******************
-   * Chat & Message Watchers
-   *******************/
+  // Chat & Message Watchers
   function loadRequests() {
     db.ref("users/" + myId + "/requests").on("value", snap => {
       let data = snap.val() || {};
@@ -536,7 +522,6 @@
             db.ref("users/" + myId + "/friends/" + from).set(true);
             db.ref("users/" + dev + "/friends/" + displayName).set(true);
             db.ref("users/" + dev + "/accepted/" + displayName).set(true);
-            // Notify the other user.
             db.ref("privateChats/" + cid + "/messages").push({
               sender: "_system",
               text: `${from} accepted your friend request!`,
@@ -599,6 +584,7 @@
       blocked = snap.val() || {};
     });
   }
+  
   function loadFriends() {
     db.ref("users/" + myId + "/friends").on("value", snap => {
       friends = snap.val() || {};
@@ -745,7 +731,6 @@
     currentChat = cid; currentType = type;
     chatUnread[cid] = 0;
     updateChatListUI({});
-    // For group chats, show group name with your display name in top left.
     if (type === "group") {
       document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
     } else {
@@ -886,9 +871,7 @@
     if (rt) rt.textContent = val.reaction || "";
   }
   
-  /*******************
-   * Typing & Emoji
-   *******************/
+  // Typing & Emoji
   function attachTypingListener() {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
@@ -922,1425 +905,7 @@
     });
   }
   
-  /*******************
-   * Slash Commands & Live Autocomplete
-   *******************/
-  const slashCmds = [
-    "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
-    "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
-    "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
-  ];
-  
-  function slashAutoInput(e) {
-    let val = e.target.value;
-    let sc = document.getElementById("slashAutocomplete");
-    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
-    sc.innerHTML = "";
-    let rect = e.target.getBoundingClientRect();
-    sc.style.left = rect.left + "px";
-    sc.style.top = (rect.top - 115) + "px";
-    let hits = slashCmds.filter(c => c.startsWith(val));
-    if (!hits.length) { sc.style.display = "none"; return; }
-    hits.slice(0, 8).forEach(cmd => {
-      let b = document.createElement("button");
-      b.textContent = cmd;
-      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-      sc.appendChild(b);
-    });
-    sc.style.display = "block";
-  }
-  
-  function sendMessage() {
-    if (!currentChat || currentType === "help") return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if (!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if (txt.startsWith("/")) {
-      processSlashCommand(txt);
-      inp.value = "";
-      return;
-    }
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
-  }
-  
-  function processSlashCommand(cmd) {
-    let parts = cmd.split(" ");
-    let slash = parts[0].toLowerCase();
-    if (slash === "/roll") {
-      let sides = parseInt(parts[1], 10) || 6;
-      let r = Math.floor(Math.random() * sides) + 1;
-      sendSystemMessage(`🎲 Rolled a ${sides}-sided die: ${r}`);
-    }
-    else if (slash === "/ping") {
-      let t0 = Date.now();
-      db.ref("pingTest").set({ time: t0 }, () => {
-        let dt = Date.now() - t0;
-        sendSystemMessage(`Ping: ${dt}ms`);
-      });
-    }
-    else if (slash === "/8ball") {
-      let q = cmd.slice(7).trim();
-      if (!q) { showNotice("Usage: /8ball [question]"); return; }
-      let answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
-      let pick = answers[Math.floor(Math.random() * answers.length)];
-      sendSystemMessage(`8ball: ${pick}`);
-    }
-    else if (slash === "/roast") {
-      let roasts = [
-        "Your code has more bugs than a beehive.",
-        "You're slower than dial-up internet.",
-        "At least your chat is entertaining."
-      ];
-      let pick = roasts[Math.floor(Math.random() * roasts.length)];
-      sendSystemMessage(`Roast: ${pick}`);
-    }
-    else if (slash === "/tod") {
-      if (parts[1] === "truth") {
-        let truths = [
-          "What's your biggest fear?",
-          "Have you ever lied to your best friend?",
-          "What's your most embarrassing moment?"
-        ];
-        let pick = truths[Math.floor(Math.random() * truths.length)];
-        sendSystemMessage(`Truth: ${pick}`);
-      } else if (parts[1] === "dare") {
-        let dares = [
-          "Dance like a robot for 15 seconds.",
-          "Talk in a baby voice for 3 messages.",
-          "Pretend you're an alien for 10 seconds."
-        ];
-        let pick = dares[Math.floor(Math.random() * dares.length)];
-        sendSystemMessage(`Dare: ${pick}`);
-      } else { showNotice("Usage: /tod truth or /tod dare"); }
-    }
-    else if (slash === "/title") {
-      let text = parts.slice(1).join(" ");
-      if (!text) { showNotice("Usage: /title [text]"); return; }
-      sendSystemMessage(`<< ${text} >>`);
-    }
-    else if (slash === "/cf" || slash === "/coin") {
-      let guess = "";
-      if (slash === "/cf") guess = parts[1] || "";
-      else if (parts[1] === "flip") guess = parts[2] || "";
-      guess = guess.toLowerCase();
-      if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
-      let side = Math.random() < 0.5 ? "heads" : "tails";
-      sendSystemMessage(`Coinflip: ${side} => you chose ${guess} => ${side === guess ? "You win!" : "You lose."}`);
-    }
-    else if (slash === "/ship") {
-      let n = parts[1] || "";
-      if (!n) { showNotice("Usage: /ship [name]"); return; }
-      let merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
-      sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
-    }
-    else if (slash === "/typingrace") {
-      // If no option provided, show live options
-      const prompts = [
-        "The quick brown fox jumps over the lazy dog.",
-        "Pack my box with five dozen liquor jugs.",
-        "How vexingly quick daft zebras jump!"
-      ];
-      if (parts.length === 1) {
-        let options = prompts.map((p, i) => `${i+1}: ${p}`);
-        sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
-      } else {
-        let option = parseInt(parts[1], 10);
-        if (isNaN(option) || option < 1 || option > prompts.length) {
-          showNotice("Invalid option. Usage: /typingrace [option number]");
-          return;
-        }
-        let prompt = prompts[option - 1];
-        // Start the typing race game
-        startTypingRaceGame(prompt);
-      }
-    }
-    else {
-      showNotice("Unknown slash command: " + cmd);
-    }
-  }
-  
-  function sendSystemMessage(text) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: "_system",
-      text: text,
-      timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
-    });
-  }
-  
-  /*******************
-   * Typing Race Game (Enhanced)
-   *******************/
-  function startTypingRaceGame(prompt) {
-    let gameId = "type_" + Date.now();
-    db.ref("games/typingrace/" + currentChat + "/" + gameId).set({
-      initiator: myId,
-      prompt: prompt,
-      ready: { [myId]: true },
-      timestamp: Date.now(),
-      status: "pending"
-    });
-    // Show a modal for the opponent to click "I'm Ready" (non-selectable prompt)
-    sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type /typingrace ${gameId} ready to accept.`);
-    // Listen for readiness update
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").on("value", snap => {
-      let ready = snap.val() || {};
-      // If both players are ready, hide the prompt from display
-      if (Object.keys(ready).length >= 2) {
-        sendSystemMessage(`TypingRace [${gameId}] started! Type the hidden prompt exactly to win.`);
-      }
-    });
-    // Set a timeout to cancel game after 60 seconds if not completed
-    setTimeout(() => {
-      db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
-        if (snap.val() === "pending") {
-          db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          sendSystemMessage(`TypingRace [${gameId}] expired.`);
-        }
-      });
-    }, 60000);
-  }
-  
-  // To accept a typing race challenge, the opponent types: /typingrace [gameId] ready
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-  
-  // In your message sending logic, if a message exactly matches the prompt of an active typing race game, declare winner.
-  // (For simplicity, we assume that only one active typing race game exists at a time per chat.)
-  function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
-      let games = snap.val();
-      if (!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
-          // If the typed message matches exactly the prompt
-          if (messageText === game.prompt) {
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  
-  /*******************
-   * Reaction Handling
-   *******************/
-  function applyReaction(mId, emoji) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-    db.ref(path).set(emoji);
-  }
-  
-  /*******************
-   * Friend & Block UI
-   *******************/
-  function addFriendUI() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Friend by Name</h3>
-        <input id="friendNameInput" placeholder="Friend's display name"/><br/>
-        <button id="friendSendBtn">Send Request</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    mo.querySelector("#friendSendBtn").onclick = () => {
-      let n = mo.querySelector("#friendNameInput").value.trim();
-      if (!n) { showNotice("No name typed!"); return; }
-      if (n === displayName) { showNotice("Cannot add yourself!"); return; }
-      if (blocked[n]) { showNotice("User is blocked. Unblock first!"); return; }
-      db.ref("displayNames/" + n).once("value", snap => {
-        let dev = snap.val();
-        if (!dev) { showNotice(`No user named ${n} found!`); return; }
-        if (friends[n]) { showNotice(`You're already friends with ${n}!`); return; }
-        db.ref("users/" + myId + "/requestsSent/" + n).once("value", s2 => {
-          if (s2.exists()) { showNotice("Request already pending."); return; }
-          db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          db.ref("users/" + myId + "/requestsSent/" + n).set(true);
-          let cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).set({});
-          showNotice(`Friend request sent to ${n}.`);
-          document.body.removeChild(mo);
-        });
-      });
-    };
-  }
-  
-  function openFriendsPanel() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Your Friends</h3>
-        <div id="frList"></div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    let fl = mo.querySelector("#frList");
-    if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
-    else {
-      Object.keys(friends).forEach(n => {
-        let d = document.createElement("div");
-        d.style.background = "var(--chat-bg)";
-        d.style.padding = "8px";
-        d.style.marginBottom = "8px";
-        d.style.borderRadius = "6px";
-        d.textContent = n;
-        let dots = document.createElement("span");
-        dots.textContent = "⋮";
-        dots.style.cursor = "pointer";
-        dots.style.position = "relative";
-        let menu = document.createElement("div");
-        menu.className = "friendMenu";
-        let openBtn = document.createElement("button");
-        openBtn.textContent = "Open Chat";
-        openBtn.onclick = () => {
-          db.ref("displayNames/" + n).once("value", snap => {
-            let dev = snap.val();
-            if (!dev) { showNotice("User not found!"); return; }
-            let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).once("value", snap2 => {
-              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
-            });
-            db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
-            openChat(cid, n, "private");
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(openBtn);
-        let unfriendBtn = document.createElement("button");
-        unfriendBtn.textContent = "Unfriend";
-        unfriendBtn.onclick = () => {
-          showConfirm("Unfriend " + n + "?", () => {
-            db.ref("users/" + myId + "/friends/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap2 => {
-              let dev = snap2.val();
-              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
-            });
-            showNotice("Unfriended " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(unfriendBtn);
-        let blockBtn = document.createElement("button");
-        blockBtn.textContent = "Block";
-        blockBtn.onclick = () => {
-          showConfirm("Block " + n + "?", () => {
-            db.ref("users/" + myId + "/blocked/" + n).set(true);
-            showNotice("Blocked " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(blockBtn);
-        dots.onclick = (ev) => {
-          ev.stopPropagation();
-          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-          let rect = dots.getBoundingClientRect();
-          menu.style.left = rect.left + "px";
-          menu.style.top = (rect.bottom + 2) + "px";
-        };
-        d.appendChild(dots);
-        d.appendChild(menu);
-        fl.appendChild(d);
-      });
-    }
-  }
-  
-  /*******************
-   * Help Chat (Read-only)
-   *******************/
-  function setupHelpChat() {
-    db.ref("users/" + myId + "/chats/help_chat").set({ name: "Help (info)", type: "help", last: 0 });
-  }
-  
-  function openHelpChat() {
-    currentChat = "help_chat"; currentType = "help";
-    document.getElementById("chatTitle").textContent = "Help & Info";
-    let msgs = document.getElementById("messages");
-    msgs.innerHTML = "";
-    let big = document.createElement("div");
-    big.className = "msg console";
-    big.innerHTML = `
-      <strong>HELP & INFO</strong><br/>
-      <p>
-        <code>/rps rock|paper|scissors</code><br/>
-        <code>/roll [sides]</code><br/>
-        <code>/ping</code><br/>
-        <code>/8ball [question]</code><br/>
-        <code>/roast</code><br/>
-        <code>/tod truth</code> or <code>/tod dare</code><br/>
-        <code>/title [text]</code><br/>
-        <code>/cf heads</code> or <code>/coin flip tails</code><br/>
-        <code>/ship [name]</code><br/>
-        <code>/guessnumber</code> and <code>/guessnumber [number]</code><br/>
-        <code>/typingrace</code><br/>
-        <code>/vote question|opt1|opt2|...</code><br/>
-        <code>/vote vote [pollId] [option]</code>
-      </p>
-    `;
-    msgs.appendChild(big);
-    document.getElementById("msgInput").disabled = true;
-  }
-  
-  /*******************
-   * Modals (Confirm & Notice)
-   *******************/
-  function showConfirm(msg, yesCb) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Confirm</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:green;" id="yesBtn">Yes</button>
-          <button style="background:red;" id="noBtn">No</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#yesBtn").onclick = () => { document.body.removeChild(mo); yesCb(); };
-    mo.querySelector("#noBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  function showNotice(msg) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Notice</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:var(--accent);" id="okBtn">OK</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#okBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  /*******************
-   * Typing Race Ready Command
-   *******************/
-  // When a player types "/typingrace [gameId] ready", mark them as ready.
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-  
-  /*******************
-   * Message Handler: Check Typing Race Win
-   *******************/
-  // Call this in your sendMessage function if the message doesn't start with a slash.
-  function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
-      let games = snap.val();
-      if (!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
-          if (messageText === game.prompt) {
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  
-  /*******************
-   * Reaction Handling
-   *******************/
-  function applyReaction(mId, emoji) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-    db.ref(path).set(emoji);
-  }
-  
-  /*******************
-   * Friend & Block UI
-   *******************/
-  function addFriendUI() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Friend by Name</h3>
-        <input id="friendNameInput" placeholder="Friend's display name"/><br/>
-        <button id="friendSendBtn">Send Request</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    mo.querySelector("#friendSendBtn").onclick = () => {
-      let n = mo.querySelector("#friendNameInput").value.trim();
-      if (!n) { showNotice("No name typed!"); return; }
-      if (n === displayName) { showNotice("Cannot add yourself!"); return; }
-      if (blocked[n]) { showNotice("User is blocked. Unblock first!"); return; }
-      db.ref("displayNames/" + n).once("value", snap => {
-        let dev = snap.val();
-        if (!dev) { showNotice(`No user named ${n} found!`); return; }
-        if (friends[n]) { showNotice(`You're already friends with ${n}!`); return; }
-        db.ref("users/" + myId + "/requestsSent/" + n).once("value", s2 => {
-          if (s2.exists()) { showNotice("Request already pending."); return; }
-          db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          db.ref("users/" + myId + "/requestsSent/" + n).set(true);
-          let cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).set({});
-          showNotice(`Friend request sent to ${n}.`);
-          document.body.removeChild(mo);
-        });
-      });
-    };
-  }
-  
-  function openFriendsPanel() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Your Friends</h3>
-        <div id="frList"></div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    let fl = mo.querySelector("#frList");
-    if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
-    else {
-      Object.keys(friends).forEach(n => {
-        let d = document.createElement("div");
-        d.style.background = "var(--chat-bg)";
-        d.style.padding = "8px";
-        d.style.marginBottom = "8px";
-        d.style.borderRadius = "6px";
-        d.textContent = n;
-        let dots = document.createElement("span");
-        dots.textContent = "⋮";
-        dots.style.cursor = "pointer";
-        dots.style.position = "relative";
-        let menu = document.createElement("div");
-        menu.className = "friendMenu";
-        let openBtn = document.createElement("button");
-        openBtn.textContent = "Open Chat";
-        openBtn.onclick = () => {
-          db.ref("displayNames/" + n).once("value", snap => {
-            let dev = snap.val();
-            if (!dev) { showNotice("User not found!"); return; }
-            let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).once("value", snap2 => {
-              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
-            });
-            db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
-            openChat(cid, n, "private");
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(openBtn);
-        let unfriendBtn = document.createElement("button");
-        unfriendBtn.textContent = "Unfriend";
-        unfriendBtn.onclick = () => {
-          showConfirm("Unfriend " + n + "?", () => {
-            db.ref("users/" + myId + "/friends/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap2 => {
-              let dev = snap2.val();
-              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
-            });
-            showNotice("Unfriended " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(unfriendBtn);
-        let blockBtn = document.createElement("button");
-        blockBtn.textContent = "Block";
-        blockBtn.onclick = () => {
-          showConfirm("Block " + n + "?", () => {
-            db.ref("users/" + myId + "/blocked/" + n).set(true);
-            showNotice("Blocked " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(blockBtn);
-        dots.onclick = (ev) => {
-          ev.stopPropagation();
-          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-          let rect = dots.getBoundingClientRect();
-          menu.style.left = rect.left + "px";
-          menu.style.top = (rect.bottom + 2) + "px";
-        };
-        d.appendChild(dots);
-        d.appendChild(menu);
-        fl.appendChild(d);
-      });
-    }
-  }
-  
-  /*******************
-   * Help Chat (Read-only)
-   *******************/
-  function setupHelpChat() {
-    db.ref("users/" + myId + "/chats/help_chat").set({ name: "Help (info)", type: "help", last: 0 });
-  }
-  
-  function openHelpChat() {
-    currentChat = "help_chat"; currentType = "help";
-    document.getElementById("chatTitle").textContent = "Help & Info";
-    let msgs = document.getElementById("messages");
-    msgs.innerHTML = "";
-    let big = document.createElement("div");
-    big.className = "msg console";
-    big.innerHTML = `
-      <strong>HELP & INFO</strong><br/>
-      <p>
-        <code>/rps rock|paper|scissors</code><br/>
-        <code>/roll [sides]</code><br/>
-        <code>/ping</code><br/>
-        <code>/8ball [question]</code><br/>
-        <code>/roast</code><br/>
-        <code>/tod truth</code> or <code>/tod dare</code><br/>
-        <code>/title [text]</code><br/>
-        <code>/cf heads</code> or <code>/coin flip tails</code><br/>
-        <code>/ship [name]</code><br/>
-        <code>/guessnumber</code> and <code>/guessnumber [number]</code><br/>
-        <code>/typingrace</code><br/>
-        <code>/vote question|opt1|opt2|...</code><br/>
-        <code>/vote vote [pollId] [option]</code>
-      </p>
-    `;
-    msgs.appendChild(big);
-    document.getElementById("msgInput").disabled = true;
-  }
-  
-  /*******************
-   * Modals (Confirm & Notice)
-   *******************/
-  function showConfirm(msg, yesCb) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Confirm</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:green;" id="yesBtn">Yes</button>
-          <button style="background:red;" id="noBtn">No</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#yesBtn").onclick = () => { document.body.removeChild(mo); yesCb(); };
-    mo.querySelector("#noBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  function showNotice(msg) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Notice</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:var(--accent);" id="okBtn">OK</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#okBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  /*******************
-   * Typing Race Ready Command
-   *******************/
-  // When a player types "/typingrace [gameId] ready", process readiness.
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-  
-  /*******************
-   * Check Typing Race Win
-   *******************/
-  function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
-      let games = snap.val();
-      if (!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
-          if (messageText === game.prompt) {
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  
-  /*******************
-   * Reaction Handling
-   *******************/
-  function applyReaction(mId, emoji) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-    db.ref(path).set(emoji);
-  }
-  
-  /*******************
-   * Friend & Block UI
-   *******************/
-  function addFriendUI() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Friend by Name</h3>
-        <input id="friendNameInput" placeholder="Friend's display name"/><br/>
-        <button id="friendSendBtn">Send Request</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    mo.querySelector("#friendSendBtn").onclick = () => {
-      let n = mo.querySelector("#friendNameInput").value.trim();
-      if (!n) { showNotice("No name typed!"); return; }
-      if (n === displayName) { showNotice("Cannot add yourself!"); return; }
-      if (blocked[n]) { showNotice("User is blocked. Unblock first!"); return; }
-      db.ref("displayNames/" + n).once("value", snap => {
-        let dev = snap.val();
-        if (!dev) { showNotice(`No user named ${n} found!`); return; }
-        if (friends[n]) { showNotice(`You're already friends with ${n}!`); return; }
-        db.ref("users/" + myId + "/requestsSent/" + n).once("value", s2 => {
-          if (s2.exists()) { showNotice("Request already pending."); return; }
-          db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          db.ref("users/" + myId + "/requestsSent/" + n).set(true);
-          let cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).set({});
-          showNotice(`Friend request sent to ${n}.`);
-          document.body.removeChild(mo);
-        });
-      });
-    };
-  }
-  
-  function openFriendsPanel() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Your Friends</h3>
-        <div id="frList"></div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    let fl = mo.querySelector("#frList");
-    if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
-    else {
-      Object.keys(friends).forEach(n => {
-        let d = document.createElement("div");
-        d.style.background = "var(--chat-bg)";
-        d.style.padding = "8px";
-        d.style.marginBottom = "8px";
-        d.style.borderRadius = "6px";
-        d.textContent = n;
-        let dots = document.createElement("span");
-        dots.textContent = "⋮";
-        dots.style.cursor = "pointer";
-        dots.style.position = "relative";
-        let menu = document.createElement("div");
-        menu.className = "friendMenu";
-        let openBtn = document.createElement("button");
-        openBtn.textContent = "Open Chat";
-        openBtn.onclick = () => {
-          db.ref("displayNames/" + n).once("value", snap => {
-            let dev = snap.val();
-            if (!dev) { showNotice("User not found!"); return; }
-            let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).once("value", snap2 => {
-              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
-            });
-            db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
-            openChat(cid, n, "private");
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(openBtn);
-        let unfriendBtn = document.createElement("button");
-        unfriendBtn.textContent = "Unfriend";
-        unfriendBtn.onclick = () => {
-          showConfirm("Unfriend " + n + "?", () => {
-            db.ref("users/" + myId + "/friends/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap2 => {
-              let dev = snap2.val();
-              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
-            });
-            showNotice("Unfriended " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(unfriendBtn);
-        let blockBtn = document.createElement("button");
-        blockBtn.textContent = "Block";
-        blockBtn.onclick = () => {
-          showConfirm("Block " + n + "?", () => {
-            db.ref("users/" + myId + "/blocked/" + n).set(true);
-            showNotice("Blocked " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(blockBtn);
-        dots.onclick = (ev) => {
-          ev.stopPropagation();
-          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-          let rect = dots.getBoundingClientRect();
-          menu.style.left = rect.left + "px";
-          menu.style.top = (rect.bottom + 2) + "px";
-        };
-        d.appendChild(dots);
-        d.appendChild(menu);
-        fl.appendChild(d);
-      });
-    }
-  }
-  
-  /*******************
-   * Help Chat (Read-only)
-   *******************/
-  function setupHelpChat() {
-    db.ref("users/" + myId + "/chats/help_chat").set({ name: "Help (info)", type: "help", last: 0 });
-  }
-  
-  function openHelpChat() {
-    currentChat = "help_chat"; currentType = "help";
-    document.getElementById("chatTitle").textContent = "Help & Info";
-    let msgs = document.getElementById("messages");
-    msgs.innerHTML = "";
-    let big = document.createElement("div");
-    big.className = "msg console";
-    big.innerHTML = `
-      <strong>HELP & INFO</strong><br/>
-      <p>
-        <code>/rps rock|paper|scissors</code><br/>
-        <code>/roll [sides]</code><br/>
-        <code>/ping</code><br/>
-        <code>/8ball [question]</code><br/>
-        <code>/roast</code><br/>
-        <code>/tod truth</code> or <code>/tod dare</code><br/>
-        <code>/title [text]</code><br/>
-        <code>/cf heads</code> or <code>/coin flip tails</code><br/>
-        <code>/ship [name]</code><br/>
-        <code>/guessnumber</code> and <code>/guessnumber [number]</code><br/>
-        <code>/typingrace</code><br/>
-        <code>/vote question|opt1|opt2|...</code><br/>
-        <code>/vote vote [pollId] [option]</code>
-      </p>
-    `;
-    msgs.appendChild(big);
-    document.getElementById("msgInput").disabled = true;
-  }
-  
-  /*******************
-   * Modals (Confirm & Notice)
-   *******************/
-  function showConfirm(msg, yesCb) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Confirm</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:green;" id="yesBtn">Yes</button>
-          <button style="background:red;" id="noBtn">No</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#yesBtn").onclick = () => { document.body.removeChild(mo); yesCb(); };
-    mo.querySelector("#noBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  function showNotice(msg) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Notice</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:var(--accent);" id="okBtn">OK</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#okBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  /*******************
-   * Typing Race Ready Command
-   *******************/
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-  
-  /*******************
-   * Check Typing Race Win
-   *******************/
-  function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
-      let games = snap.val();
-      if (!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
-          if (messageText === game.prompt) {
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  
-  /*******************
-   * Reaction Handling
-   *******************/
-  function applyReaction(mId, emoji) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-    db.ref(path).set(emoji);
-  }
-  
-  /*******************
-   * Friend & Block UI
-   *******************/
-  function addFriendUI() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Friend by Name</h3>
-        <input id="friendNameInput" placeholder="Friend's display name"/><br/>
-        <button id="friendSendBtn">Send Request</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    mo.querySelector("#friendSendBtn").onclick = () => {
-      let n = mo.querySelector("#friendNameInput").value.trim();
-      if (!n) { showNotice("No name typed!"); return; }
-      if (n === displayName) { showNotice("Cannot add yourself!"); return; }
-      if (blocked[n]) { showNotice("User is blocked. Unblock first!"); return; }
-      db.ref("displayNames/" + n).once("value", snap => {
-        let dev = snap.val();
-        if (!dev) { showNotice(`No user named ${n} found!`); return; }
-        if (friends[n]) { showNotice(`You're already friends with ${n}!`); return; }
-        db.ref("users/" + myId + "/requestsSent/" + n).once("value", s2 => {
-          if (s2.exists()) { showNotice("Request already pending."); return; }
-          db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          db.ref("users/" + myId + "/requestsSent/" + n).set(true);
-          let cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).set({});
-          showNotice(`Friend request sent to ${n}.`);
-          document.body.removeChild(mo);
-        });
-      });
-    };
-  }
-  
-  function openFriendsPanel() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Your Friends</h3>
-        <div id="frList"></div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    let fl = mo.querySelector("#frList");
-    if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
-    else {
-      Object.keys(friends).forEach(n => {
-        let d = document.createElement("div");
-        d.style.background = "var(--chat-bg)";
-        d.style.padding = "8px";
-        d.style.marginBottom = "8px";
-        d.style.borderRadius = "6px";
-        d.textContent = n;
-        let dots = document.createElement("span");
-        dots.textContent = "⋮";
-        dots.style.cursor = "pointer";
-        dots.style.position = "relative";
-        let menu = document.createElement("div");
-        menu.className = "friendMenu";
-        let openBtn = document.createElement("button");
-        openBtn.textContent = "Open Chat";
-        openBtn.onclick = () => {
-          db.ref("displayNames/" + n).once("value", snap => {
-            let dev = snap.val();
-            if (!dev) { showNotice("User not found!"); return; }
-            let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).once("value", snap2 => {
-              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
-            });
-            db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
-            openChat(cid, n, "private");
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(openBtn);
-        let unfriendBtn = document.createElement("button");
-        unfriendBtn.textContent = "Unfriend";
-        unfriendBtn.onclick = () => {
-          showConfirm("Unfriend " + n + "?", () => {
-            db.ref("users/" + myId + "/friends/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap2 => {
-              let dev = snap2.val();
-              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
-            });
-            showNotice("Unfriended " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(unfriendBtn);
-        let blockBtn = document.createElement("button");
-        blockBtn.textContent = "Block";
-        blockBtn.onclick = () => {
-          showConfirm("Block " + n + "?", () => {
-            db.ref("users/" + myId + "/blocked/" + n).set(true);
-            showNotice("Blocked " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(blockBtn);
-        dots.onclick = (ev) => {
-          ev.stopPropagation();
-          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-          let rect = dots.getBoundingClientRect();
-          menu.style.left = rect.left + "px";
-          menu.style.top = (rect.bottom + 2) + "px";
-        };
-        d.appendChild(dots);
-        d.appendChild(menu);
-        fl.appendChild(d);
-      });
-    }
-  }
-  
-  /*******************
-   * Help Chat (Read-only)
-   *******************/
-  function setupHelpChat() {
-    db.ref("users/" + myId + "/chats/help_chat").set({ name: "Help (info)", type: "help", last: 0 });
-  }
-  
-  function openHelpChat() {
-    currentChat = "help_chat"; currentType = "help";
-    document.getElementById("chatTitle").textContent = "Help & Info";
-    let msgs = document.getElementById("messages");
-    msgs.innerHTML = "";
-    let big = document.createElement("div");
-    big.className = "msg console";
-    big.innerHTML = `
-      <strong>HELP & INFO</strong><br/>
-      <p>
-        <code>/rps rock|paper|scissors</code><br/>
-        <code>/roll [sides]</code><br/>
-        <code>/ping</code><br/>
-        <code>/8ball [question]</code><br/>
-        <code>/roast</code><br/>
-        <code>/tod truth</code> or <code>/tod dare</code><br/>
-        <code>/title [text]</code><br/>
-        <code>/cf heads</code> or <code>/coin flip tails</code><br/>
-        <code>/ship [name]</code><br/>
-        <code>/guessnumber</code> and <code>/guessnumber [number]</code><br/>
-        <code>/typingrace</code><br/>
-        <code>/vote question|opt1|opt2|...</code><br/>
-        <code>/vote vote [pollId] [option]</code>
-      </p>
-    `;
-    msgs.appendChild(big);
-    document.getElementById("msgInput").disabled = true;
-  }
-  
-  /*******************
-   * Modals (Confirm & Notice)
-   *******************/
-  function showConfirm(msg, yesCb) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Confirm</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:green;" id="yesBtn">Yes</button>
-          <button style="background:red;" id="noBtn">No</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#yesBtn").onclick = () => { document.body.removeChild(mo); yesCb(); };
-    mo.querySelector("#noBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  function showNotice(msg) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Notice</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:var(--accent);" id="okBtn">OK</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#okBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  /*******************
-   * Typing Race Ready Command
-   *******************/
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-  
-  /*******************
-   * Check Typing Race Win
-   *******************/
-  function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
-      let games = snap.val();
-      if (!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
-          if (messageText === game.prompt) {
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  
-  /*******************
-   * Reaction Handling
-   *******************/
-  function applyReaction(mId, emoji) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-    db.ref(path).set(emoji);
-  }
-  
-  /*******************
-   * Friend & Block UI
-   *******************/
-  function addFriendUI() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Friend by Name</h3>
-        <input id="friendNameInput" placeholder="Friend's display name"/><br/>
-        <button id="friendSendBtn">Send Request</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    mo.querySelector("#friendSendBtn").onclick = () => {
-      let n = mo.querySelector("#friendNameInput").value.trim();
-      if (!n) { showNotice("No name typed!"); return; }
-      if (n === displayName) { showNotice("Cannot add yourself!"); return; }
-      if (blocked[n]) { showNotice("User is blocked. Unblock first!"); return; }
-      db.ref("displayNames/" + n).once("value", snap => {
-        let dev = snap.val();
-        if (!dev) { showNotice(`No user named ${n} found!`); return; }
-        if (friends[n]) { showNotice(`You're already friends with ${n}!`); return; }
-        db.ref("users/" + myId + "/requestsSent/" + n).once("value", s2 => {
-          if (s2.exists()) { showNotice("Request already pending."); return; }
-          db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          db.ref("users/" + myId + "/requestsSent/" + n).set(true);
-          let cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).set({});
-          showNotice(`Friend request sent to ${n}.`);
-          document.body.removeChild(mo);
-        });
-      });
-    };
-  }
-  
-  function openFriendsPanel() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Your Friends</h3>
-        <div id="frList"></div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
-    let fl = mo.querySelector("#frList");
-    if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
-    else {
-      Object.keys(friends).forEach(n => {
-        let d = document.createElement("div");
-        d.style.background = "var(--chat-bg)";
-        d.style.padding = "8px";
-        d.style.marginBottom = "8px";
-        d.style.borderRadius = "6px";
-        d.textContent = n;
-        let dots = document.createElement("span");
-        dots.textContent = "⋮";
-        dots.style.cursor = "pointer";
-        dots.style.position = "relative";
-        let menu = document.createElement("div");
-        menu.className = "friendMenu";
-        let openBtn = document.createElement("button");
-        openBtn.textContent = "Open Chat";
-        openBtn.onclick = () => {
-          db.ref("displayNames/" + n).once("value", snap => {
-            let dev = snap.val();
-            if (!dev) { showNotice("User not found!"); return; }
-            let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).once("value", snap2 => {
-              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
-            });
-            db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
-            openChat(cid, n, "private");
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(openBtn);
-        let unfriendBtn = document.createElement("button");
-        unfriendBtn.textContent = "Unfriend";
-        unfriendBtn.onclick = () => {
-          showConfirm("Unfriend " + n + "?", () => {
-            db.ref("users/" + myId + "/friends/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap2 => {
-              let dev = snap2.val();
-              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
-            });
-            showNotice("Unfriended " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(unfriendBtn);
-        let blockBtn = document.createElement("button");
-        blockBtn.textContent = "Block";
-        blockBtn.onclick = () => {
-          showConfirm("Block " + n + "?", () => {
-            db.ref("users/" + myId + "/blocked/" + n).set(true);
-            showNotice("Blocked " + n);
-          });
-          menu.style.display = "none";
-        };
-        menu.appendChild(blockBtn);
-        dots.onclick = (ev) => {
-          ev.stopPropagation();
-          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-          let rect = dots.getBoundingClientRect();
-          menu.style.left = rect.left + "px";
-          menu.style.top = (rect.bottom + 2) + "px";
-        };
-        d.appendChild(dots);
-        d.appendChild(menu);
-        fl.appendChild(d);
-      });
-    }
-  }
-  
-  /*******************
-   * Add Chat / Group Chat Panel
-   *******************/
-  function showAddChatPanel() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.id = "modalAddChat";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:320px;">
-        <button class="closeBtn" onclick="document.body.removeChild(document.getElementById('modalAddChat'))">X</button>
-        <h3>Add Chat</h3>
-        <button onclick="showCreateGroup(); document.body.removeChild(document.getElementById('modalAddChat'))">Create Group</button><br/>
-        <button onclick="showJoinGroup(); document.body.removeChild(document.getElementById('modalAddChat'))">Join Group</button><br/>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-  }
-  
-  function showCreateGroup() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Create Group</h3>
-        <input id="groupName" placeholder="Group Name"/><br/>
-        <select id="groupType">
-          <option value="open">Open</option>
-          <option value="password">Password</option>
-          <option value="invite">Invite Only</option>
-        </select><br/>
-        <input id="groupPassword" placeholder="Password (if needed)"/><br/>
-        <button id="createGroupBtn">Create</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.querySelector("#createGroupBtn").onclick = () => {
-      let name = mo.querySelector("#groupName").value.trim();
-      let type = mo.querySelector("#groupType").value;
-      let pwd = mo.querySelector("#groupPassword").value.trim();
-      if (!name) { showNotice("No group name!"); return; }
-      let gid = "group_" + Date.now();
-      let members = {};
-      members[myId] = true;
-      db.ref("groupChats/" + gid).set({ name: name, type: type, password: pwd, createdBy: myId, members: members });
-      db.ref("users/" + myId + "/chats/" + gid).set({ name: name, type: "group", last: Date.now() });
-      document.body.removeChild(mo);
-      openChat(gid, name, "group");
-    };
-  }
-  
-  function showJoinGroup() {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Join Group</h3>
-        <input id="joinGroupID" placeholder="Group ID"/><br/>
-        <input id="joinGroupPassword" placeholder="Password (if needed)"/><br/>
-        <button id="joinGroupBtn">Join</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.querySelector("#joinGroupBtn").onclick = () => {
-      let id = mo.querySelector("#joinGroupID").value.trim();
-      let pwd = mo.querySelector("#joinGroupPassword").value.trim();
-      if (!id) { showNotice("No group ID typed!"); return; }
-      db.ref("groupChats/" + id).once("value", snap => {
-        let group = snap.val();
-        if (!group) { showNotice("Group not found!"); return; }
-        if (group.type === "password" && group.password !== pwd) { showNotice("Wrong password!"); return; }
-        if (group.type === "invite" && !(group.members && group.members[myId])) { showNotice("Not invited!"); return; }
-        db.ref("groupChats/" + id + "/members/" + myId).set(true);
-        db.ref("users/" + myId + "/chats/" + id).set({ name: group.name, type: "group", last: Date.now() });
-        document.body.removeChild(mo);
-        openChat(id, group.name, "group");
-      });
-    };
-  }
-  
-  /*******************
-   * Typing Race Modal (Prevents copying by disabling text selection)
-   *******************/
-  function showTypingRacePrompt(prompt, gameId) {
-    let mo = document.createElement("div");
-    mo.className = "modal no-select";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:500px;position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Typing Race Challenge</h3>
-        <p>Type exactly the following (cannot be selected or copied):</p>
-        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
-        <button id="readyBtn">I'm Ready</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#readyBtn").onclick = () => {
-      // Mark current user as ready for this typing race game.
-      processTypingRaceReady(gameId);
-      document.body.removeChild(mo);
-    };
-  }
-  
-  /*******************
-   * Slash Commands & Live Autocomplete
-   *******************/
+  // Slash Commands & Live Autocomplete
   const slashCmds = [
     "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
     "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
@@ -2383,7 +948,6 @@
       inp.value = "";
       return;
     }
-    // Check if the message wins a typing race
     checkTypingRaceWin(txt);
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
     db.ref(path).push({
@@ -2484,9 +1048,25 @@
           return;
         }
         let prompt = prompts[option - 1];
-        startTypingRaceGame(prompt);
-        // Immediately show the typing race prompt modal (non-selectable) so opponent cannot copy it.
-        showTypingRacePrompt(prompt, "type_" + Date.now());
+        let gameId = "type_" + Date.now();
+        db.ref("games/typingrace/" + currentChat + "/" + gameId).set({
+          initiator: myId,
+          prompt: prompt,
+          ready: { [myId]: true },
+          timestamp: Date.now(),
+          status: "pending"
+        });
+        sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
+        // Immediately show the prompt modal so that it cannot be copied.
+        showTypingRacePrompt(prompt, gameId);
+        setTimeout(() => {
+          db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
+            if (snap.val() === "pending") {
+              db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+              sendSystemMessage(`TypingRace [${gameId}] expired.`);
+            }
+          });
+        }, 60000);
       }
     }
     else {
@@ -2506,45 +1086,46 @@
     });
   }
   
-  /*******************
-   * Check for Typing Race Win on Normal Messages
-   *******************/
-  // Called inside sendMessage after a non-command message is sent.
-  function checkForTypingRace(messageText) {
-    checkTypingRaceWin(messageText);
-  }
-  
-  /*******************
-   * Reaction Handling
-   *******************/
-  // (Already implemented above)
-  
-  /*******************
-   * Friend & Block UI
-   *******************/
-  // (Already implemented above)
-  
-  /*******************
-   * Typing Race: Ready Command & Prevention of Cheating
-   *******************/
-  // When a player types "/typingrace [gameId] ready", process readiness.
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
+  // Check Typing Race Win
+  function checkTypingRaceWin(messageText) {
+    db.ref("games/typingrace/" + currentChat).once("value", snap => {
+      let games = snap.val();
+      if (!games) return;
+      Object.keys(games).forEach(gameId => {
+        let game = games[gameId];
+        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
+          if (messageText === game.prompt) {
+            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
+            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+          }
+        }
+      });
     });
   }
   
-  /*******************
-   * Check Typing Race Win (Already implemented above)
-   *******************/
+  // Typing Race Prompt Modal (non-selectable)
+  function showTypingRacePrompt(prompt, gameId) {
+    let mo = document.createElement("div");
+    mo.className = "modal no-select";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-width:500px;position:relative;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Typing Race Challenge</h3>
+        <p>Type exactly the following (cannot be selected or copied):</p>
+        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
+        <button id="readyBtn">I'm Ready</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.querySelector("#readyBtn").onclick = () => {
+      processTypingRaceReady(gameId);
+      document.body.removeChild(mo);
+    };
+  }
   
-  /*******************
-   * End of Code
-   *******************/
+  // Slash Command Autocomplete already implemented above.
+  
+  // ------------------ End of Code ------------------
 </script>
 
 <!-- Login Screen -->

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Optimized for Performance</title>
+  <title>Static Live Chat – Final Optimized Version</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
@@ -227,20 +227,8 @@
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
-    .chatBadge {
-      background: var(--badge);
-      color: #fff;
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      margin-left: 5px;
-    }
-    .requestItem {
-      background: var(--bubble-from);
-      padding: 10px;
-      margin-bottom: 5px;
-      border-radius: 6px;
-    }
+    .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
+    .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -355,44 +343,48 @@
 </head>
 <body>
 <script>
-  /* ----- Firebase Setup ----- */
+  // ----- Firebase Setup -----
   if (typeof firebase === "undefined") {
     console.error("Firebase not loaded – check your network.");
     window.firebase = { initializeApp: () => {}, database: () => ({ ref: () => ({}) }) };
   }
   let db = null;
   try {
-    const config = {
-      apiKey: "YOUR_API_KEY_HERE",
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
       authDomain: "static-live-chatting.firebaseapp.com",
       databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
       projectId: "static-live-chatting",
-      storageBucket: "static-live-chatting.appspot.com",
+      storageBucket: "static-live-chatting.firebasestorage.app",
       messagingSenderId: "578562140653",
-      appId: "1:578562140653:web:c12df07155627083e9dfe4"
+      appId: "1:578562140653:web:c12df07155627083e9dfe4",
+      measurementId: "G-HZ1F0B1CDS"
     };
-    firebase.initializeApp(config);
+    firebase.initializeApp(firebaseConfig);
     db = firebase.database();
   } catch (e) {
     console.error("Firebase init error:", e);
     db = { ref: () => ({ once: () => {}, on: () => {}, set: () => {}, push: () => ({}) }) };
   }
   
-  /* ----- Device & User Setup ----- */
+  // ----- Device & User Setup -----
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
   let myId = localStorage.getItem("myDeviceId");
   if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
   let displayName = localStorage.getItem("displayName") || "";
   let pass = localStorage.getItem("pass") || "";
   
-  /* ----- Global Variables ----- */
+  // ----- Global Variables -----
   let currentChat = "", currentType = "";
   let messagesRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
+  // Throttle for sendMessage to prevent spamming (in ms)
+  let lastMessageTime = 0;
+  const MESSAGE_THROTTLE = 300; // Minimum 300ms between messages
   
-  /* ----- On Load Initialization ----- */
+  // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
     if (displayName) {
       document.getElementById("login").style.display = "none";
@@ -402,7 +394,7 @@
     }
   });
   
-  /* ----- Login & Settings ----- */
+  // ----- Login & Settings -----
   function toggleLoginPass() {
     let pw = document.getElementById("password");
     pw.type = (pw.type === "password") ? "text" : "password";
@@ -622,11 +614,10 @@
     });
   }
   
-  // We attach a watcher on the user's chat list (background only).
+  // Attach background watchers for chats (only for chats that are not active)
   function initChatWatchers() {
     db.ref("users/" + myId + "/chats").on("value", snap => {
       let chats = snap.val() || {};
-      // Only attach watchers for chats that are not open.
       Object.keys(chats).forEach(cid => {
         if (cid === "help_chat" || cid === currentChat) return;
         let info = chats[cid];
@@ -755,10 +746,9 @@
     }
   }
   
-  // ----- Open Chat: One-Time Read Update & No Active Watchers -----
+  // ----- Open Chat: One-Time Read Update -----
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
-    // Reset unread count when chat is opened
     chatUnread[cid] = 0;
     updateChatListUI({});
     if (type === "group") {
@@ -773,40 +763,33 @@
     let area = document.getElementById("messages");
     area.innerHTML = "";
     document.getElementById("loadMoreBtn").style.display = "none";
-    // Detach any active message watchers for performance
     if (messagesRef) { messagesRef.off(); }
     let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
     messagesRef = db.ref(path);
-    // Load the last 50 messages once (no continuous on-child listeners for the active chat)
     messagesRef.orderByChild("timestamp").limitToLast(50).once("value", snap => {
       let data = snap.val() || {};
       let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
       oldestStamp = (arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER);
       arr.forEach(([mId, mVal]) => createBubble(mId, mVal, true));
-      // After loading, mark chat as read by sending one update.
+      // Send one update to mark the chat as read
       markChatRead();
       if (arr.length >= 50) {
         hasMoreOld = true;
         document.getElementById("loadMoreBtn").style.display = "block";
       } else { hasMoreOld = false; }
     });
-    // For group chats, update member list continuously
     if (type === "group") {
       db.ref("groupChats/" + cid + "/members").on("value", snap => {
         let members = Object.keys(snap.val() || {});
         gm.textContent = "Members: " + members.join(", ");
       });
     }
-    // Start a one-time attachment for new messages arriving in background if chat is not open.
-    // (For the active chat, we rely on the one-time load.)
     attachTypingListener();
   }
   
   // When a chat is opened, send one update to mark it as read.
   function markChatRead() {
     if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    // Instead of iterating over each message, we simply update our local "last read" timestamp.
     db.ref("users/" + myId + "/chats/" + currentChat + "/lastRead").set(Date.now());
   }
   
@@ -818,26 +801,29 @@
     if (val.sender === myId) bubble.classList.add("to");
     else if (val.sender === "_system") bubble.classList.add("console");
     else bubble.classList.add("from");
-    // Bubble body contains the message text, then a timestamp block
+    
     let textDiv = document.createElement("div");
     textDiv.textContent = val.text || "";
     bubble.appendChild(textDiv);
+    
     let ts = document.createElement("div");
     ts.className = "timestamp";
     let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
     ts.textContent = t;
     bubble.appendChild(ts);
-    // If the message is from you and has been read by someone else, show "Seen"
+    
     if (val.sender === myId && val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
       let seen = document.createElement("div");
       seen.className = "seenLabel";
       seen.textContent = "Seen";
       bubble.appendChild(seen);
     }
+    
     let rt = document.createElement("span");
     rt.className = "reactionTag";
     if (val.reaction) rt.textContent = val.reaction;
     bubble.appendChild(rt);
+    
     let rBar = document.createElement("div");
     rBar.className = "reactionBar";
     ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
@@ -847,6 +833,7 @@
       rBar.appendChild(span);
     });
     bubble.appendChild(rBar);
+    
     bubble.addEventListener("dblclick", () => {
       rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
     });
@@ -935,8 +922,13 @@
     sc.style.display = "block";
   }
   
+  // ----- Message Send with Debounce to Prevent Spam -----
   function sendMessage() {
     if (!currentChat || currentType === "help") return;
+    let now = Date.now();
+    if (now - lastMessageTime < MESSAGE_THROTTLE) return; // Throttle message sending
+    lastMessageTime = now;
+    
     let inp = document.getElementById("msgInput");
     let txt = inp.value.trim();
     if (!txt) return;

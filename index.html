@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Static Live Chat</title>
-  <!-- Firebase Scripts (using compat libraries) -->
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
@@ -926,8 +926,8 @@
         unfriendBtn.onclick = () => {
           showConfirm("Unfriend " + nm + "?", () => {
             db.ref("users/" + myId + "/friends/" + nm).remove();
-            db.ref("displayNames/" + nm).once("value", snap2 => {
-              const dev = snap2.val();
+            db.ref("displayNames/" + nm).once("value", snap => {
+              const dev = snap.val();
               if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
             });
             showNotice("Unfriended " + nm);
@@ -1371,7 +1371,7 @@
     });
   }
   
-  // ----- Typing Race Prompt Modal (non-selectable) -----
+  // ----- Typing Race Prompt Modal -----
   function showTypingRacePrompt(prompt, gameId) {
     const mo = document.createElement("div");
     mo.className = "modal no-select";
@@ -1391,7 +1391,7 @@
     };
   }
   
-  // ----- Typing Race Ready Command (for opponent) -----
+  // ----- Typing Race Ready Command -----
   function processTypingRaceReady(gameId) {
     db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
       const ready = snap.val() || {};
@@ -1402,7 +1402,7 @@
     });
   }
   
-  // ----- Client-Side Cooldown (0.5 sec between messages) -----
+  // ----- Client-Side Cooldown -----
   function canSendMessage() {
     const nowTime = Date.now();
     if (nowTime - lastMessageTime < 500) {

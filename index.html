@@ -230,9 +230,8 @@
       padding: 6px;
       border-radius: 6px;
       display: none;
-      z-index: 100; /* ensure on top */
+      z-index: 100;
     }
-    /* Position the friend menu to the right of the dots */
     .friendMenu.show {
       left: calc(100% + 5px);
       top: 0;
@@ -437,6 +436,11 @@
     let chatUnread = {};
     let blocked = {}, friends = {};
     let lastMessageTime = 0;
+    const slashCmds = [
+      "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
+      "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
+      "/ship", "/rps", "/guessnumber", "/vote"
+    ];
     
     // ========= On Load =========
     window.addEventListener("DOMContentLoaded", () => {
@@ -608,7 +612,7 @@
           btn.style.cursor = "pointer";
           const menu = document.createElement("div");
           menu.className = "friendMenu";
-          menu.style.left = "calc(100% + 5px)"; // Position to the right of the dots
+          menu.style.left = "calc(100% + 5px)";
           menu.style.top = "0px";
           const openBtn = document.createElement("button");
           openBtn.textContent = "Open Chat";
@@ -651,7 +655,6 @@
           d.appendChild(menu);
           btn.onclick = ev => {
             ev.stopPropagation();
-            // Toggle friend menu display
             menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
           };
           fl.appendChild(d);
@@ -965,7 +968,7 @@
           dots.style.position = "relative";
           const menu = document.createElement("div");
           menu.className = "friendMenu";
-          menu.style.left = "calc(100% + 5px)"; // Positioned to the right of the button
+          menu.style.left = "calc(100% + 5px)";
           menu.style.top = "0px";
           const openBtn = document.createElement("button");
           openBtn.textContent = "Open Chat";
@@ -1083,7 +1086,6 @@
       }
       const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       messagesRef = db.ref(path);
-      // Load the last 100 messages now
       messagesRef.orderByChild("timestamp").limitToLast(100).once("value", snap => {
         const data = snap.val() || {};
         const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
@@ -1232,11 +1234,6 @@
     }
     
     // ========= Slash Commands & Autocomplete =========
-    const slashCmds = [
-      "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
-      "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
-      "/ship", "/rps", "/guessnumber", "/vote"
-    ];
     function slashAutoInput(e) {
       const val = e.target.value;
       const sc = document.getElementById("slashAutocomplete");
@@ -1287,9 +1284,7 @@
         readBy: { [myId]: Date.now() }
       });
       inp.value = "";
-      setTimeout(() => {
-        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-      }, 50);
+      setTimeout(() => { document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight; }, 50);
       sendTyping();
     }
     
@@ -1357,7 +1352,6 @@
         const merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
         sendSystemMessage("Ship: " + displayName + " + " + n + " => " + merged + " 💘");
       } else if (slash === "/rps") {
-        // Placeholder for Rock-Paper-Scissors
         sendSystemMessage("[RPS] " + displayName + " played rock (placeholder)");
       } else if (slash === "/guessnumber") {
         sendSystemMessage("[GuessNumber] Waiting for opponent (placeholder)");
@@ -1383,10 +1377,6 @@
         readBy: { [myId]: Date.now() }
       });
     }
-    
-    // ========= Client-Side Cooldown & Message Sending =========
-    // lastMessageTime is declared only once here.
-    // (Fixed duplicate declaration error)
     
     // ========= Friend Request & Chat Watchers =========
     function loadRequests() {
@@ -1538,7 +1528,7 @@
           dots.style.position = "relative";
           const menu = document.createElement("div");
           menu.className = "friendMenu";
-          menu.style.left = "calc(100% + 5px)"; 
+          menu.style.left = "calc(100% + 5px)";
           menu.style.top = "0px";
           const openBtn = document.createElement("button");
           openBtn.textContent = "Open Chat";
@@ -1656,7 +1646,6 @@
       }
       const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       messagesRef = db.ref(path);
-      // Load the last 100 messages
       messagesRef.orderByChild("timestamp").limitToLast(100).once("value", snap => {
         const data = snap.val() || {};
         const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
@@ -1804,31 +1793,6 @@
       });
     }
     
-    // ========= Slash Commands & Autocomplete =========
-    const slashCmds = [
-      "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
-      "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
-      "/ship", "/rps", "/guessnumber", "/vote"
-    ];
-    function slashAutoInput(e) {
-      const val = e.target.value;
-      const sc = document.getElementById("slashAutocomplete");
-      if (!val.startsWith("/")) { sc.style.display = "none"; return; }
-      sc.innerHTML = "";
-      const rect = e.target.getBoundingClientRect();
-      sc.style.left = rect.left + "px";
-      sc.style.top = rect.top - 115 + "px";
-      const hits = slashCmds.filter(c => c.startsWith(val));
-      if (!hits.length) { sc.style.display = "none"; return; }
-      hits.slice(0, 8).forEach(cmd => {
-        const b = document.createElement("button");
-        b.textContent = cmd;
-        b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-        sc.appendChild(b);
-      });
-      sc.style.display = "block";
-    }
-    
   </script>
   
   <!-- ========= Notification Container ========= -->
@@ -1887,11 +1851,6 @@
   <div id="staticMenu">
     <a href="https://sites.google.com/view/staticquasar931" target="_blank" class="staticLink">More Unblocked Games by Static</a>
   </div>
-  
-  <!-- ========= Final Message Sending Function (declared only once) ========= -->
-  <script>
-    // lastMessageTime is declared only once above.
-  </script>
   
 </body>
 </html>

@@ -150,6 +150,7 @@
       position: relative;
       cursor: pointer;
       box-shadow: var(--shadow-msg);
+      /* Vertical centering via flexbox */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -178,11 +179,7 @@
       opacity: 0.7;
       margin-top: 8px;
     }
-    .seenLabel {
-      font-size: 10px;
-      color: var(--accent);
-      margin-top: 2px;
-    }
+    /* Removed seenLabel to avoid extra watchers */
     #typingIndicator {
       display: none;
       font-style: italic;
@@ -380,9 +377,9 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  // Throttle for sendMessage to prevent spamming (in ms)
+  // Throttle for sendMessage (milliseconds)
   let lastMessageTime = 0;
-  const MESSAGE_THROTTLE = 300; // Minimum 300ms between messages
+  const MESSAGE_THROTTLE = 300;
   
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -550,7 +547,7 @@
               text: `${from} accepted your friend request!`,
               timestamp: Date.now(),
               reaction: "",
-              readBy: { [dev]: Date.now() }
+              readBy: { [myId]: Date.now() }
             });
             openChat(cid, from, "private");
           });
@@ -614,7 +611,7 @@
     });
   }
   
-  // Attach background watchers for chats (only for chats that are not active)
+  // Attach background watchers only for chats that are not active
   function initChatWatchers() {
     db.ref("users/" + myId + "/chats").on("value", snap => {
       let chats = snap.val() || {};
@@ -787,7 +784,6 @@
     attachTypingListener();
   }
   
-  // When a chat is opened, send one update to mark it as read.
   function markChatRead() {
     if (!currentChat || currentType === "help") return;
     db.ref("users/" + myId + "/chats/" + currentChat + "/lastRead").set(Date.now());
@@ -811,13 +807,6 @@
     let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
     ts.textContent = t;
     bubble.appendChild(ts);
-    
-    if (val.sender === myId && val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
-      let seen = document.createElement("div");
-      seen.className = "seenLabel";
-      seen.textContent = "Seen";
-      bubble.appendChild(seen);
-    }
     
     let rt = document.createElement("span");
     rt.className = "reactionTag";
@@ -922,11 +911,12 @@
     sc.style.display = "block";
   }
   
-  // ----- Message Send with Debounce to Prevent Spam -----
+  // ----- End of Code -----
+  
   function sendMessage() {
     if (!currentChat || currentType === "help") return;
     let now = Date.now();
-    if (now - lastMessageTime < MESSAGE_THROTTLE) return; // Throttle message sending
+    if (now - lastMessageTime < MESSAGE_THROTTLE) return;
     lastMessageTime = now;
     
     let inp = document.getElementById("msgInput");

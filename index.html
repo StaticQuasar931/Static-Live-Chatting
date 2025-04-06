@@ -229,7 +229,7 @@
       margin-bottom: 5px;
       border-radius: 6px;
     }
-    /* Friend menu: three-dots options near the dots */
+    /* Friend menu: three-dots options */
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -342,9 +342,9 @@
   const firebaseConfig = {
     apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
     authDomain: "static-live-chatting.firebaseapp.com",
-    databaseURL: "https://static-live-chatting.firebaseapp.com",
+    databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
     projectId: "static-live-chatting",
-    storageBucket: "static-live-chatting.firebasestorage.app",
+    storageBucket: "static-live-chatting.appspot.com",
     messagingSenderId: "578562140653",
     appId: "1:578562140653:web:c12df07155627083e9dfe4",
     measurementId: "G-HZ1F0B1CDS"
@@ -589,19 +589,16 @@
       setTimeout(() => db.ref("users/" + myId + "/accepted/" + who).remove(), 3000);
     });
   }
-  
   function loadBlocked() {
     db.ref("users/" + myId + "/blocked").on("value", snap => {
       blocked = snap.val() || {};
     });
   }
-  
   function loadFriends() {
     db.ref("users/" + myId + "/friends").on("value", snap => {
       friends = snap.val() || {};
     });
   }
-  
   function initChatWatchers() {
     db.ref("users/" + myId + "/chats").on("value", snap => {
       let chats = snap.val() || {};
@@ -609,7 +606,6 @@
       updateChatListUI(chats);
     });
   }
-  
   function attachAllChatWatchers(chats) {
     Object.keys(chats).forEach(cid => {
       if (cid === "help_chat") return;
@@ -625,7 +621,6 @@
       }
     });
   }
-  
   function updateChatListUI(chats) {
     let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
     let cl = document.getElementById("chatList");
@@ -712,7 +707,6 @@
       cl.appendChild(div);
     });
   }
-  
   function confirmDeleteChat(cid, info) {
     if (info.type === "group") {
       db.ref("groupChats/" + cid + "/createdBy").once("value", snap => {
@@ -738,7 +732,6 @@
       });
     }
   }
-  
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
     chatUnread[cid] = 0;
@@ -791,13 +784,11 @@
     }
     attachTypingListener();
   }
-  
   function markMsgRead(mId, val) {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
   }
-  
   function loadOlderMessages() {
     if (!currentChat || !hasMoreOld) return;
     let btn = document.getElementById("loadMoreBtn");
@@ -819,7 +810,6 @@
       btn.disabled = false;
     });
   }
-  
   function createBubble(mId, val, toEnd) {
     let area = document.getElementById("messages");
     if (document.getElementById("msg_" + mId)) return;
@@ -867,14 +857,13 @@
     if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
     area.scrollTop = area.scrollHeight;
   }
-  
   function updateBubble(mId, val) {
     let b = document.getElementById("msg_" + mId);
     if (!b) return;
     let rt = b.querySelector(".reactionTag");
     if (rt) rt.textContent = val.reaction || "";
   }
-  
+
   // ----- Typing & Emoji -----
   function attachTypingListener() {
     if (!currentChat || currentType === "help") return;
@@ -887,14 +876,12 @@
       else { t.style.display = "none"; }
     });
   }
-  
   function sendTyping() {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
     db.ref(path).set(displayName);
     setTimeout(() => db.ref(path).set(""), 2000);
   }
-  
   function toggleEmojiPicker() {
     let ep = document.getElementById("emojiPicker");
     if (ep.style.display === "flex") { ep.style.display = "none"; return; }
@@ -908,14 +895,13 @@
       ep.appendChild(span);
     });
   }
-  
+
   // ----- Slash Commands & Autocomplete -----
   const slashCmds = [
     "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
     "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
     "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
   ];
-  
   function slashAutoInput(e) {
     let val = e.target.value;
     let sc = document.getElementById("slashAutocomplete");
@@ -934,8 +920,8 @@
     });
     sc.style.display = "block";
   }
-  
-  // ----- Client-Side Cooldown (0.5 sec between messages) -----
+
+  // ----- Client-Side Cooldown -----
   function canSendMessage() {
     let nowTime = Date.now();
     if (nowTime - lastMessageTime < 500) {
@@ -945,7 +931,6 @@
     lastMessageTime = nowTime;
     return true;
   }
-  
   function sendMessage() {
     if (!currentChat || currentType === "help") return;
     if (!canSendMessage()) return;
@@ -976,7 +961,6 @@
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     sendTyping();
   }
-  
   function processSlashCommand(cmd) {
     let parts = cmd.split(" ");
     let slash = parts[0].toLowerCase();
@@ -1087,7 +1071,6 @@
       showNotice("Unknown slash command: " + cmd);
     }
   }
-  
   function sendSystemMessage(text) {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
@@ -1099,7 +1082,6 @@
       readBy: { [myId]: Date.now() }
     });
   }
-  
   // ----- Check Typing Race Win on Normal Messages -----
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value", snap => {
@@ -1116,7 +1098,6 @@
       });
     });
   }
-  
   // ----- Typing Race Prompt Modal (non-selectable) -----
   function showTypingRacePrompt(prompt, gameId) {
     let mo = document.createElement("div");
@@ -1136,7 +1117,6 @@
       document.body.removeChild(mo);
     };
   }
-  
   // ----- Typing Race Ready Command (for opponent) -----
   function processTypingRaceReady(gameId) {
     db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
@@ -1147,10 +1127,6 @@
       }
     });
   }
-  
-  // ----- Slash Autocomplete -----
-  // (Handled by slashAutoInput)
-  
   // ----- Client-Side Cooldown -----
   function canSendMessage() {
     let nowTime = Date.now();
@@ -1161,7 +1137,19 @@
     lastMessageTime = nowTime;
     return true;
   }
-  
+  // ----- Placeholder Functions for Missing Features -----
+  function addFriendUI() {
+    // Placeholder implementation – replace with your full UI as needed
+    alert("Add Friend UI is not implemented yet.");
+  }
+  function openFriendsPanel() {
+    // Placeholder implementation – replace with your full UI as needed
+    alert("Open Friends Panel is not implemented yet.");
+  }
+  function showAddChatPanel() {
+    // Placeholder implementation – replace with your full UI as needed
+    alert("Add Chat Panel is not implemented yet.");
+  }
   // ----- End of Code -----
 </script>
 

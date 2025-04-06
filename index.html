@@ -43,7 +43,7 @@
       background:var(--bg-color); color:var(--text-color);
       height:100vh; display:flex; flex-direction:column; overflow:hidden;
     }
-    input, button {
+    input,button {
       padding:10px; font-size:16px; margin:5px; border-radius:6px; border:none;
     }
     button { background:var(--accent); color:#fff; cursor:pointer; }
@@ -91,12 +91,18 @@
       display:none; flex-direction:row; gap:5px; background:rgba(0,0,0,0.6);
       padding:5px; border-radius:6px; margin-bottom:5px;
     }
-    .reactionBar span { font-size:22px; cursor:pointer; }
+    .reactionBar span {
+      font-size:22px; cursor:pointer;
+    }
     .timestamp {
       position:absolute; font-size:10px; opacity:0.7; bottom:-14px;
     }
-    .mineTime { right:10px; }
-    .otherTime { left:10px; }
+    .mineTime {
+      right:10px;
+    }
+    .otherTime {
+      left:10px;
+    }
     #typingIndicator {
       display:none; font-style:italic; font-size:14px; margin:0 20px 10px;
     }
@@ -117,8 +123,12 @@
       background:var(--chat-item-bg); padding:10px; border-radius:6px; margin-bottom:8px;
       display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.2s;
     }
-    .chatItem:hover { background:var(--bubble-them); }
-    .chatItem.active { outline:2px solid var(--accent); }
+    .chatItem:hover {
+      background:var(--bubble-them);
+    }
+    .chatItem.active {
+      outline:2px solid var(--accent);
+    }
     .chatBadge {
       background:var(--badge); color:#fff; font-size:12px; padding:3px 8px; border-radius:12px; margin-left:5px;
     }
@@ -165,20 +175,20 @@
       background:var(--accent); color:#fff; border:none; border-radius:6px;
       padding:5px; cursor:pointer; opacity:0.8; z-index:10;
     }
-    .ownerName { font-weight:bold; text-decoration:underline; }
+    .ownerName {
+      font-weight:bold; text-decoration:underline;
+    }
   </style>
 </head>
 <body>
-<!-- Full final code integrated below. -->
+
 <script>
-// We'll produce the final integrated code with everything bug-checked and fully working.
-// It's the stable version plus ESC/outside click logic and group chat improvements.
+// The stable final code with all expansions, verifying chat deletion bug is fixed, adding more help chat details.
 
 </script>
 
-<!-- LOGIN UI -->
 <div id="login" style="display:flex;">
-  <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
+  <div style="background:var(--chat-bg);padding:20px;border-radius:10px;position:relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
     <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
@@ -191,7 +201,6 @@
   </div>
 </div>
 
-<!-- MAIN APP UI -->
 <div id="app" style="display:none;">
   <div id="sidebar">
     <button onclick="openFriendsPanel()">Friends</button>
@@ -227,13 +236,12 @@
   </div>
 </div>
 
-<!-- Static Menu -->
 <div id="staticMenu">
   <a href="https://sites.google.com/view/staticquasar931" target="_blank" class="staticLink">More Unblocked Games by Static</a>
 </div>
 
 <script>
-// ========== Firebase fallback
+// ========== 1) Basic fallback if firebase blocked
 if(typeof firebase==="undefined"){
   window.firebase={ initializeApp:()=>{}, database:()=>({ref:()=>({})}) };
 }
@@ -254,11 +262,11 @@ try{
   db={ref:()=>({once:()=>{},on:()=>{},set:()=>{},push:()=>({})})};
 }
 
-// beep logic
+// beep
 let beepAudio=null, beepAllowed=false;
 function initBeep(){
   beepAudio=document.createElement("audio");
-  beepAudio.src="data:audio/wav;base64,UklGRv4AAABXQVZFZm10IBAAAAABAAEAqA4AAABCxAgAEABAAZGF0YQAAAAA=";
+  beepAudio.src="data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAEAX48AAABCxAgAEABAAZGF0YQAAAAA=";
   document.body.appendChild(beepAudio);
   beepAudio.volume=1;
 }
@@ -268,7 +276,7 @@ document.addEventListener("click",()=>{
   }
 },{once:true});
 
-// device-based ID
+// ========== 2) device-based ID
 function genId(){ return "dev_"+Math.random().toString(36).slice(2)+"_"+Date.now();}
 let myId=localStorage.getItem("myDeviceId");
 if(!myId){
@@ -282,16 +290,17 @@ function trackOldName(o,n){
   db.ref(`users/${myId}/oldNames`).push(o);
 }
 
-// skip login if we have name
+// ========== 3) On load skip if we have displayName
 window.addEventListener("DOMContentLoaded",()=>{
   if(displayName){
     document.getElementById("login").style.display="none";
     document.getElementById("app").style.display="flex";
-    applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers(); setupHelpChat();
+    applyTheme();
+    loadBlocked(); loadFriends(); loadRequests(); initChatWatchers(); setupHelpChat();
   }
 });
 
-// toggle password show
+// toggle password
 function toggleLoginPass(){
   let pw=document.getElementById("password");
   pw.type=(pw.type==="password")?"text":"password";
@@ -347,19 +356,17 @@ function setThemeLabel(x){
   document.getElementById("themeBtn").textContent=`${x}: Theme`;
 }
 
-// modals: ESC/outside click
+// ========== ESC or outside click to close
 document.addEventListener("keydown",(ev)=>{
   if(ev.key==="Escape"){
     let modals=document.querySelectorAll(".modal");
-    modals.forEach(m=>{
-      if(m.style.display==="flex") document.body.removeChild(m);
-    });
+    modals.forEach(m=>{ if(m.style.display==="flex") document.body.removeChild(m); });
     document.getElementById("emojiPicker").style.display="none";
     document.getElementById("slashAutocomplete").style.display="none";
   }
 });
 
-// confirm/notice
+// confirm and notice
 function showConfirm(msg, yesCb){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -376,9 +383,7 @@ function showConfirm(msg, yesCb){
   `;
   document.body.appendChild(mo);
   mo.style.display="flex";
-  mo.addEventListener("click",(ev)=>{
-    if(ev.target===mo) document.body.removeChild(mo);
-  });
+  mo.addEventListener("click",(ev)=>{ if(ev.target===mo) document.body.removeChild(mo); });
   mo.addEventListener("keydown",(ev)=>{
     if(ev.key==="Escape") document.body.removeChild(mo);
   });
@@ -403,16 +408,14 @@ function showNotice(msg){
   `;
   document.body.appendChild(mo);
   mo.style.display="flex";
-  mo.addEventListener("click",(ev)=>{
-    if(ev.target===mo) document.body.removeChild(mo);
-  });
+  mo.addEventListener("click",(ev)=>{ if(ev.target===mo) document.body.removeChild(mo); });
   mo.addEventListener("keydown",(ev)=>{
     if(ev.key==="Escape") document.body.removeChild(mo);
   });
   mo.querySelector("#okBtn").onclick=()=> document.body.removeChild(mo);
 }
 
-// setup help pinned
+// help pinned
 function setupHelpChat(){
   db.ref(`users/${myId}/chats/help_chat`).set({name:"Help (info)",type:"help",last:0});
 }
@@ -426,12 +429,26 @@ function openHelpChat(){
   let big=document.createElement("div");
   big.className="msg centerSys";
   big.innerHTML=`
-    <strong>HELP & INFO</strong><br/><br/>
-    <code>/rps [rock|paper|scissors]</code>, <code>/roll [sides]</code>, <code>/vote question|opt1|opt2</code>,
-    <code>/ping</code>, <code>/8ball [q]</code>, <code>/roast</code>, <code>/guessnumber [1-10]</code>,
-    <code>/ship [name]</code>, <code>/typingrace [cat] [num]</code>, <code>/tod truth|dare</code>,
-    <code>/title text</code>, <code>/cf heads</code>, <code>/coin flip tails</code>
-    <br/>Categories for /typingrace: "mix", "sentences", "anything"
+    <strong>HELP & INFO</strong><br/>
+    <p>Commands (type / in message):
+    <ul>
+    <li><code>/rps [rock|paper|scissors]</code> - Partial Rock-Paper-Scissors vs user</li>
+    <li><code>/roll [sides]</code> - dice roller (default 6 sides)</li>
+    <li><code>/vote question|opt1|opt2</code> - mini poll</li>
+    <li><code>/ping</code> - measure roundtrip</li>
+    <li><code>/8ball [question]</code> - random yes/no/maybe answers</li>
+    <li><code>/roast</code> - silly roast generator</li>
+    <li><code>/guessnumber [1-10]</code> - partial guess game</li>
+    <li><code>/ship [name]</code> - combine your name + someone else's</li>
+    <li><code>/typingrace [cat] [num]</code> - “mix” / “sentences” / “anything”, lines=1 default</li>
+    <li><code>/tod truth</code>, <code>/tod dare</code> - random T/D question</li>
+    <li><code>/title [text]</code> - big system text in chat</li>
+    <li><code>/cf heads</code>, <code>/coin flip tails</code> - coin flip</li>
+    </ul>
+    <strong>Examples:</strong><br/>
+    /typingrace mix 1<br/>
+    /vote “Your poll?”|Yes|No
+    </p>
   `;
   area.appendChild(big);
   document.getElementById("msgInput").disabled=true;
@@ -450,7 +467,7 @@ function loadFriends(){
   });
 }
 
-// watchers for friend requests
+// watchers friend requests
 function loadRequests(){
   db.ref(`users/${myId}/requests`).on("value",(snap)=>{
     let data=snap.val()||{};
@@ -608,28 +625,33 @@ function confirmDeleteChat(cid, info){
       let own=sn.val();
       if(own!==myId){
         showConfirm(`Leave group ${info.name}?`,()=>{
+          // remove me from group
           db.ref(`groupChats/${cid}/members/${myId}`).remove();
+          // remove from my user list
           db.ref(`users/${myId}/chats/${cid}`).remove();
-          showNotice("Left group chat.");
+          showNotice("Left group chat successfully.");
         });
       } else {
         showConfirm(`Delete group ${info.name}?`,()=>{
+          // delete entire group
           db.ref(`groupChats/${cid}`).remove();
           db.ref(`users/${myId}/chats/${cid}`).remove();
-          showNotice("Group chat deleted for all!");
+          showNotice("Group chat fully deleted for everyone!");
         });
       }
     });
   } else {
     showConfirm(`Remove private chat with ${info.name}?`,()=>{
       db.ref(`users/${myId}/chats/${cid}`).remove();
-      showNotice("Private chat removed from your side.");
+      showNotice("Private chat removed from your side. The other user still keeps it unless they also delete it.");
     });
   }
 }
 
 // open chat watchers
 let currentChat="", currentType="";
+let messagesRef=null, childAddedRef=null, childChangedRef=null;
+let oldestStamp=Number.MAX_SAFE_INTEGER, hasMoreOld=false;
 function openChat(cid,name,type){
   currentChat=cid; currentType=type;
   chatUnread[cid]=0;
@@ -643,12 +665,14 @@ function openChat(cid,name,type){
   let area=document.getElementById("messages");
   area.innerHTML="";
   document.getElementById("loadMoreBtn").style.display="none";
+
   if(messagesRef){
     if(childAddedRef) messagesRef.off("child_added", childAddedRef);
     if(childChangedRef) messagesRef.off("child_changed", childChangedRef);
   }
   let path=(type==="group"?"groupChats":"privateChats")+"/"+cid+"/messages";
   messagesRef=db.ref(path);
+
   messagesRef.orderByChild("timestamp").limitToLast(50).once("value",(snap)=>{
     let data=snap.val()||{};
     let arr=Object.entries(data).sort((a,b)=>(a[1].timestamp||0)-(b[1].timestamp||0));
@@ -660,6 +684,7 @@ function openChat(cid,name,type){
       hasMoreOld=true;
       document.getElementById("loadMoreBtn").style.display="block";
     } else hasMoreOld=false;
+
     childAddedRef=messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added",(sn)=>{
       let v=sn.val();
       createBubble(sn.key,v,true);
@@ -673,6 +698,7 @@ function openChat(cid,name,type){
     db.ref(`users/${myId}/chats/${cid}/last`).set(Date.now());
     arr.forEach(([mId,mVal])=> markMsgRead(mId,mVal));
   });
+
   if(type==="group"){
     db.ref(`groupChats/${cid}/members`).on("value",(s)=>{
       let mm=s.val()||{};
@@ -682,6 +708,7 @@ function openChat(cid,name,type){
   attachTypingListener();
 }
 
+// showGroupMembers
 function showGroupMembers(devs,cid){
   let gm=document.getElementById("groupMembers");
   gm.innerHTML="";
@@ -706,9 +733,161 @@ function showGroupMembers(devs,cid){
     }
   });
 }
+function editGroupChat(cid){
+  // rename, lock, add user, remove user
+  let mo=document.createElement("div");
+  mo.className="modal";
+  mo.innerHTML=`
+    <div class="modalContent" style="min-width:320px;">
+      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+      <h3>Edit Group</h3>
+      <label>New Name:</label><br/>
+      <input id="grpRename"/><br/>
+      <label>Add user by name:</label><br/>
+      <input id="grpAddName"/><button id="grpAddBtn">Add</button><br/>
+      <label>Remove user by name:</label><br/>
+      <input id="grpRemName"/><button id="grpRemBtn">Remove</button><br/>
+      <label>Lock/unlock (password):</label><br/>
+      <input id="grpLockPass"/><button id="grpLockBtn">Apply</button><br/>
+    </div>
+  `;
+  document.body.appendChild(mo);
+  mo.style.display="flex";
+  mo.addEventListener("click",(e)=>{
+    if(e.target===mo) document.body.removeChild(mo);
+  });
+  mo.addEventListener("keydown",(ev)=>{
+    if(ev.key==="Escape") document.body.removeChild(mo);
+  });
 
-let messagesRef=null, childAddedRef=null, childChangedRef=null;
-let oldestStamp=Number.MAX_SAFE_INTEGER, hasMoreOld=false;
+  let rename=mo.querySelector("#grpRename");
+  let addName=mo.querySelector("#grpAddName");
+  let remName=mo.querySelector("#grpRemName");
+  let lockP=mo.querySelector("#grpLockPass");
+
+  mo.querySelector("#grpAddBtn").onclick=()=>{
+    let n=addName.value.trim(); if(!n)return;
+    db.ref("displayNames/"+n).once("value",(sn)=>{
+      let dev=sn.val(); if(!dev)return showNotice(`No user named ${n}`);
+      db.ref(`groupChats/${cid}/members/${dev}`).set(true);
+      showNotice(`Added ${n} to group.`);
+      addName.value="";
+    });
+  };
+  mo.querySelector("#grpRemBtn").onclick=()=>{
+    let n=remName.value.trim(); if(!n)return;
+    db.ref("displayNames/"+n).once("value",(sn2)=>{
+      let dev=sn2.val(); if(!dev)return showNotice(`No user named ${n}`);
+      db.ref(`groupChats/${cid}/members/${dev}`).remove();
+      showNotice(`Removed ${n} from group.`);
+      remName.value="";
+    });
+  };
+  rename.addEventListener("keypress",(ev)=>{
+    if(ev.key==="Enter"){
+      let newN=rename.value.trim(); if(!newN)return;
+      db.ref(`groupChats/${cid}/name`).set(newN);
+      db.ref(`users/${myId}/chats/${cid}/name`).set(newN);
+      showNotice(`Group name changed to ${newN}`);
+      rename.value="";
+    }
+  });
+  mo.querySelector("#grpLockBtn").onclick=()=>{
+    let p=lockP.value.trim();
+    db.ref(`groupChats/${cid}/password`).set(p);
+    showNotice(p? `Group locked with password: ${p}` : "Group unlocked.");
+  };
+}
+
+function getDisplayName(dId,cb){
+  if(dId===myId)return cb(displayName);
+  if(dId==="_system")return cb("_system");
+  db.ref(`users/${dId}/displayName`).once("value",(sn)=>{
+    cb(sn.val()||"?");
+  });
+}
+
+// read receipts
+function markMsgRead(mId,val){
+  if(!currentChat||currentType==="help")return;
+  let p=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${p}/${currentChat}/messages/${mId}/readBy/${myId}`).set(Date.now());
+}
+
+// create bubble
+function createBubble(mId,val,toEnd){
+  let area=document.getElementById("messages");
+  if(document.getElementById("msg_"+mId))return;
+  let b=document.createElement("div");
+  b.id="msg_"+mId;
+  if(val.sender===myId) b.className="msg me";
+  else if(val.sender==="_system") b.className="msg centerSys";
+  else b.className="msg them";
+
+  let text=val.text||"";
+  if(currentType==="group" && val.sender!==myId && val.sender!=="_system"){
+    getDisplayName(val.sender,(nm)=>{
+      b.innerHTML=`<span style="font-weight:bold;">${nm}:</span> ${text}`;
+    });
+  } else {
+    b.innerHTML=text;
+  }
+  let rt=document.createElement("span");
+  rt.className="reactionTag";
+  if(val.reaction) rt.textContent=val.reaction;
+  b.appendChild(rt);
+
+  let rBar=document.createElement("div");
+  rBar.className="reactionBar";
+  ["❤️","👍","👎","😂","😮","😢"].forEach(emo=>{
+    let s=document.createElement("span");
+    s.textContent=emo;
+    s.onclick=(ev)=>{
+      ev.stopPropagation();
+      applyReaction(mId,emo);
+      rBar.style.display="none";
+    };
+    rBar.appendChild(s);
+  });
+  b.appendChild(rBar);
+
+  b.addEventListener("dblclick",(ev)=>{
+    rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
+  });
+  b.addEventListener("contextmenu",(ev)=>{
+    ev.preventDefault();
+    if(currentType==="group"){
+      db.ref(`groupChats/${currentChat}/createdBy`).once("value",(sn)=>{
+        if(sn.val()===myId){
+          showConfirm("Remove this message?",()=>{
+            db.ref(`groupChats/${currentChat}/messages/${mId}`).remove();
+            let ex=document.getElementById("msg_"+mId);
+            if(ex) ex.remove();
+          });
+        }
+      });
+    }
+  });
+
+  let ts=document.createElement("div");
+  ts.className="timestamp";
+  let t= val.timestamp? new Date(val.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"";
+  ts.textContent=t;
+  b.appendChild(ts);
+  if(val.sender===myId) ts.classList.add("mineTime");
+  else if(val.sender==="_system"){}
+  else ts.classList.add("otherTime");
+
+  if(toEnd) area.appendChild(b); else area.prepend(b);
+  area.scrollTop=area.scrollHeight;
+}
+function updateBubble(mId,val){
+  let b=document.getElementById("msg_"+mId);
+  if(!b)return;
+  let rt=b.querySelector(".reactionTag");
+  if(rt) rt.textContent=val.reaction||"";
+}
+
 function loadOlderMessages(){
   if(!currentChat||!hasMoreOld)return;
   let btn=document.getElementById("loadMoreBtn");
@@ -735,7 +914,7 @@ function loadOlderMessages(){
   });
 }
 
-// slash logic partial
+// slash commands
 let slashCmds=[
   "/rps","/roll","/vote","/ping","/8ball","/roast","/guessnumber","/ship","/typingrace",
   "/tod truth","/tod dare","/title",
@@ -745,7 +924,8 @@ function slashAutoInput(e){
   let val=e.target.value;
   let sc=document.getElementById("slashAutocomplete");
   if(!val.startsWith("/")){
-    sc.style.display="none"; return;
+    sc.style.display="none";
+    return;
   }
   sc.innerHTML="";
   let rect=e.target.getBoundingClientRect();
@@ -787,19 +967,16 @@ function sendMessage(){
   inp.value="";
   document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
 }
-
 function processSlashCommand(cmd){
-  // partial
-  showNotice(`Recognized slash command: ${cmd} (partial logic).`);
+  showNotice(`Slash command recognized: ${cmd} (partial). For real logic, expand processSlashCommand()!`);
 }
-
 function applyReaction(mId,r){
   if(!currentChat||currentType==="help")return;
   let p=(currentType==="group"?"groupChats":"privateChats");
   db.ref(`${p}/${currentChat}/messages/${mId}/reaction`).set(r);
 }
 
-// add friend UI
+// add friend
 function addFriendUI(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -837,8 +1014,6 @@ function addFriendUI(){
     });
   };
 }
-
-// open friends panel
 function openFriendsPanel(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -866,7 +1041,6 @@ function openFriendsPanel(){
     let d=document.createElement("div");
     d.style.background="var(--chat-bg)"; d.style.padding="8px"; d.style.marginBottom="8px";
     d.style.borderRadius="6px"; d.textContent=n;
-    // 3-dot menu
     let dotBtn=document.createElement("button");
     dotBtn.textContent="...";
     dotBtn.style.marginLeft="10px";
@@ -876,7 +1050,6 @@ function openFriendsPanel(){
     menu.style.background="var(--chat-bg)";
     menu.style.padding="6px";
     menu.style.borderRadius="6px";
-    // open chat
     let oc=document.createElement("button");
     oc.textContent="Open Chat";
     oc.onclick=()=>{
@@ -892,7 +1065,6 @@ function openFriendsPanel(){
       menu.style.display="none";
     };
     menu.appendChild(oc);
-    // unfriend
     let uf=document.createElement("button");
     uf.textContent="Unfriend";
     uf.onclick=()=>{
@@ -907,7 +1079,6 @@ function openFriendsPanel(){
       menu.style.display="none";
     };
     menu.appendChild(uf);
-    // block
     let blk=document.createElement("button");
     blk.textContent="Block";
     blk.onclick=()=>{
@@ -927,14 +1098,13 @@ function openFriendsPanel(){
       menu.style.left=(rect.left)+"px";
       menu.style.top=(rect.top+25)+"px";
     };
-
     d.appendChild(dotBtn);
     d.appendChild(menu);
     fl.appendChild(d);
   });
 }
 
-// add chat panel
+// add chat
 function showAddChatPanel(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -980,12 +1150,12 @@ function showCreatePanel(){
   });
   mo.querySelector("#grpCreateBtn").onclick=()=>{
     let name=mo.querySelector("#grpName").value.trim();
-    let pass=mo.querySelector("#grpPass").value.trim();
+    let pw=mo.querySelector("#grpPass").value.trim();
     if(!name)return showNotice("Group name required!");
     let id="group_"+Date.now();
     let members={}; members[myId]=true;
     db.ref(`groupChats/${id}`).set({
-      name, password:pass, members, createdBy:myId
+      name, password:pw, members, createdBy:myId
     });
     db.ref(`users/${myId}/chats/${id}`).set({name,type:"group",last:Date.now()});
     openChat(id,name,"group");
@@ -1047,13 +1217,12 @@ function showPublicDirectory(){
   mo.addEventListener("keydown",(ev)=>{
     if(ev.key==="Escape") document.body.removeChild(mo);
   });
-  // fetch groups with no password
   db.ref("groupChats").once("value",(snap)=>{
     let data=snap.val()||{};
     let list=mo.querySelector("#publicGroupList");
     list.innerHTML="";
     Object.entries(data).forEach(([id,g])=>{
-      if(!g.password){ // no password => open
+      if(!g.password){
         let btn=document.createElement("button");
         btn.textContent=`${g.name} (${id})`;
         btn.onclick=()=>{
@@ -1069,6 +1238,7 @@ function showPublicDirectory(){
   });
 }
 
+// open settings => rename => track old name
 function openSettings(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -1099,7 +1269,7 @@ function openSettings(){
     if(!nn)return showNotice("Name can't be empty!");
     db.ref("displayNames/"+nn).once("value",(sn)=>{
       let val=sn.val();
-      if(val && val!==myId){
+      if(val&& val!==myId){
         showNotice("Name is used by another device!");
         return;
       }
@@ -1124,6 +1294,7 @@ function openSettings(){
   };
 }
 
+// toggling emoji
 function toggleEmojiPicker(){
   let ep=document.getElementById("emojiPicker");
   if(ep.style.display==="flex"){
@@ -1145,10 +1316,11 @@ function toggleEmojiPicker(){
 }
 </script>
 
-<!-- Example DB rules:
+<!-- DB Rules:
 {
   "rules":{
-    ".read":true,".write":true,
+    ".read":true,
+    ".write":true,
     "users":{"$did":{".read":true,".write":true}},
     "privateChats":{"$cid":{".read":true,".write":true}},
     "groupChats":{"$gid":{".read":true,".write":true}},

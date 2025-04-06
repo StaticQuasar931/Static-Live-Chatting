@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;       /* your messages */
-      --bubble-from: #444;        /* others' messages */
+      --bubble-to: #1e90ff;       /* Your messages */
+      --bubble-from: #444;        /* Others' messages */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -95,9 +95,17 @@
       border-radius: 6px;
       border: none;
     }
-    button { background: var(--accent); color: #fff; cursor: pointer; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
     /* ===== Layout ===== */
-    #app { display: flex; flex: 1; height: 100%; }
+    #app {
+      display: flex;
+      flex: 1;
+      height: 100%;
+    }
     #sidebar {
       width: 280px;
       background: var(--sidebar-color);
@@ -156,14 +164,34 @@
       flex-direction: column;
       justify-content: center;
     }
-    .msg p { margin: 0; }
+    .msg p {
+      margin: 0;
+    }
     /* "to" messages (your messages) right-aligned */
-    .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
+    .to {
+      align-self: flex-end;
+      background: var(--bubble-to);
+      color: #fff;
+    }
     /* "from" messages (others) left-aligned */
-    .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
+    .from {
+      align-self: flex-start;
+      background: var(--bubble-from);
+      color: #fff;
+    }
     /* "console" messages centered */
-    .console { align-self: center; background: var(--bubble-console); font-style: italic; }
-    .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
+    .console {
+      align-self: center;
+      background: var(--bubble-console);
+      font-style: italic;
+    }
+    .reactionTag {
+      font-size: 14px;
+      opacity: 0.8;
+      position: absolute;
+      top: 5px;
+      right: 10px;
+    }
     .reactionBar {
       position: absolute;
       bottom: 100%;
@@ -177,16 +205,32 @@
       border-radius: 6px;
       margin-bottom: 5px;
     }
-    .reactionBar span { font-size: 22px; cursor: pointer; }
+    .reactionBar span {
+      font-size: 22px;
+      cursor: pointer;
+    }
     .timestamp {
       font-size: 10px;
       opacity: 0.7;
       margin-top: 4px;
       text-align: right;
     }
-    #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
-    #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
-    #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
+    #typingIndicator {
+      display: none;
+      font-style: italic;
+      font-size: 14px;
+      margin: 0 20px 10px;
+    }
+    #inputArea {
+      display: flex;
+      padding: 10px;
+      background: var(--sidebar-color);
+    }
+    #inputArea input {
+      flex: 1;
+      margin-right: 5px;
+      font-size: 17px;
+    }
     #emojiPicker {
       display: none;
       position: absolute;
@@ -200,7 +244,11 @@
       max-height: 180px;
       overflow: auto;
     }
-    #emojiPicker span { font-size: 22px; margin: 6px; cursor: pointer; }
+    #emojiPicker span {
+      font-size: 22px;
+      margin: 6px;
+      cursor: pointer;
+    }
     .chatItem {
       background: var(--chat-item-bg);
       padding: 10px;
@@ -213,8 +261,12 @@
       transition: background 0.2s;
       position: relative;
     }
-    .chatItem:hover { background: var(--bubble-from); }
-    .chatItem.active { outline: 2px solid var(--accent); }
+    .chatItem:hover {
+      background: var(--bubble-from);
+    }
+    .chatItem.active {
+      outline: 2px solid var(--accent);
+    }
     .chatBadge {
       background: var(--badge);
       color: #fff;
@@ -257,13 +309,19 @@
       animation: blink 2s infinite;
       z-index: 1000;
     }
-    a.staticLink { color: #0ff; text-decoration: none; }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    a.staticLink {
+      color: #0ff;
+      text-decoration: none;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
     /* ===== Modal Styles ===== */
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -295,7 +353,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       z-index: 999;
     }
     /* ===== Slash Autocomplete ===== */
@@ -744,7 +802,8 @@
     chatUnread[cid] = 0;
     updateChatListUI({});
     if (type === "group") {
-      document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
+      document.getElementById("chatTitle").innerHTML =
+        `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
     } else {
       document.getElementById("chatTitle").textContent = name;
     }
@@ -769,14 +828,18 @@
       if (arr.length >= 50) {
         hasMoreOld = true;
         document.getElementById("loadMoreBtn").style.display = "block";
-      } else { hasMoreOld = false; }
+      } else {
+        hasMoreOld = false;
+      }
       childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
         let v = snap.val();
         createBubble(snap.key, v, true);
         area.scrollTop = area.scrollHeight;
         markMsgRead(snap.key, v);
       });
-      childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
+      childChangedRef = messagesRef.on("child_changed", snap => {
+        updateBubble(snap.key, snap.val());
+      });
       area.scrollTop = area.scrollHeight;
       if (type !== "help" && cid !== currentChat) {
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
@@ -812,7 +875,10 @@
       }
       oldestStamp = arr[0][1].timestamp;
       arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
-      if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
+      if (arr.length < 50) {
+        hasMoreOld = false;
+        btn.style.display = "none";
+      }
       arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
       btn.disabled = false;
     });
@@ -822,9 +888,13 @@
     if (document.getElementById("msg_" + mId)) return;
     let bubble = document.createElement("div");
     bubble.id = "msg_" + mId;
-    if (val.sender === myId) bubble.classList.add("to");
-    else if (val.sender === "_system") bubble.classList.add("console");
-    else bubble.classList.add("from");
+    if (val.sender === myId) {
+      bubble.classList.add("to");
+    } else if (val.sender === "_system") {
+      bubble.classList.add("console");
+    } else {
+      bubble.classList.add("from");
+    }
     let p = document.createElement("p");
     p.textContent = val.text || "";
     bubble.appendChild(p);
@@ -841,7 +911,9 @@
       rBar.appendChild(span);
     });
     bubble.appendChild(rBar);
-    bubble.addEventListener("dblclick", () => { rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex"; });
+    bubble.addEventListener("dblclick", () => { 
+      rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex"; 
+    });
     bubble.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
       if (currentType === "group") {
@@ -861,7 +933,11 @@
     let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
     ts.textContent = t;
     bubble.appendChild(ts);
-    if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
+    if (toEnd) {
+      area.appendChild(bubble);
+    } else {
+      area.prepend(bubble);
+    }
     area.scrollTop = area.scrollHeight;
   }
   function updateBubble(mId, val) {
@@ -879,8 +955,12 @@
     db.ref(path).on("value", snap => {
       let val = snap.val();
       let t = document.getElementById("typingIndicator");
-      if (val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
-      else { t.style.display = "none"; }
+      if (val && val !== displayName) {
+        t.style.display = "block";
+        t.textContent = val + " is typing...";
+      } else {
+        t.style.display = "none";
+      }
     });
   }
   function sendTyping() {
@@ -891,14 +971,20 @@
   }
   function toggleEmojiPicker() {
     let ep = document.getElementById("emojiPicker");
-    if (ep.style.display === "flex") { ep.style.display = "none"; return; }
+    if (ep.style.display === "flex") {
+      ep.style.display = "none";
+      return;
+    }
     ep.innerHTML = "";
     ep.style.display = "flex";
     let emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
     emojis.forEach(e => {
       let span = document.createElement("span");
       span.textContent = e;
-      span.onclick = () => { document.getElementById("msgInput").value += e; ep.style.display = "none"; };
+      span.onclick = () => {
+        document.getElementById("msgInput").value += e;
+        ep.style.display = "none";
+      };
       ep.appendChild(span);
     });
   }
@@ -912,17 +998,26 @@
   function slashAutoInput(e) {
     let val = e.target.value;
     let sc = document.getElementById("slashAutocomplete");
-    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
+    if (!val.startsWith("/")) {
+      sc.style.display = "none";
+      return;
+    }
     sc.innerHTML = "";
     let rect = e.target.getBoundingClientRect();
     sc.style.left = rect.left + "px";
     sc.style.top = (rect.top - 115) + "px";
     let hits = slashCmds.filter(c => c.startsWith(val));
-    if (!hits.length) { sc.style.display = "none"; return; }
+    if (!hits.length) {
+      sc.style.display = "none";
+      return;
+    }
     hits.slice(0, 8).forEach(cmd => {
       let b = document.createElement("button");
       b.textContent = cmd;
-      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+      b.onclick = () => {
+        e.target.value = cmd + " ";
+        sc.style.display = "none";
+      };
       sc.appendChild(b);
     });
     sc.style.display = "block";
@@ -1175,10 +1270,10 @@
     sendTyping();
   }
 
-  // ----- Placeholder Functions for Missing UI -----
-  function addFriendUI() { alert("Add Friend UI placeholder. Replace with full implementation."); }
-  function openFriendsPanel() { alert("Open Friends Panel placeholder. Replace with full implementation."); }
-  function showAddChatPanel() { alert("Add Chat Panel placeholder. Replace with full implementation."); }
+  // ----- Placeholder Functions for Missing UI Features -----
+  function addFriendUI() { alert("Add Friend UI placeholder. Please implement the full UI."); }
+  function openFriendsPanel() { alert("Open Friends Panel placeholder. Please implement the full UI."); }
+  function showAddChatPanel() { alert("Add Chat Panel placeholder. Please implement the full UI."); }
   function applyReaction(mId, emoji) {
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
     db.ref(path).set(emoji);
@@ -1187,15 +1282,15 @@
 </script>
 
 <!-- Login Screen -->
-<div id="login" style="display:flex;">
-  <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
+<div id="login" style="display: flex;">
+  <div style="background: var(--chat-bg); padding: 20px; border-radius: 10px; position: relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
     <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()" />
     <br/>
     <label>Password (optional):</label><br/>
-    <div style="display:flex;">
-      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()" />
+    <div style="display: flex;">
+      <input id="password" type="password" style="flex: 1;" onkeypress="if(event.key==='Enter')doLogin()" />
       <button onclick="toggleLoginPass()">👁️</button>
     </div>
     <button onclick="doLogin()">Log In</button>
@@ -1203,14 +1298,14 @@
 </div>
 
 <!-- Main App UI -->
-<div id="app" style="display:none;">
+<div id="app" style="display: none;">
   <div id="sidebar">
     <button onclick="openFriendsPanel()">Friends</button>
     <button onclick="addFriendUI()">Add Friend</button>
     <button onclick="showAddChatPanel()">Add Chat</button>
     <h3>Friend Requests</h3>
     <div id="requestsTab"></div>
-    <div id="requestsSentTab" style="margin-top:8px; color:#ccc;"></div>
+    <div id="requestsSentTab" style="margin-top: 8px; color: #ccc;"></div>
     <hr/>
     <h3>Chats</h3>
     <div id="chatList"></div>
@@ -1223,7 +1318,7 @@
         <button onclick="openSettings()">Settings</button>
       </div>
     </div>
-    <div id="groupMembers" style="padding:5px 15px; display:none; font-size:14px;"></div>
+    <div id="groupMembers" style="padding: 5px 15px; display: none; font-size: 14px;"></div>
     <button id="loadMoreBtn" onclick="loadOlderMessages()">Load Older</button>
     <div id="messages"></div>
     <div id="typingIndicator"></div>

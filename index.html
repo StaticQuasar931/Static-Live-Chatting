@@ -78,6 +78,7 @@
       --accent: #b86af1;
       --chat-item-bg: #4d1460;
     }
+
     /* ========= Global Styles ========= */
     body {
       margin: 0;
@@ -97,6 +98,7 @@
       border: none;
     }
     button { background: var(--accent); color: #fff; cursor: pointer; }
+
     /* ========= Layout ========= */
     #app { display: flex; flex: 1; }
     #sidebar {
@@ -131,6 +133,7 @@
       display: flex;
       flex-direction: column;
     }
+
     /* ========= Message Bubbles ========= */
     .msg {
       max-width: 70%;
@@ -172,10 +175,12 @@
       margin-top: 4px;
       text-align: right;
     }
+
     /* ========= Input Area ========= */
     #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
     #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
     #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
+
     /* ========= Utility Panels ========= */
     #emojiPicker {
       display: none;
@@ -251,6 +256,7 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; }
     }
+
     /* ========= Modal Styles ========= */
     .modal {
       position: fixed;
@@ -281,6 +287,7 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
+
     /* ========= Notification Container ========= */
     #notificationContainer {
       position: fixed;
@@ -300,6 +307,7 @@
       box-shadow: var(--shadow-msg);
       transition: opacity 0.5s;
     }
+
     /* ========= Login Screen ========= */
     #login {
       position: fixed;
@@ -310,6 +318,7 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
+
     /* ========= Slash Autocomplete ========= */
     #slashAutocomplete {
       display: none;
@@ -386,12 +395,12 @@
           </div>
         `;
         document.body.appendChild(container);
-        container.querySelector("#yesBtn").onclick = () => { 
-          document.body.removeChild(container); 
+        container.querySelector("#yesBtn").onclick = () => {
+          document.body.removeChild(container);
           resolve(true);
         };
-        container.querySelector("#noBtn").onclick = () => { 
-          document.body.removeChild(container); 
+        container.querySelector("#noBtn").onclick = () => {
+          document.body.removeChild(container);
           resolve(false);
         };
       });
@@ -665,7 +674,7 @@
           if (!dev) { showNotice("No user with that name found."); return; }
           db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
           db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          // Create a proper placeholder private chat with a "members" property
+          // Create the private chat node with proper members immediately
           db.ref("privateChats/" + [myId, dev].sort().join("_")).set({
             members: { [myId]: true, [dev]: true },
             createdAt: Date.now()
@@ -719,7 +728,7 @@
         const password = mo.querySelector("#groupPass").value.trim();
         if (!name) { showNotice("Group name cannot be empty."); return; }
         const gid = "group_" + Date.now();
-        // Create group chat with a valid members object
+        // Create group chat with valid members object.
         db.ref("groupChats/" + gid).set({
           name: name,
           type: type,

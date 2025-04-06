@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Static Live Chat – Final Version</title>
+  <title>Static Live Chat – Optimized</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;       /* Your messages */
-      --bubble-from: #444;        /* Others' messages */
+      --bubble-to: #1e90ff;
+      --bubble-from: #444;
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -167,19 +167,16 @@
     .msg p {
       margin: 0;
     }
-    /* "to" messages (your messages) right-aligned */
     .to {
       align-self: flex-end;
       background: var(--bubble-to);
       color: #fff;
     }
-    /* "from" messages (others) left-aligned */
     .from {
       align-self: flex-start;
       background: var(--bubble-from);
       color: #fff;
     }
-    /* "console" messages centered */
     .console {
       align-self: center;
       background: var(--bubble-console);
@@ -200,7 +197,7 @@
       display: none;
       flex-direction: row;
       gap: 5px;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       padding: 5px;
       border-radius: 6px;
       margin-bottom: 5px;
@@ -281,7 +278,6 @@
       margin-bottom: 5px;
       border-radius: 6px;
     }
-    /* Friend menu: three-dots options */
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -317,11 +313,10 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; }
     }
-    /* ===== Modal Styles ===== */
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -346,17 +341,15 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    /* ===== Login Screen ===== */
     #login {
       position: fixed;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       z-index: 999;
     }
-    /* ===== Slash Autocomplete ===== */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -431,7 +424,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // 0.5-second cooldown
+  let lastMessageTime = 0; // 0.5-second cooldown timer
 
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -455,7 +448,7 @@
     let nm = document.getElementById("username").value.trim();
     let p = document.getElementById("password").value.trim();
     if (!nm) { showNotice("Name cannot be empty!"); return; }
-    db.ref("displayNames/" + nm).once("value", snap => {
+    db.ref("displayNames/" + nm).once("value").then(snap => {
       let val = snap.val();
       if (val && val !== myId) {
         showNotice("That display name is already taken by another device!");
@@ -464,7 +457,8 @@
       displayName = nm; pass = p;
       localStorage.setItem("displayName", nm);
       localStorage.setItem("pass", p);
-      db.ref("displayNames/" + nm).set(myId);
+      return db.ref("displayNames/" + nm).set(myId);
+    }).then(() => {
       db.ref("users/" + myId + "/displayName").set(nm);
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
@@ -502,7 +496,7 @@
       let newN = mo.querySelector("#editName").value.trim();
       let newP = mo.querySelector("#editPass").value.trim();
       if (!newN) { showNotice("Name cannot be empty!"); return; }
-      db.ref("displayNames/" + newN).once("value", snap => {
+      db.ref("displayNames/" + newN).once("value").then(snap => {
         let val = snap.val();
         if (val && val !== myId) {
           showNotice("That name is taken by another device!");
@@ -511,7 +505,8 @@
         displayName = newN; pass = newP;
         localStorage.setItem("displayName", newN);
         localStorage.setItem("pass", newP);
-        db.ref("displayNames/" + newN).set(myId);
+        return db.ref("displayNames/" + newN).set(myId);
+      }).then(() => {
         db.ref("users/" + myId + "/displayName").set(newN);
         showNotice("Settings saved!");
         document.body.removeChild(mo);
@@ -528,7 +523,7 @@
     loadBlockedForSettings(mo.querySelector("#blockedList"));
   }
   function loadBlockedForSettings(container) {
-    db.ref("users/" + myId + "/blocked").once("value", snap => {
+    db.ref("users/" + myId + "/blocked").once("value").then(snap => {
       let list = snap.val() || {};
       container.innerHTML = "";
       if (Object.keys(list).length === 0) {
@@ -540,9 +535,10 @@
           let unblk = document.createElement("button");
           unblk.textContent = "Unblock";
           unblk.onclick = () => {
-            db.ref("users/" + myId + "/blocked/" + user).remove();
-            showNotice(user + " has been unblocked.");
-            loadBlockedForSettings(container);
+            db.ref("users/" + myId + "/blocked/" + user).remove().then(() => {
+              showNotice(user + " has been unblocked.");
+              loadBlockedForSettings(container);
+            });
           };
           div.appendChild(unblk);
           container.appendChild(div);
@@ -588,24 +584,24 @@
         accept.style.background = "green";
         accept.onclick = () => {
           if (blocked[from]) { showNotice("Unblock them first!"); return; }
-          db.ref("displayNames/" + from).once("value", sn => {
+          db.ref("displayNames/" + from).once("value").then(sn => {
             let dev = sn.val();
             if (!dev) { showNotice("User not found!"); return; }
             let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).set({});
-            db.ref("users/" + myId + "/chats/" + cid).set({ name: from, type: "private", last: Date.now() });
-            db.ref("users/" + myId + "/requests/" + from).remove();
-            db.ref("users/" + myId + "/friends/" + from).set(true);
-            db.ref("users/" + dev + "/friends/" + displayName).set(true);
-            db.ref("users/" + dev + "/accepted/" + displayName).set(true);
-            db.ref("privateChats/" + cid + "/messages").push({
-              sender: "_system",
-              text: `${from} accepted your friend request!`,
-              timestamp: Date.now(),
-              reaction: "",
-              readBy: { [dev]: Date.now() }
-            });
-            openChat(cid, from, "private");
+            return db.ref("privateChats/" + cid).set({}).then(() => {
+              db.ref("users/" + myId + "/chats/" + cid).set({ name: from, type: "private", last: Date.now() });
+              db.ref("users/" + myId + "/requests/" + from).remove();
+              db.ref("users/" + myId + "/friends/" + from).set(true);
+              db.ref("users/" + dev + "/friends/" + displayName).set(true);
+              db.ref("users/" + dev + "/accepted/" + displayName).set(true);
+              return db.ref("privateChats/" + cid + "/messages").push({
+                sender: "_system",
+                text: `${from} accepted your friend request!`,
+                timestamp: Date.now(),
+                reaction: "",
+                readBy: { [dev]: Date.now() }
+              });
+            }).then(() => openChat(cid, from, "private"));
           });
         };
         div.appendChild(accept);
@@ -629,7 +625,7 @@
         btn.textContent = "Cancel";
         btn.onclick = () => {
           db.ref("users/" + myId + "/requestsSent/" + n).remove();
-          db.ref("displayNames/" + n).once("value", sn => {
+          db.ref("displayNames/" + n).once("value").then(sn => {
             let dev = sn.val();
             if (dev) db.ref("users/" + dev + "/requests/" + displayName).remove();
           });
@@ -642,12 +638,14 @@
       let who = snap.key;
       showNotice(`${who} accepted your friend request!`);
       db.ref("users/" + myId + "/requestsSent/" + who).remove();
-      db.ref("displayNames/" + who).once("value", sn => {
+      db.ref("displayNames/" + who).once("value").then(sn => {
         let dev = sn.val();
         if (!dev) return;
         let cid = [myId, dev].sort().join("_");
-        db.ref("privateChats/" + cid).once("value", snap2 => {
-          if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
+        db.ref("privateChats/" + cid).once("value").then(snap2 => {
+          if (!snap2.exists()) {
+            db.ref("privateChats/" + cid).set({});
+          }
         });
         db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
       });
@@ -676,14 +674,13 @@
       if (cid === "help_chat") return;
       let info = chats[cid];
       let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-      db.ref(path).off("child_added", handleMsg);
-      db.ref(path).on("child_added", handleMsg);
-      function handleMsg(snap) {
+      db.ref(path).off("child_added");
+      db.ref(path).on("child_added", snap => {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
         updateChatListUI(chats);
-      }
+      });
     });
   }
   function updateChatListUI(chats) {
@@ -717,11 +714,11 @@
         let openBtn = document.createElement("button");
         openBtn.textContent = "Open Chat";
         openBtn.onclick = () => {
-          db.ref("displayNames/" + nm).once("value", snap => {
+          db.ref("displayNames/" + nm).once("value").then(snap => {
             let dev = snap.val();
             if (!dev) { showNotice("User not found!"); return; }
             let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/" + cid).once("value", snap2 => {
+            db.ref("privateChats/" + cid).once("value").then(snap2 => {
               if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
             });
             db.ref("users/" + myId + "/chats/" + cid).set({ name: nm, type: "private", last: Date.now() });
@@ -735,7 +732,7 @@
         unfriendBtn.onclick = () => {
           showConfirm("Unfriend " + nm + "?", () => {
             db.ref("users/" + myId + "/friends/" + nm).remove();
-            db.ref("displayNames/" + nm).once("value", snap2 => {
+            db.ref("displayNames/" + nm).once("value").then(snap2 => {
               let dev = snap2.val();
               if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
             });
@@ -766,15 +763,18 @@
       }
       div.appendChild(right);
       div.onclick = () => {
-        if (info.type === "help") openHelpChat();
-        else openChat(cid, nm, info.type);
+        if (info.type === "help") {
+          openHelpChat();
+        } else {
+          openChat(cid, nm, info.type);
+        }
       };
       cl.appendChild(div);
     });
   }
   function confirmDeleteChat(cid, info) {
     if (info.type === "group") {
-      db.ref("groupChats/" + cid + "/createdBy").once("value", snap => {
+      db.ref("groupChats/" + cid + "/createdBy").once("value").then(snap => {
         let own = snap.val();
         if (own !== myId) {
           showConfirm("Leave group " + info.name + "?", () => {
@@ -798,12 +798,12 @@
     }
   }
   function openChat(cid, name, type) {
-    currentChat = cid; currentType = type;
+    currentChat = cid;
+    currentType = type;
     chatUnread[cid] = 0;
     updateChatListUI({});
     if (type === "group") {
-      document.getElementById("chatTitle").innerHTML =
-        `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
+      document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
     } else {
       document.getElementById("chatTitle").textContent = name;
     }
@@ -815,12 +815,11 @@
     area.innerHTML = "";
     document.getElementById("loadMoreBtn").style.display = "none";
     if (messagesRef) {
-      if (childAddedRef) messagesRef.off("child_added", childAddedRef);
-      if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
+      messagesRef.off();
     }
     let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
     messagesRef = db.ref(path);
-    messagesRef.orderByChild("timestamp").limitToLast(50).once("value", snap => {
+    messagesRef.orderByChild("timestamp").limitToLast(50).once("value").then(snap => {
       let data = snap.val() || {};
       let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
       oldestStamp = (arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER);
@@ -831,13 +830,13 @@
       } else {
         hasMoreOld = false;
       }
-      childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
+      messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
         let v = snap.val();
         createBubble(snap.key, v, true);
         area.scrollTop = area.scrollHeight;
         markMsgRead(snap.key, v);
       });
-      childChangedRef = messagesRef.on("child_changed", snap => {
+      messagesRef.on("child_changed", snap => {
         updateBubble(snap.key, snap.val());
       });
       area.scrollTop = area.scrollHeight;
@@ -863,7 +862,7 @@
     if (!currentChat || !hasMoreOld) return;
     let btn = document.getElementById("loadMoreBtn");
     btn.disabled = true;
-    messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
+    messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value").then(snap => {
       let data = snap.val() || {};
       let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
       if (arr.length < 1) {
@@ -900,24 +899,30 @@
     bubble.appendChild(p);
     let rt = document.createElement("span");
     rt.className = "reactionTag";
-    if (val.reaction) rt.textContent = val.reaction;
+    if (val.reaction) {
+      rt.textContent = val.reaction;
+    }
     bubble.appendChild(rt);
     let rBar = document.createElement("div");
     rBar.className = "reactionBar";
     ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
       let span = document.createElement("span");
       span.textContent = emoji;
-      span.onclick = (ev) => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
+      span.onclick = (ev) => {
+        ev.stopPropagation();
+        applyReaction(mId, emoji);
+        rBar.style.display = "none";
+      };
       rBar.appendChild(span);
     });
     bubble.appendChild(rBar);
-    bubble.addEventListener("dblclick", () => { 
-      rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex"; 
+    bubble.addEventListener("dblclick", () => {
+      rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
     });
     bubble.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
       if (currentType === "group") {
-        db.ref("groupChats/" + currentChat + "/createdBy").once("value", snap => {
+        db.ref("groupChats/" + currentChat + "/createdBy").once("value").then(snap => {
           if (snap.val() === myId) {
             showConfirm("Remove this message?", () => {
               db.ref("groupChats/" + currentChat + "/messages/" + mId).remove();
@@ -944,7 +949,9 @@
     let b = document.getElementById("msg_" + mId);
     if (!b) return;
     let rt = b.querySelector(".reactionTag");
-    if (rt) rt.textContent = val.reaction || "";
+    if (rt) {
+      rt.textContent = val.reaction || "";
+    }
   }
 
   // ----- Typing & Emoji -----
@@ -967,7 +974,9 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
     db.ref(path).set(displayName);
-    setTimeout(() => db.ref(path).set(""), 2000);
+    setTimeout(() => {
+      db.ref(path).set("");
+    }, 2000);
   }
   function toggleEmojiPicker() {
     let ep = document.getElementById("emojiPicker");
@@ -1160,7 +1169,7 @@
         sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
         showTypingRacePrompt(prompt, gameId);
         setTimeout(() => {
-          db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
+          db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value").then(snap => {
             if (snap.val() === "pending") {
               db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
               sendSystemMessage(`TypingRace [${gameId}] expired.`);
@@ -1184,9 +1193,8 @@
       readBy: { [myId]: Date.now() }
     });
   }
-  // ----- Check Typing Race Win on Normal Messages -----
   function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
+    db.ref("games/typingrace/" + currentChat).once("value").then(snap => {
       let games = snap.val();
       if (!games) return;
       Object.keys(games).forEach(gameId => {
@@ -1200,7 +1208,6 @@
       });
     });
   }
-  // ----- Typing Race Prompt Modal (non-selectable) -----
   function showTypingRacePrompt(prompt, gameId) {
     let mo = document.createElement("div");
     mo.className = "modal no-select";
@@ -1219,9 +1226,8 @@
       document.body.removeChild(mo);
     };
   }
-  // ----- Typing Race Ready Command (for opponent) -----
   function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
+    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value").then(snap => {
       let ready = snap.val() || {};
       if (!ready[myId]) {
         db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
@@ -1229,6 +1235,7 @@
       }
     });
   }
+
   // ----- Client-Side Cooldown -----
   function canSendMessage() {
     let nowTime = Date.now();
@@ -1271,9 +1278,9 @@
   }
 
   // ----- Placeholder Functions for Missing UI Features -----
-  function addFriendUI() { alert("Add Friend UI placeholder. Please implement the full UI."); }
-  function openFriendsPanel() { alert("Open Friends Panel placeholder. Please implement the full UI."); }
-  function showAddChatPanel() { alert("Add Chat Panel placeholder. Please implement the full UI."); }
+  function addFriendUI() { alert("Add Friend UI placeholder."); }
+  function openFriendsPanel() { alert("Open Friends Panel placeholder."); }
+  function showAddChatPanel() { alert("Add Chat Panel placeholder."); }
   function applyReaction(mId, emoji) {
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
     db.ref(path).set(emoji);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Optimized Notifications</title>
+  <title>Static Live Chat – Final Optimized Version</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;
-      --bubble-from: #444;
+      --bubble-to: #1e90ff;       /* your messages */
+      --bubble-from: #444;        /* others' messages */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -34,7 +34,7 @@
       --accent: #007acc;
       --chat-item-bg: #bbb;
     }
-    /* Additional theme definitions for blue, green, pink, purple omitted for brevity */
+    /* Additional themes (blue, green, pink, purple) can be defined similarly */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -123,7 +123,7 @@
     }
     .reactionBar span { font-size: 22px; cursor: pointer; }
     .timestamp { font-size: 10px; opacity: 0.7; margin-top: 8px; }
-    /* Client-side unread flag: when chat is opened, the unread count is simply cleared */
+    /* Unread notification counts are tracked client-side */
     #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
     #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
     #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
@@ -301,7 +301,7 @@
   let currentChat = "", currentType = "";
   let messagesRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
-  let chatUnread = {}; // Client-side tracking: when a chat is opened, its unread count is cleared.
+  let chatUnread = {}; // client-side flag for unread notifications
   let blocked = {}, friends = {};
   
   // ----- On Load Initialization -----
@@ -681,8 +681,7 @@
   
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
-    // Clear unread notifications client-side when chat is opened
-    chatUnread[cid] = 0;
+    chatUnread[cid] = 0; // clear client-side unread count
     updateChatListUI({});
     if (type === "group") {
       document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
@@ -717,7 +716,7 @@
       messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
       if (cid !== currentChat) {
-        db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
+        db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
       }
       arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
@@ -734,7 +733,6 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    // Unread notifications are cleared client-side when chat is opened.
   }
   
   function loadOlderMessages() {
@@ -872,7 +870,8 @@
     sc.style.display = "block";
   }
   
-  // ----- Send Message & Slash Processing -----
+  // ----- End of Code -----
+  
   function sendMessage() {
     if (!currentChat || currentType === "help") return;
     let inp = document.getElementById("msgInput");
@@ -1026,7 +1025,7 @@
     });
   }
   
-  // ----- Check Typing Race Win on Normal Messages -----
+  // ----- Check Typing Race Win -----
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value", snap => {
       let games = snap.val();
@@ -1043,7 +1042,7 @@
     });
   }
   
-  // ----- Typing Race Prompt Modal (non-selectable) -----
+  // ----- Typing Race Prompt Modal -----
   function showTypingRacePrompt(prompt, gameId) {
     let mo = document.createElement("div");
     mo.className = "modal no-select";
@@ -1063,7 +1062,7 @@
     };
   }
   
-  // ----- Typing Race Ready Command (for opponent) -----
+  // ----- Typing Race Ready Command -----
   function processTypingRaceReady(gameId) {
     db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
       let ready = snap.val() || {};

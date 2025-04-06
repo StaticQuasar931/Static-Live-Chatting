@@ -97,12 +97,8 @@
     .timestamp {
       position:absolute; font-size:10px; opacity:0.7; bottom:-14px;
     }
-    .mineTime {
-      right:10px;
-    }
-    .otherTime {
-      left:10px;
-    }
+    .mineTime { right:10px; }
+    .otherTime { left:10px; }
     #typingIndicator {
       display:none; font-style:italic; font-size:14px; margin:0 20px 10px;
     }
@@ -181,67 +177,8 @@
   </style>
 </head>
 <body>
-
 <script>
-// The stable final code with all expansions, verifying chat deletion bug is fixed, adding more help chat details.
-
-</script>
-
-<div id="login" style="display:flex;">
-  <div style="background:var(--chat-bg);padding:20px;border-radius:10px;position:relative;">
-    <h2>Static Live Chat</h2>
-    <label>Display Name (unique):</label><br/>
-    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
-    <label>Password (optional friend key):</label><br/>
-    <div style="display:flex;">
-      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
-      <button onclick="toggleLoginPass()">👁️</button>
-    </div>
-    <button onclick="doLogin()">Log In</button>
-  </div>
-</div>
-
-<div id="app" style="display:none;">
-  <div id="sidebar">
-    <button onclick="openFriendsPanel()">Friends</button>
-    <button onclick="addFriendUI()">Add Friend</button>
-    <button onclick="showAddChatPanel()">Add Chat</button>
-    <h3>Friend Requests</h3>
-    <div id="requestsTab"></div>
-    <div id="requestsSentTab" style="margin-top:8px;color:#ccc;"></div>
-    <hr/>
-    <h3>Chats</h3>
-    <div id="chatList"></div>
-  </div>
-
-  <div id="chatPanel">
-    <div id="topBar">
-      <div id="chatTitle">No Chat</div>
-      <div>
-        <button id="themeBtn" onclick="toggleTheme()">Dark: Theme</button>
-        <button onclick="openSettings()">⚙️ Settings</button>
-      </div>
-    </div>
-    <div id="groupMembers" style="padding:5px 15px; display:none; font-size:14px;"></div>
-    <button id="loadMoreBtn" style="display:none;" onclick="loadOlderMessages()">Load Older</button>
-    <div id="messages"></div>
-    <div id="typingIndicator" style="display:none;"></div>
-    <div id="inputArea">
-      <input id="msgInput" placeholder="Type '/' for commands" oninput="slashAutoInput(event)" onkeypress="if(event.key==='Enter')sendMessage();"/>
-      <button onclick="toggleEmojiPicker()">😀</button>
-      <button onclick="sendMessage()">Send</button>
-    </div>
-    <div id="emojiPicker"></div>
-    <div id="slashAutocomplete"></div>
-  </div>
-</div>
-
-<div id="staticMenu">
-  <a href="https://sites.google.com/view/staticquasar931" target="_blank" class="staticLink">More Unblocked Games by Static</a>
-</div>
-
-<script>
-// ========== 1) Basic fallback if firebase blocked
+// If firebase is blocked
 if(typeof firebase==="undefined"){
   window.firebase={ initializeApp:()=>{}, database:()=>({ref:()=>({})}) };
 }
@@ -266,7 +203,7 @@ try{
 let beepAudio=null, beepAllowed=false;
 function initBeep(){
   beepAudio=document.createElement("audio");
-  beepAudio.src="data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAEAX48AAABCxAgAEABAAZGF0YQAAAAA=";
+  beepAudio.src="data:audio/wav;base64,UklGRmYAAABXQVZFZm10IBAAAAABAAEAkg0AAABCxAgAEABAAZGF0YQAAAAA=";
   document.body.appendChild(beepAudio);
   beepAudio.volume=1;
 }
@@ -276,7 +213,7 @@ document.addEventListener("click",()=>{
   }
 },{once:true});
 
-// ========== 2) device-based ID
+// device ID
 function genId(){ return "dev_"+Math.random().toString(36).slice(2)+"_"+Date.now();}
 let myId=localStorage.getItem("myDeviceId");
 if(!myId){
@@ -290,30 +227,25 @@ function trackOldName(o,n){
   db.ref(`users/${myId}/oldNames`).push(o);
 }
 
-// ========== 3) On load skip if we have displayName
+// skipping login if name
 window.addEventListener("DOMContentLoaded",()=>{
   if(displayName){
     document.getElementById("login").style.display="none";
     document.getElementById("app").style.display="flex";
-    applyTheme();
-    loadBlocked(); loadFriends(); loadRequests(); initChatWatchers(); setupHelpChat();
+    applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers(); setupHelpChat();
   }
 });
-
-// toggle password
 function toggleLoginPass(){
   let pw=document.getElementById("password");
   pw.type=(pw.type==="password")?"text":"password";
 }
-
-// doLogin
 function doLogin(){
   let nm=document.getElementById("username").value.trim();
   let p=document.getElementById("password").value.trim();
   if(!nm)return showNotice("Name can't be empty!");
   db.ref("displayNames/"+nm).once("value",(snap)=>{
     let val=snap.val();
-    if(val&& val!==myId){
+    if(val && val!==myId){
       showNotice("That display name is used by another device!");
       return;
     }
@@ -342,9 +274,7 @@ function applyTheme(){
 function toggleTheme(){
   let cyc=["dark","light","blue","green","pink","purple"];
   let c="dark";
-  for(let col of cyc){
-    if(document.body.classList.contains(col)) c=col;
-  }
+  for(let col of cyc){ if(document.body.classList.contains(col)) c=col; }
   let idx=cyc.indexOf(c);
   let nxt=cyc[(idx+1)%cyc.length];
   document.body.classList.remove(...cyc);
@@ -356,7 +286,7 @@ function setThemeLabel(x){
   document.getElementById("themeBtn").textContent=`${x}: Theme`;
 }
 
-// ========== ESC or outside click to close
+// ESC close modals
 document.addEventListener("keydown",(ev)=>{
   if(ev.key==="Escape"){
     let modals=document.querySelectorAll(".modal");
@@ -366,7 +296,7 @@ document.addEventListener("keydown",(ev)=>{
   }
 });
 
-// confirm and notice
+// confirm/notice
 function showConfirm(msg, yesCb){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -415,7 +345,7 @@ function showNotice(msg){
   mo.querySelector("#okBtn").onclick=()=> document.body.removeChild(mo);
 }
 
-// help pinned
+// pinned help
 function setupHelpChat(){
   db.ref(`users/${myId}/chats/help_chat`).set({name:"Help (info)",type:"help",last:0});
 }
@@ -430,31 +360,28 @@ function openHelpChat(){
   big.className="msg centerSys";
   big.innerHTML=`
     <strong>HELP & INFO</strong><br/>
-    <p>Commands (type / in message):
-    <ul>
-    <li><code>/rps [rock|paper|scissors]</code> - Partial Rock-Paper-Scissors vs user</li>
-    <li><code>/roll [sides]</code> - dice roller (default 6 sides)</li>
-    <li><code>/vote question|opt1|opt2</code> - mini poll</li>
-    <li><code>/ping</code> - measure roundtrip</li>
-    <li><code>/8ball [question]</code> - random yes/no/maybe answers</li>
-    <li><code>/roast</code> - silly roast generator</li>
-    <li><code>/guessnumber [1-10]</code> - partial guess game</li>
-    <li><code>/ship [name]</code> - combine your name + someone else's</li>
-    <li><code>/typingrace [cat] [num]</code> - “mix” / “sentences” / “anything”, lines=1 default</li>
-    <li><code>/tod truth</code>, <code>/tod dare</code> - random T/D question</li>
-    <li><code>/title [text]</code> - big system text in chat</li>
-    <li><code>/cf heads</code>, <code>/coin flip tails</code> - coin flip</li>
-    </ul>
-    <strong>Examples:</strong><br/>
-    /typingrace mix 1<br/>
-    /vote “Your poll?”|Yes|No
+    <p>
+      <code>/rps rock|paper|scissors</code><br/>
+      <code>/roll [sides]</code><br/>
+      <code>/vote question|opt1|opt2</code><br/>
+      <code>/ping</code><br/>
+      <code>/8ball [question]</code><br/>
+      <code>/roast</code><br/>
+      <code>/guessnumber [1-10]</code><br/>
+      <code>/ship [name]</code><br/>
+      <code>/typingrace [mix|sentences|anything] [lines]</code><br/>
+      <code>/tod truth</code>, <code>/tod dare</code><br/>
+      <code>/title [text]</code><br/>
+      <code>/cf heads</code>, <code>/coin flip tails</code><br/>
+      <br/>
+      Example: <code>/typingrace mix 1</code>
     </p>
   `;
   area.appendChild(big);
   document.getElementById("msgInput").disabled=true;
 }
 
-// watchers for blocked/friends
+// watchers blocked/friends
 let blocked={}, friends={};
 function loadBlocked(){
   db.ref(`users/${myId}/blocked`).on("value",(snap)=>{
@@ -625,25 +552,22 @@ function confirmDeleteChat(cid, info){
       let own=sn.val();
       if(own!==myId){
         showConfirm(`Leave group ${info.name}?`,()=>{
-          // remove me from group
           db.ref(`groupChats/${cid}/members/${myId}`).remove();
-          // remove from my user list
           db.ref(`users/${myId}/chats/${cid}`).remove();
-          showNotice("Left group chat successfully.");
+          showNotice("Left group chat.");
         });
       } else {
         showConfirm(`Delete group ${info.name}?`,()=>{
-          // delete entire group
           db.ref(`groupChats/${cid}`).remove();
           db.ref(`users/${myId}/chats/${cid}`).remove();
-          showNotice("Group chat fully deleted for everyone!");
+          showNotice("Group chat fully deleted!");
         });
       }
     });
   } else {
     showConfirm(`Remove private chat with ${info.name}?`,()=>{
       db.ref(`users/${myId}/chats/${cid}`).remove();
-      showNotice("Private chat removed from your side. The other user still keeps it unless they also delete it.");
+      showNotice("Private chat removed from your side only.");
     });
   }
 }
@@ -654,7 +578,7 @@ let messagesRef=null, childAddedRef=null, childChangedRef=null;
 let oldestStamp=Number.MAX_SAFE_INTEGER, hasMoreOld=false;
 function openChat(cid,name,type){
   currentChat=cid; currentType=type;
-  chatUnread[cid]=0;
+  chatUnread[cid]=0; // zero unread for that chat
   updateTitle();
   updateChatListUI({});
   document.getElementById("chatTitle").textContent=name;
@@ -707,8 +631,6 @@ function openChat(cid,name,type){
   }
   attachTypingListener();
 }
-
-// showGroupMembers
 function showGroupMembers(devs,cid){
   let gm=document.getElementById("groupMembers");
   gm.innerHTML="";
@@ -733,161 +655,6 @@ function showGroupMembers(devs,cid){
     }
   });
 }
-function editGroupChat(cid){
-  // rename, lock, add user, remove user
-  let mo=document.createElement("div");
-  mo.className="modal";
-  mo.innerHTML=`
-    <div class="modalContent" style="min-width:320px;">
-      <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-      <h3>Edit Group</h3>
-      <label>New Name:</label><br/>
-      <input id="grpRename"/><br/>
-      <label>Add user by name:</label><br/>
-      <input id="grpAddName"/><button id="grpAddBtn">Add</button><br/>
-      <label>Remove user by name:</label><br/>
-      <input id="grpRemName"/><button id="grpRemBtn">Remove</button><br/>
-      <label>Lock/unlock (password):</label><br/>
-      <input id="grpLockPass"/><button id="grpLockBtn">Apply</button><br/>
-    </div>
-  `;
-  document.body.appendChild(mo);
-  mo.style.display="flex";
-  mo.addEventListener("click",(e)=>{
-    if(e.target===mo) document.body.removeChild(mo);
-  });
-  mo.addEventListener("keydown",(ev)=>{
-    if(ev.key==="Escape") document.body.removeChild(mo);
-  });
-
-  let rename=mo.querySelector("#grpRename");
-  let addName=mo.querySelector("#grpAddName");
-  let remName=mo.querySelector("#grpRemName");
-  let lockP=mo.querySelector("#grpLockPass");
-
-  mo.querySelector("#grpAddBtn").onclick=()=>{
-    let n=addName.value.trim(); if(!n)return;
-    db.ref("displayNames/"+n).once("value",(sn)=>{
-      let dev=sn.val(); if(!dev)return showNotice(`No user named ${n}`);
-      db.ref(`groupChats/${cid}/members/${dev}`).set(true);
-      showNotice(`Added ${n} to group.`);
-      addName.value="";
-    });
-  };
-  mo.querySelector("#grpRemBtn").onclick=()=>{
-    let n=remName.value.trim(); if(!n)return;
-    db.ref("displayNames/"+n).once("value",(sn2)=>{
-      let dev=sn2.val(); if(!dev)return showNotice(`No user named ${n}`);
-      db.ref(`groupChats/${cid}/members/${dev}`).remove();
-      showNotice(`Removed ${n} from group.`);
-      remName.value="";
-    });
-  };
-  rename.addEventListener("keypress",(ev)=>{
-    if(ev.key==="Enter"){
-      let newN=rename.value.trim(); if(!newN)return;
-      db.ref(`groupChats/${cid}/name`).set(newN);
-      db.ref(`users/${myId}/chats/${cid}/name`).set(newN);
-      showNotice(`Group name changed to ${newN}`);
-      rename.value="";
-    }
-  });
-  mo.querySelector("#grpLockBtn").onclick=()=>{
-    let p=lockP.value.trim();
-    db.ref(`groupChats/${cid}/password`).set(p);
-    showNotice(p? `Group locked with password: ${p}` : "Group unlocked.");
-  };
-}
-
-function getDisplayName(dId,cb){
-  if(dId===myId)return cb(displayName);
-  if(dId==="_system")return cb("_system");
-  db.ref(`users/${dId}/displayName`).once("value",(sn)=>{
-    cb(sn.val()||"?");
-  });
-}
-
-// read receipts
-function markMsgRead(mId,val){
-  if(!currentChat||currentType==="help")return;
-  let p=(currentType==="group"?"groupChats":"privateChats");
-  db.ref(`${p}/${currentChat}/messages/${mId}/readBy/${myId}`).set(Date.now());
-}
-
-// create bubble
-function createBubble(mId,val,toEnd){
-  let area=document.getElementById("messages");
-  if(document.getElementById("msg_"+mId))return;
-  let b=document.createElement("div");
-  b.id="msg_"+mId;
-  if(val.sender===myId) b.className="msg me";
-  else if(val.sender==="_system") b.className="msg centerSys";
-  else b.className="msg them";
-
-  let text=val.text||"";
-  if(currentType==="group" && val.sender!==myId && val.sender!=="_system"){
-    getDisplayName(val.sender,(nm)=>{
-      b.innerHTML=`<span style="font-weight:bold;">${nm}:</span> ${text}`;
-    });
-  } else {
-    b.innerHTML=text;
-  }
-  let rt=document.createElement("span");
-  rt.className="reactionTag";
-  if(val.reaction) rt.textContent=val.reaction;
-  b.appendChild(rt);
-
-  let rBar=document.createElement("div");
-  rBar.className="reactionBar";
-  ["❤️","👍","👎","😂","😮","😢"].forEach(emo=>{
-    let s=document.createElement("span");
-    s.textContent=emo;
-    s.onclick=(ev)=>{
-      ev.stopPropagation();
-      applyReaction(mId,emo);
-      rBar.style.display="none";
-    };
-    rBar.appendChild(s);
-  });
-  b.appendChild(rBar);
-
-  b.addEventListener("dblclick",(ev)=>{
-    rBar.style.display=(rBar.style.display==="flex")?"none":"flex";
-  });
-  b.addEventListener("contextmenu",(ev)=>{
-    ev.preventDefault();
-    if(currentType==="group"){
-      db.ref(`groupChats/${currentChat}/createdBy`).once("value",(sn)=>{
-        if(sn.val()===myId){
-          showConfirm("Remove this message?",()=>{
-            db.ref(`groupChats/${currentChat}/messages/${mId}`).remove();
-            let ex=document.getElementById("msg_"+mId);
-            if(ex) ex.remove();
-          });
-        }
-      });
-    }
-  });
-
-  let ts=document.createElement("div");
-  ts.className="timestamp";
-  let t= val.timestamp? new Date(val.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"";
-  ts.textContent=t;
-  b.appendChild(ts);
-  if(val.sender===myId) ts.classList.add("mineTime");
-  else if(val.sender==="_system"){}
-  else ts.classList.add("otherTime");
-
-  if(toEnd) area.appendChild(b); else area.prepend(b);
-  area.scrollTop=area.scrollHeight;
-}
-function updateBubble(mId,val){
-  let b=document.getElementById("msg_"+mId);
-  if(!b)return;
-  let rt=b.querySelector(".reactionTag");
-  if(rt) rt.textContent=val.reaction||"";
-}
-
 function loadOlderMessages(){
   if(!currentChat||!hasMoreOld)return;
   let btn=document.getElementById("loadMoreBtn");
@@ -914,12 +681,130 @@ function loadOlderMessages(){
   });
 }
 
+// typing watchers
+function attachTypingListener(){
+  if(!currentChat||currentType==="help")return;
+  let p=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${p}/${currentChat}/typing`).off();
+  db.ref(`${p}/${currentChat}/typing`).on("value",(sn)=>{
+    let val=sn.val();
+    let t=document.getElementById("typingIndicator");
+    if(val && val!==displayName){
+      t.style.display="block";
+      t.textContent=`${val} is typing...`;
+    } else t.style.display="none";
+  });
+}
+function sendTyping(){
+  if(!currentChat||currentType==="help")return;
+  let p=(currentType==="group"?"groupChats":"privateChats");
+  db.ref(`${p}/${currentChat}/typing`).set(displayName);
+  setTimeout(()=>db.ref(`${p}/${currentChat}/typing`).set(""),2000);
+}
+
 // slash commands
 let slashCmds=[
   "/rps","/roll","/vote","/ping","/8ball","/roast","/guessnumber","/ship","/typingrace",
   "/tod truth","/tod dare","/title",
   "/cf heads","/cf tails","/coin flip heads","/coin flip tails"
 ];
+// extended logic
+function processSlashCommand(cmd){
+  let parts=cmd.split(" ");
+  let slash=parts[0].toLowerCase();
+  if(slash==="/roll"){
+    let sides=parseInt(parts[1],10)||6;
+    let r=Math.floor(Math.random()*sides)+1;
+    sendSystemMessage(`:game_die: Rolled a ${sides}-sided die: ${r}`);
+  }
+  else if(slash==="/ping"){
+    let t0=Date.now();
+    db.ref("pingTest").set({time:t0},()=>{
+      let dt=Date.now()-t0;
+      sendSystemMessage(`Ping: ${dt}ms`);
+    });
+  }
+  else if(slash==="/8ball"){
+    let q=cmd.slice(6).trim();
+    if(!q)return showNotice("Usage: /8ball [question]");
+    let answers=["Yes","No","Maybe","Ask again later","Definitely not","Certainly","Likely"];
+    let pick=answers[Math.floor(Math.random()*answers.length)];
+    sendSystemMessage(`8ball: ${pick}`);
+  }
+  else if(slash==="/roast"){
+    let roasts=["You're slower than dial-up internet.","If sarcasm was an art, you'd be Picasso's muse.","You add chaos to normal chaos.","I've seen bigger brains in a walnut."];
+    let pick=roasts[Math.floor(Math.random()*roasts.length)];
+    sendSystemMessage(`Roast: ${pick}`);
+  }
+  else if(slash==="/tod"){
+    if(parts[1]==="truth"){
+      let truths=["What is your biggest fear?","Have you ever lied to a friend?","What's your weirdest dream?"];
+      let t=truths[Math.floor(Math.random()*truths.length)];
+      sendSystemMessage(`Truth: ${t}`);
+    } else if(parts[1]==="dare"){
+      let dares=["Pretend you're a cat for 10s.","Moonwalk across the room.","Speak in a robot voice for 1 min."];
+      let d=dares[Math.floor(Math.random()*dares.length)];
+      sendSystemMessage(`Dare: ${d}`);
+    } else showNotice("Usage: /tod truth or /tod dare");
+  }
+  else if(slash==="/title"){
+    let text=parts.slice(1).join(" ");
+    if(!text)return showNotice("Usage: /title something");
+    sendSystemMessage(`<< ${text} >>`);
+  }
+  else if(slash==="/cf"|| slash==="/coin"){
+    let guess="";
+    if(slash==="/cf") guess=parts[1]||"";
+    else if(parts[1]==="flip") guess=parts[2]||"";
+    guess=guess.toLowerCase();
+    if(guess!=="heads"&& guess!=="tails"){ showNotice("Usage: /cf heads or /coin flip heads/tails");return;}
+    let side=Math.random()<0.5?"heads":"tails";
+    sendSystemMessage(`Coinflip: ${side} => you chose ${guess}, ${side===guess?"You win!":"You lose!"}`);
+  }
+  else if(slash==="/vote"|| slash==="/poll"){
+    let rest=cmd.slice(slash.length).trim();
+    let ps=rest.split("|").map(x=>x.trim());
+    if(ps.length<2)return showNotice("Usage: /vote question|opt1|opt2");
+    let q=ps[0];
+    let opts=ps.slice(1);
+    let msg=`Vote: ${q}\n`;
+    opts.forEach(o=> msg+=`- ${o}\n`);
+    sendSystemMessage(msg);
+  }
+  else if(slash==="/guessnumber"){
+    let rng=parts[1]||"";
+    sendSystemMessage(`[GuessNumber] You selected ${rng || "1-10"}. Another user /guess # to guess. (Partial)`);
+  }
+  else if(slash==="/rps"){
+    let choice=(parts[1]||"").toLowerCase();
+    if(!choice)return showNotice("Usage: /rps rock|paper|scissors");
+    sendSystemMessage(`[RPS] ${displayName} chooses ${choice}. Another user must also type /rps to pick. (Partial)`);
+  }
+  else if(slash==="/typingrace"){
+    let cat=parts[1]||"mix"; 
+    let ln=parseInt(parts[2],10)||1;
+    sendSystemMessage(`[TypingRace] Category=${cat}, lines=${ln}. Both see the same prompt. (Partial)`);
+  }
+  else if(slash==="/ship"){
+    let nm=parts[1]||"";
+    if(!nm)return showNotice("Usage: /ship [name]");
+    let merged=shipNames(displayName,nm);
+    sendSystemMessage(`Ship: You and ${nm} => ${merged} :cupid:`);
+  }
+  else showNotice(`Unknown slash command: ${cmd}`);
+}
+function shipNames(a,b){
+  let h1=Math.floor(a.length/2), h2=Math.floor(b.length/2);
+  return a.slice(0,h1)+ b.slice(h2);
+}
+function sendSystemMessage(txt){
+  let path=(currentType==="group"?"groupChats":"privateChats")+"/"+currentChat+"/messages";
+  db.ref(path).push({
+    sender:"_system", text:txt, timestamp:Date.now(), reaction:"", readBy:{[myId]:Date.now()}
+  });
+}
+
+// slashAutoInput
 function slashAutoInput(e){
   let val=e.target.value;
   let sc=document.getElementById("slashAutocomplete");
@@ -944,32 +829,8 @@ function slashAutoInput(e){
   });
   sc.style.display="block";
 }
-function sendMessage(){
-  if(!currentChat||currentType==="help")return;
-  let inp=document.getElementById("msgInput");
-  let txt=inp.value.trim();
-  if(!txt)return;
-  document.getElementById("slashAutocomplete").style.display="none";
-  if(txt.startsWith("/")){
-    processSlashCommand(txt);
-    inp.value="";
-    return;
-  }
-  let friendName=document.getElementById("chatTitle").textContent;
-  if(currentType==="private" && blocked[friendName]){
-    showNotice("You blocked them. Unblock first!");
-    return;
-  }
-  let path=(currentType==="group"?"groupChats":"privateChats")+"/"+currentChat+"/messages";
-  db.ref(path).push({
-    sender:myId, text:txt, timestamp:Date.now(), reaction:"", readBy:{[myId]:Date.now()}
-  });
-  inp.value="";
-  document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
-}
-function processSlashCommand(cmd){
-  showNotice(`Slash command recognized: ${cmd} (partial). For real logic, expand processSlashCommand()!`);
-}
+
+// apply reaction
 function applyReaction(mId,r){
   if(!currentChat||currentType==="help")return;
   let p=(currentType==="group"?"groupChats":"privateChats");
@@ -1050,6 +911,7 @@ function openFriendsPanel(){
     menu.style.background="var(--chat-bg)";
     menu.style.padding="6px";
     menu.style.borderRadius="6px";
+    // open chat
     let oc=document.createElement("button");
     oc.textContent="Open Chat";
     oc.onclick=()=>{
@@ -1065,6 +927,7 @@ function openFriendsPanel(){
       menu.style.display="none";
     };
     menu.appendChild(oc);
+    // unfriend
     let uf=document.createElement("button");
     uf.textContent="Unfriend";
     uf.onclick=()=>{
@@ -1079,6 +942,7 @@ function openFriendsPanel(){
       menu.style.display="none";
     };
     menu.appendChild(uf);
+    // block
     let blk=document.createElement("button");
     blk.textContent="Block";
     blk.onclick=()=>{
@@ -1104,7 +968,7 @@ function openFriendsPanel(){
   });
 }
 
-// add chat
+// group
 function showAddChatPanel(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -1127,6 +991,7 @@ function showAddChatPanel(){
   });
 }
 function showCreatePanel(){
+  // same as above
   let mo=document.createElement("div");
   mo.className="modal";
   mo.innerHTML=`
@@ -1238,7 +1103,7 @@ function showPublicDirectory(){
   });
 }
 
-// open settings => rename => track old name
+// open settings
 function openSettings(){
   let mo=document.createElement("div");
   mo.className="modal";
@@ -1269,7 +1134,7 @@ function openSettings(){
     if(!nn)return showNotice("Name can't be empty!");
     db.ref("displayNames/"+nn).once("value",(sn)=>{
       let val=sn.val();
-      if(val&& val!==myId){
+      if(val && val!==myId){
         showNotice("Name is used by another device!");
         return;
       }
@@ -1294,7 +1159,7 @@ function openSettings(){
   };
 }
 
-// toggling emoji
+// toggle emojis
 function toggleEmojiPicker(){
   let ep=document.getElementById("emojiPicker");
   if(ep.style.display==="flex"){
@@ -1316,7 +1181,7 @@ function toggleEmojiPicker(){
 }
 </script>
 
-<!-- DB Rules:
+<!-- DB rules example:
 {
   "rules":{
     ".read":true,

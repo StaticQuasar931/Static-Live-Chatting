@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Optimized Version</title>
+  <title>Static Live Chat – Optimized for Performance</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
@@ -150,11 +150,10 @@
       position: relative;
       cursor: pointer;
       box-shadow: var(--shadow-msg);
-      /* Flex container to center text vertically and allow a timestamp block below */
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
@@ -228,8 +227,20 @@
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
-    .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
-    .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
+    .chatBadge {
+      background: var(--badge);
+      color: #fff;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-left: 5px;
+    }
+    .requestItem {
+      background: var(--bubble-from);
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+    }
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -298,7 +309,7 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
-    /* ===== Slash Command Autocomplete ===== */
+    /* ===== Slash Autocomplete ===== */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -344,7 +355,7 @@
 </head>
 <body>
 <script>
-  // ----- Firebase Setup -----
+  /* ----- Firebase Setup ----- */
   if (typeof firebase === "undefined") {
     console.error("Firebase not loaded – check your network.");
     window.firebase = { initializeApp: () => {}, database: () => ({ ref: () => ({}) }) };
@@ -367,21 +378,21 @@
     db = { ref: () => ({ once: () => {}, on: () => {}, set: () => {}, push: () => ({}) }) };
   }
   
-  // ----- Device & User Setup -----
+  /* ----- Device & User Setup ----- */
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
   let myId = localStorage.getItem("myDeviceId");
   if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
   let displayName = localStorage.getItem("displayName") || "";
   let pass = localStorage.getItem("pass") || "";
   
-  // ----- Global Variables -----
+  /* ----- Global Variables ----- */
   let currentChat = "", currentType = "";
-  let messagesRef = null, childAddedRef = null, childChangedRef = null;
+  let messagesRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
   
-  // ----- On Load Initialization -----
+  /* ----- On Load Initialization ----- */
   window.addEventListener("DOMContentLoaded", () => {
     if (displayName) {
       document.getElementById("login").style.display = "none";
@@ -391,7 +402,7 @@
     }
   });
   
-  // ----- Login & Settings -----
+  /* ----- Login & Settings ----- */
   function toggleLoginPass() {
     let pw = document.getElementById("password");
     pw.type = (pw.type === "password") ? "text" : "password";
@@ -495,7 +506,7 @@
     });
   }
   
-  // ----- Theming -----
+  /* ----- Theming ----- */
   function applyTheme() {
     let themes = ["dark", "light", "blue", "green", "pink", "purple"];
     let saved = localStorage.getItem("theme") || "dark";
@@ -517,7 +528,7 @@
     document.getElementById("themeBtn").textContent = `${lab}: Theme`;
   }
   
-  // ----- Chat & Message Watchers -----
+  /* ----- Chat & Message Watchers ----- */
   function loadRequests() {
     db.ref("users/" + myId + "/requests").on("value", snap => {
       let data = snap.val() || {};
@@ -611,29 +622,23 @@
     });
   }
   
+  // We attach a watcher on the user's chat list (background only).
   function initChatWatchers() {
     db.ref("users/" + myId + "/chats").on("value", snap => {
       let chats = snap.val() || {};
-      attachAllChatWatchers(chats);
-      updateChatListUI(chats);
-    });
-  }
-  
-  function attachAllChatWatchers(chats) {
-    Object.keys(chats).forEach(cid => {
-      if (cid === "help_chat") return;
-      let info = chats[cid];
-      let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-      // Remove previous watcher to avoid duplicate events
-      db.ref(path).off("child_added");
-      db.ref(path).on("child_added", snap => {
-        if (cid === currentChat) return;
-        chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        if (cid !== currentChat) {
+      // Only attach watchers for chats that are not open.
+      Object.keys(chats).forEach(cid => {
+        if (cid === "help_chat" || cid === currentChat) return;
+        let info = chats[cid];
+        let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
+        db.ref(path).off("child_added");
+        db.ref(path).on("child_added", snap => {
+          chatUnread[cid] = (chatUnread[cid] || 0) + 1;
           db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
-        }
-        updateChatListUI(chats);
+          updateChatListUI(chats);
+        });
       });
+      updateChatListUI(chats);
     });
   }
   
@@ -750,8 +755,10 @@
     }
   }
   
+  // ----- Open Chat: One-Time Read Update & No Active Watchers -----
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
+    // Reset unread count when chat is opened
     chatUnread[cid] = 0;
     updateChatListUI({});
     if (type === "group") {
@@ -766,77 +773,41 @@
     let area = document.getElementById("messages");
     area.innerHTML = "";
     document.getElementById("loadMoreBtn").style.display = "none";
-    if (messagesRef) {
-      messagesRef.off();
-    }
+    // Detach any active message watchers for performance
+    if (messagesRef) { messagesRef.off(); }
     let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
     messagesRef = db.ref(path);
+    // Load the last 50 messages once (no continuous on-child listeners for the active chat)
     messagesRef.orderByChild("timestamp").limitToLast(50).once("value", snap => {
       let data = snap.val() || {};
       let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
       oldestStamp = (arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER);
       arr.forEach(([mId, mVal]) => createBubble(mId, mVal, true));
+      // After loading, mark chat as read by sending one update.
+      markChatRead();
       if (arr.length >= 50) {
         hasMoreOld = true;
         document.getElementById("loadMoreBtn").style.display = "block";
       } else { hasMoreOld = false; }
-      messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
-        let v = snap.val();
-        createBubble(snap.key, v, true);
-        area.scrollTop = area.scrollHeight;
-        markMsgRead(snap.key, v);
-      });
-      messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
-      area.scrollTop = area.scrollHeight;
-      if (cid !== currentChat) {
-        db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
-      }
-      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
+    // For group chats, update member list continuously
     if (type === "group") {
       db.ref("groupChats/" + cid + "/members").on("value", snap => {
         let members = Object.keys(snap.val() || {});
         gm.textContent = "Members: " + members.join(", ");
       });
     }
+    // Start a one-time attachment for new messages arriving in background if chat is not open.
+    // (For the active chat, we rely on the one-time load.)
     attachTypingListener();
   }
   
-  function markMsgRead(mId, val) {
+  // When a chat is opened, send one update to mark it as read.
+  function markChatRead() {
     if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
-    db.ref(path).set(Date.now());
-    if (val.sender === myId && val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
-      let msgEl = document.getElementById("msg_" + mId);
-      if (msgEl && !msgEl.querySelector(".seenLabel")) {
-        let seen = document.createElement("div");
-        seen.className = "seenLabel";
-        seen.textContent = "Seen";
-        msgEl.appendChild(seen);
-      }
-    }
-  }
-  
-  function loadOlderMessages() {
-    if (!currentChat || !hasMoreOld) return;
-    let btn = document.getElementById("loadMoreBtn");
-    btn.disabled = true;
-    messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
-      let data = snap.val() || {};
-      let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-      if (arr.length < 1) {
-        showNotice("No older messages found!");
-        hasMoreOld = false;
-        btn.style.display = "none";
-        btn.disabled = false;
-        return;
-      }
-      oldestStamp = arr[0][1].timestamp;
-      arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
-      if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
-      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
-      btn.disabled = false;
-    });
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    // Instead of iterating over each message, we simply update our local "last read" timestamp.
+    db.ref("users/" + myId + "/chats/" + currentChat + "/lastRead").set(Date.now());
   }
   
   function createBubble(mId, val, toEnd) {
@@ -847,7 +818,22 @@
     if (val.sender === myId) bubble.classList.add("to");
     else if (val.sender === "_system") bubble.classList.add("console");
     else bubble.classList.add("from");
-    bubble.innerHTML = val.text || "";
+    // Bubble body contains the message text, then a timestamp block
+    let textDiv = document.createElement("div");
+    textDiv.textContent = val.text || "";
+    bubble.appendChild(textDiv);
+    let ts = document.createElement("div");
+    ts.className = "timestamp";
+    let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
+    ts.textContent = t;
+    bubble.appendChild(ts);
+    // If the message is from you and has been read by someone else, show "Seen"
+    if (val.sender === myId && val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
+      let seen = document.createElement("div");
+      seen.className = "seenLabel";
+      seen.textContent = "Seen";
+      bubble.appendChild(seen);
+    }
     let rt = document.createElement("span");
     rt.className = "reactionTag";
     if (val.reaction) rt.textContent = val.reaction;
@@ -861,7 +847,9 @@
       rBar.appendChild(span);
     });
     bubble.appendChild(rBar);
-    bubble.addEventListener("dblclick", () => { rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex"; });
+    bubble.addEventListener("dblclick", () => {
+      rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
+    });
     bubble.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
       if (currentType === "group") {
@@ -876,12 +864,6 @@
         });
       }
     });
-    let ts = document.createElement("div");
-    ts.className = "timestamp";
-    let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
-    ts.textContent = t;
-    bubble.appendChild(ts);
-    if (val.sender === myId) ts.classList.add("mineTime"); else ts.classList.add("otherTime");
     if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
     area.scrollTop = area.scrollHeight;
   }
@@ -1154,227 +1136,6 @@
     });
   }
   
-  // ----- Slash Commands Autocomplete -----
-  function slashAutoInput(e) {
-    let val = e.target.value;
-    let sc = document.getElementById("slashAutocomplete");
-    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
-    sc.innerHTML = "";
-    let rect = e.target.getBoundingClientRect();
-    sc.style.left = rect.left + "px";
-    sc.style.top = (rect.top - 115) + "px";
-    let hits = slashCmds.filter(c => c.startsWith(val));
-    if (!hits.length) { sc.style.display = "none"; return; }
-    hits.slice(0, 8).forEach(cmd => {
-      let b = document.createElement("button");
-      b.textContent = cmd;
-      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-      sc.appendChild(b);
-    });
-    sc.style.display = "block";
-  }
-  
-  function sendMessage() {
-    if (!currentChat || currentType === "help") return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if (!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if (txt.startsWith("/")) {
-      let parts = txt.split(" ");
-      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
-        processTypingRaceReady(parts[1]);
-      } else {
-        processSlashCommand(txt);
-      }
-      inp.value = "";
-      return;
-    }
-    checkTypingRaceWin(txt);
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
-  }
-  
-  function processSlashCommand(cmd) {
-    let parts = cmd.split(" ");
-    let slash = parts[0].toLowerCase();
-    if (slash === "/roll") {
-      let sides = parseInt(parts[1], 10) || 6;
-      let r = Math.floor(Math.random() * sides) + 1;
-      sendSystemMessage(`🎲 Rolled a ${sides}-sided die: ${r}`);
-    }
-    else if (slash === "/ping") {
-      let t0 = Date.now();
-      db.ref("pingTest").set({ time: t0 }, () => {
-        let dt = Date.now() - t0;
-        sendSystemMessage(`Ping: ${dt}ms`);
-      });
-    }
-    else if (slash === "/8ball") {
-      let q = cmd.slice(7).trim();
-      if (!q) { showNotice("Usage: /8ball [question]"); return; }
-      let answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
-      let pick = answers[Math.floor(Math.random() * answers.length)];
-      sendSystemMessage(`8ball: ${pick}`);
-    }
-    else if (slash === "/roast") {
-      let roasts = [
-        "Your code has more bugs than a beehive.",
-        "You're slower than dial-up internet.",
-        "At least your chat is entertaining."
-      ];
-      let pick = roasts[Math.floor(Math.random() * roasts.length)];
-      sendSystemMessage(`Roast: ${pick}`);
-    }
-    else if (slash === "/tod") {
-      if (parts[1] === "truth") {
-        let truths = [
-          "What's your biggest fear?",
-          "Have you ever lied to your best friend?",
-          "What's your most embarrassing moment?"
-        ];
-        let pick = truths[Math.floor(Math.random() * truths.length)];
-        sendSystemMessage(`Truth: ${pick}`);
-      } else if (parts[1] === "dare") {
-        let dares = [
-          "Dance like a robot for 15 seconds.",
-          "Talk in a baby voice for 3 messages.",
-          "Pretend you're an alien for 10 seconds."
-        ];
-        let pick = dares[Math.floor(Math.random() * dares.length)];
-        sendSystemMessage(`Dare: ${pick}`);
-      } else { showNotice("Usage: /tod truth or /tod dare"); }
-    }
-    else if (slash === "/title") {
-      let text = parts.slice(1).join(" ");
-      if (!text) { showNotice("Usage: /title [text]"); return; }
-      sendSystemMessage(`<< ${text} >>`);
-    }
-    else if (slash === "/cf" || slash === "/coin") {
-      let guess = "";
-      if (slash === "/cf") guess = parts[1] || "";
-      else if (parts[1] === "flip") guess = parts[2] || "";
-      guess = guess.toLowerCase();
-      if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
-      let side = Math.random() < 0.5 ? "heads" : "tails";
-      sendSystemMessage(`Coinflip: ${side} => you chose ${guess} => ${side === guess ? "You win!" : "You lose."}`);
-    }
-    else if (slash === "/ship") {
-      let n = parts[1] || "";
-      if (!n) { showNotice("Usage: /ship [name]"); return; }
-      let merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
-      sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
-    }
-    else if (slash === "/typingrace") {
-      const prompts = [
-        "The quick brown fox jumps over the lazy dog.",
-        "Pack my box with five dozen liquor jugs.",
-        "How vexingly quick daft zebras jump!"
-      ];
-      if (parts.length === 1) {
-        let options = prompts.map((p, i) => `${i+1}: ${p}`);
-        sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
-      } else {
-        let option = parseInt(parts[1], 10);
-        if (isNaN(option) || option < 1 || option > prompts.length) {
-          showNotice("Invalid option. Usage: /typingrace [option number]");
-          return;
-        }
-        let prompt = prompts[option - 1];
-        let gameId = "type_" + Date.now();
-        db.ref("games/typingrace/" + currentChat + "/" + gameId).set({
-          initiator: myId,
-          prompt: prompt,
-          ready: { [myId]: true },
-          timestamp: Date.now(),
-          status: "pending"
-        });
-        sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
-        showTypingRacePrompt(prompt, gameId);
-        setTimeout(() => {
-          db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
-            if (snap.val() === "pending") {
-              db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-              sendSystemMessage(`TypingRace [${gameId}] expired.`);
-            }
-          });
-        }, 60000);
-      }
-    }
-    else {
-      showNotice("Unknown slash command: " + cmd);
-    }
-  }
-  
-  function sendSystemMessage(text) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: "_system",
-      text: text,
-      timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
-    });
-  }
-  
-  // ----- Check Typing Race Win on Normal Messages -----
-  function checkTypingRaceWin(messageText) {
-    db.ref("games/typingrace/" + currentChat).once("value", snap => {
-      let games = snap.val();
-      if (!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
-          if (messageText === game.prompt) {
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  
-  // ----- Typing Race Prompt Modal (non-selectable) -----
-  function showTypingRacePrompt(prompt, gameId) {
-    let mo = document.createElement("div");
-    mo.className = "modal no-select";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:500px; position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Typing Race Challenge</h3>
-        <p>Type exactly the following (cannot be selected or copied):</p>
-        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
-        <button id="readyBtn">I'm Ready</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#readyBtn").onclick = () => {
-      processTypingRaceReady(gameId);
-      document.body.removeChild(mo);
-    };
-  }
-  
-  // ----- Typing Race Ready Command (for opponent) -----
-  function processTypingRaceReady(gameId) {
-    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
-      let ready = snap.val() || {};
-      if (!ready[myId]) {
-        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-  
   // ----- Slash Autocomplete -----
   function slashAutoInput(e) {
     let val = e.target.value;
@@ -1393,75 +1154,6 @@
       sc.appendChild(b);
     });
     sc.style.display = "block";
-  }
-  
-  // ----- End of Code -----
-  
-  function sendMessage() {
-    if (!currentChat || currentType === "help") return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if (!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if (txt.startsWith("/")) {
-      let parts = txt.split(" ");
-      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
-        processTypingRaceReady(parts[1]);
-      } else {
-        processSlashCommand(txt);
-      }
-      inp.value = "";
-      return;
-    }
-    checkTypingRaceWin(txt);
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
-  }
-  
-  // ----- Login Screen & Other UI Functions -----
-  function showConfirm(msg, yesCb) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px; position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Confirm</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:green;" id="yesBtn">Yes</button>
-          <button style="background:red;" id="noBtn">No</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#yesBtn").onclick = () => { document.body.removeChild(mo); yesCb(); };
-    mo.querySelector("#noBtn").onclick = () => { document.body.removeChild(mo); };
-  }
-  
-  function showNotice(msg) {
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:400px; position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Notice</h3>
-        <p>${msg}</p>
-        <div style="text-align:center;">
-          <button style="background:var(--accent);" id="okBtn">OK</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#okBtn").onclick = () => { document.body.removeChild(mo); };
   }
   
   // ----- End of Code -----

@@ -8,14 +8,14 @@
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
-    /* =================== Base & Theme =================== */
+    /* ========== Theme Variables ========== */
     :root {
       --bg-color: #111;
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;
-      --bubble-from: #444;
+      --bubble-to: #1e90ff;       /* your messages */
+      --bubble-from: #444;        /* incoming messages */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -100,7 +100,7 @@
       color: #fff;
       cursor: pointer;
     }
-    /* =================== Layout =================== */
+    /* ========== Layout ========== */
     #app { display: flex; flex: 1; height: 100%; }
     #sidebar {
       width: 280px;
@@ -126,7 +126,7 @@
       background: var(--chat-bg);
     }
     #topBar .top-right { display: flex; gap: 5px; }
-    #groupTitle { font-size: 16px; font-weight: bold; align-self: flex-start; margin: 5px 0; }
+    #groupTitle { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
     #messages {
       flex: 1;
       padding: 15px;
@@ -134,7 +134,7 @@
       display: flex;
       flex-direction: column;
     }
-    /* =================== Message Bubbles =================== */
+    /* ========== Message Bubbles ========== */
     .msg {
       max-width: 70%;
       padding: 16px;
@@ -239,7 +239,7 @@
     }
     a.staticLink { color: #0ff; text-decoration: none; }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-    /* =================== Modal =================== */
+    /* ========== Modal ========== */
     .modal {
       position: fixed;
       inset: 0;
@@ -268,7 +268,7 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    /* =================== Login Screen =================== */
+    /* ========== Login Screen ========== */
     #login {
       position: fixed;
       inset: 0;
@@ -278,7 +278,7 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
-    /* =================== Slash Autocomplete =================== */
+    /* ========== Slash Autocomplete ========== */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -320,21 +320,20 @@
 <script>
   /* =================== Firebase Initialization =================== */
   const firebaseConfig = {
-    apiKey: "",  // Enter your API key if applicable
+    apiKey: "AIzaSyABPH-hROMRxs_nkc_M6dKmTF6bE-Jhl50",
     authDomain: "statics-live-chatting.firebaseapp.com",
     databaseURL: "https://statics-live-chatting-default-rtdb.firebaseio.com",
     projectId: "statics-live-chatting",
     storageBucket: "statics-live-chatting.appspot.com",
     messagingSenderId: "617644143849",
-    appId: "1:617644143849:web:YOUR_APP_ID",  // Replace YOUR_APP_ID with your app's ID
-    measurementId: ""
+    appId: "1:617644143849:web:c91e036e86fca3accd6c78"
   };
   firebase.initializeApp(firebaseConfig);
   let db = firebase.database();
 
   /* =================== Helper Functions =================== */
   function showNotice(msg) { alert(msg); }
-  function showConfirm(msg, callback) { if(confirm(msg)) callback(); }
+  function showConfirm(msg, callback) { if (confirm(msg)) callback(); }
 
   /* =================== User Setup =================== */
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
@@ -349,7 +348,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // 0.5 sec cooldown
+  let lastMessageTime = 0; // 0.5-second cooldown
 
   /* =================== On Load Initialization =================== */
   window.addEventListener("DOMContentLoaded", () => {
@@ -477,7 +476,7 @@
     let themes = ["dark", "light", "blue", "green", "pink", "purple"];
     let saved = localStorage.getItem("theme") || "dark";
     document.body.classList.remove(...themes);
-    if(saved!=="dark") document.body.classList.add(saved);
+    if(saved !== "dark") document.body.classList.add(saved);
     setThemeLabel(saved);
   }
   function toggleTheme(){
@@ -486,7 +485,7 @@
     let idx = themes.indexOf(current);
     let next = themes[(idx+1)%themes.length];
     document.body.classList.remove(...themes);
-    if(next!=="dark") document.body.classList.add(next);
+    if(next !== "dark") document.body.classList.add(next);
     localStorage.setItem("theme", next);
     setThemeLabel(next);
   }
@@ -512,7 +511,7 @@
           db.ref("displayNames/"+from).once("value").then(sn => {
             let dev = sn.val();
             if(!dev){ showNotice("User not found!"); return; }
-            let cid = [myId,dev].sort().join("_");
+            let cid = [myId, dev].sort().join("_");
             return db.ref("privateChats/"+cid).set({}).then(() => {
               db.ref("users/"+myId+"/chats/"+cid).set({ name: from, type: "private", last: Date.now() });
               db.ref("users/"+myId+"/requests/"+from).remove();
@@ -566,14 +565,14 @@
       db.ref("users/"+myId+"/requestsSent/"+who).remove();
       db.ref("displayNames/"+who).once("value").then(sn => {
         let dev = sn.val();
-        if(!dev) return;
-        let cid = [myId,dev].sort().join("_");
+        if(!dev)return;
+        let cid = [myId, dev].sort().join("_");
         db.ref("privateChats/"+cid).once("value").then(snap2 => {
           if(!snap2.exists()) db.ref("privateChats/"+cid).set({});
         });
         db.ref("users/"+myId+"/chats/"+cid).set({ name: who, type: "private", last: Date.now() });
       });
-      setTimeout(() => { db.ref("users/"+myId+"/accepted/"+who).remove(); }, 3000);
+      setTimeout(() => { db.ref("users/"+myId+"/accepted/"+who).remove(); },3000);
     });
   }
   function loadBlocked(){
@@ -595,28 +594,28 @@
   }
   function attachAllChatWatchers(chats){
     Object.keys(chats).forEach(cid => {
-      if(cid==="help_chat") return;
+      if(cid === "help_chat") return;
       let info = chats[cid];
-      let path = (info.type==="group" ? "groupChats" : "privateChats")+"/"+cid+"/messages";
+      let path = (info.type==="group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       db.ref(path).off("child_added");
       db.ref(path).on("child_added", snap => {
-        if(cid===currentChat) return;
-        chatUnread[cid] = (chatUnread[cid]||0)+1;
+        if(cid === currentChat) return;
+        chatUnread[cid] = (chatUnread[cid] || 0) + 1;
         updateChatListUI(chats);
       });
     });
   }
   function updateChatListUI(chats){
-    let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0)-(a[1].last || 0));
+    let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
     let cl = document.getElementById("chatList");
     cl.innerHTML = "";
     arr.forEach(([cid, info]) => {
       let div = document.createElement("div");
       div.className = "chatItem";
-      if(cid===currentChat) div.classList.add("active");
+      if(cid === currentChat) div.classList.add("active");
       let nm = info.name || cid;
-      if(info.type==="private" && blocked[nm]) nm += " [Blocked]";
-      if(info.type==="help") nm = "Help (info)";
+      if(info.type === "private" && blocked[nm]) nm += " [Blocked]";
+      if(info.type === "help") nm = "Help (info)";
       div.textContent = nm;
       let right = document.createElement("div");
       right.style.display = "flex";
@@ -627,7 +626,7 @@
         badge.textContent = "+" + chatUnread[cid];
         right.appendChild(badge);
       }
-      if(info.type!=="help"){
+      if(info.type !== "help"){
         let dots = document.createElement("span");
         dots.textContent = "⋮";
         dots.style.cursor = "pointer";
@@ -640,7 +639,7 @@
           db.ref("displayNames/"+nm).once("value").then(snap => {
             let dev = snap.val();
             if(!dev){ showNotice("User not found!"); return; }
-            let cid = [myId,dev].sort().join("_");
+            let cid = [myId, dev].sort().join("_");
             db.ref("privateChats/"+cid).once("value").then(snap2 => {
               if(!snap2.exists()) db.ref("privateChats/"+cid).set({});
             });
@@ -674,9 +673,9 @@
           menu.style.display = "none";
         };
         menu.appendChild(blockBtn);
-        dots.onclick = (ev) => {
+        dots.onclick = ev => {
           ev.stopPropagation();
-          menu.style.display = (menu.style.display==="flex") ? "none" : "flex";
+          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
           let rect = dots.getBoundingClientRect();
           menu.style.left = rect.left + "px";
           menu.style.top = (rect.bottom + 2) + "px";
@@ -686,14 +685,14 @@
       }
       div.appendChild(right);
       div.onclick = () => {
-        if(info.type==="help") openHelpChat();
+        if(info.type === "help") openHelpChat();
         else openChat(cid, nm, info.type);
       };
       cl.appendChild(div);
     });
   }
   function confirmDeleteChat(cid, info){
-    if(info.type==="group"){
+    if(info.type === "group"){
       db.ref("groupChats/"+cid+"/createdBy").once("value").then(snap => {
         let own = snap.val();
         if(own !== myId){
@@ -722,7 +721,7 @@
     currentType = type;
     chatUnread[cid] = 0;
     updateChatListUI({});
-    if(type==="group"){
+    if(type === "group"){
       document.getElementById("chatTitle").innerHTML =
         `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
     } else {
@@ -740,10 +739,10 @@
     messagesRef = db.ref(path);
     messagesRef.orderByChild("timestamp").limitToLast(50).once("value").then(snap => {
       let data = snap.val() || {};
-      let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-      oldestStamp = (arr.length>0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER);
+      let arr = Object.entries(data).sort((a,b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+      oldestStamp = (arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER);
       arr.forEach(([mId, mVal]) => createBubble(mId, mVal, true));
-      if(arr.length>=50){
+      if(arr.length >= 50){
         hasMoreOld = true;
         document.getElementById("loadMoreBtn").style.display = "block";
       } else { hasMoreOld = false; }
@@ -754,11 +753,11 @@
       });
       messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      if(type!=="help" && cid!==currentChat){
+      if(type !== "help" && cid !== currentChat){
         db.ref("users/"+myId+"/chats/"+cid+"/last").set(Date.now());
       }
     });
-    if(type==="group"){
+    if(type === "group"){
       db.ref("groupChats/"+cid+"/members").on("value", snap => {
         let members = Object.keys(snap.val() || {});
         gm.textContent = "Members: " + members.join(", ");
@@ -790,14 +789,10 @@
     let area = document.getElementById("messages");
     if(document.getElementById("msg_"+mId)) return;
     let bubble = document.createElement("div");
-    bubble.id = "msg_" + mId;
-    if(val.sender === myId){
-      bubble.classList.add("to");
-    } else if(val.sender === "_system"){
-      bubble.classList.add("console");
-    } else {
-      bubble.classList.add("from");
-    }
+    bubble.id = "msg_"+mId;
+    if(val.sender === myId) bubble.classList.add("to");
+    else if(val.sender === "_system") bubble.classList.add("console");
+    else bubble.classList.add("from");
     let p = document.createElement("p");
     p.textContent = val.text || "";
     bubble.appendChild(p);
@@ -833,7 +828,7 @@
     });
     let ts = document.createElement("div");
     ts.className = "timestamp";
-    let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "");
+    let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : "");
     ts.textContent = t;
     bubble.appendChild(ts);
     if(toEnd){ area.appendChild(bubble); } else { area.prepend(bubble); }
@@ -850,7 +845,7 @@
   function attachTypingListener(){
     if(!currentChat || currentType==="help") return;
     let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-    db.ref(path).off();
+    db.ref(path).off("value");
     db.ref(path).on("value", snap => {
       let val = snap.val();
       let t = document.getElementById("typingIndicator");
@@ -867,25 +862,6 @@
     let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
     db.ref(path).set(displayName);
     setTimeout(() => { db.ref(path).set(""); }, 2000);
-  }
-  function toggleEmojiPicker(){
-    let ep = document.getElementById("emojiPicker");
-    if(ep.style.display === "flex"){
-      ep.style.display = "none";
-      return;
-    }
-    ep.innerHTML = "";
-    ep.style.display = "flex";
-    let emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
-    emojis.forEach(e => {
-      let span = document.createElement("span");
-      span.textContent = e;
-      span.onclick = () => {
-        document.getElementById("msgInput").value += e;
-        ep.style.display = "none";
-      };
-      ep.appendChild(span);
-    });
   }
 
   /* =================== Slash Commands & Autocomplete =================== */
@@ -906,10 +882,7 @@
     sc.style.left = rect.left + "px";
     sc.style.top = (rect.top - 115) + "px";
     let hits = slashCmds.filter(c => c.startsWith(val));
-    if(!hits.length){
-      sc.style.display = "none";
-      return;
-    }
+    if(!hits.length){ sc.style.display = "none"; return; }
     hits.slice(0,8).forEach(cmd => {
       let b = document.createElement("button");
       b.textContent = cmd;
@@ -1035,488 +1008,7 @@
         "How vexingly quick daft zebras jump!"
       ];
       if(parts.length === 1){
-        let options = prompts.map((p,i)=>`${i+1}: ${p}`);
-        sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
-      } else {
-        let option = parseInt(parts[1],10);
-        if(isNaN(option) || option < 1 || option > prompts.length){
-          showNotice("Invalid option. Usage: /typingrace [option number]");
-          return;
-        }
-        let prompt = prompts[option-1];
-        let gameId = "type_" + Date.now();
-        db.ref("games/typingrace/"+currentChat+"/"+gameId).set({
-          initiator: myId,
-          prompt: prompt,
-          ready: { [myId]: true },
-          timestamp: Date.now(),
-          status: "pending"
-        });
-        sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
-        showTypingRacePrompt(prompt, gameId);
-        setTimeout(() => {
-          db.ref("games/typingrace/"+currentChat+"/"+gameId+"/status").once("value").then(snap => {
-            if(snap.val() === "pending"){
-              db.ref("games/typingrace/"+currentChat+"/"+gameId).remove();
-              sendSystemMessage(`TypingRace [${gameId}] expired.`);
-            }
-          });
-        },60000);
-      }
-    }
-    else {
-      showNotice("Unknown slash command: " + cmd);
-    }
-  }
-  function sendSystemMessage(text){
-    if(!currentChat || currentType==="help") return;
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: "_system",
-      text: text,
-      timestamp: Date.now(),
-      reaction: ""
-    });
-  }
-  function checkTypingRaceWin(messageText){
-    db.ref("games/typingrace/"+currentChat).once("value").then(snap => {
-      let games = snap.val();
-      if(!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if(game.status==="pending" && game.ready && Object.keys(game.ready).length>=2){
-          if(messageText===game.prompt){
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/"+currentChat+"/"+gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  function showTypingRacePrompt(prompt, gameId){
-    let mo = document.createElement("div");
-    mo.className = "modal no-select";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:500px; position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Typing Race Challenge</h3>
-        <p>Type exactly the following (cannot be selected or copied):</p>
-        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
-        <button id="readyBtn">I'm Ready</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#readyBtn").onclick = () => {
-      processTypingRaceReady(gameId);
-      document.body.removeChild(mo);
-    };
-  }
-  function processTypingRaceReady(gameId){
-    db.ref("games/typingrace/"+currentChat+"/"+gameId+"/ready").once("value").then(snap => {
-      let ready = snap.val() || {};
-      if(!ready[myId]){
-        db.ref("games/typingrace/"+currentChat+"/"+gameId+"/ready/"+myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
-    });
-  }
-
-  /* =================== Client-Side Cooldown =================== */
-  function canSendMessage(){
-    let nowTime = Date.now();
-    if(nowTime - lastMessageTime < 500){
-      showNotice("Please wait 0.5 seconds between messages.");
-      return false;
-    }
-    lastMessageTime = nowTime;
-    return true;
-  }
-  function sendMessage(){
-    if(!currentChat || currentType==="help") return;
-    if(!canSendMessage()) return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if(!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if(txt.startsWith("/")){
-      let parts = txt.split(" ");
-      if(parts[0].toLowerCase()==="/typingrace" && parts[2] && parts[2].toLowerCase()==="ready"){
-        processTypingRaceReady(parts[1]);
-      } else {
-        processSlashCommand(txt);
-      }
-      inp.value = "";
-      return;
-    }
-    checkTypingRaceWin(txt);
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: ""
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
-  }
-
-  /* =================== Friend & Chat UI (Full Implementation) =================== */
-  function addFriendUI(){
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Friend</h3>
-        <input id="friendNameInput" placeholder="Friend's Display Name"/><br/>
-        <button id="friendSendBtn">Send Friend Request</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.querySelector("#friendSendBtn").onclick = () => {
-      let name = document.getElementById("friendNameInput").value.trim();
-      if(!name){ showNotice("Please enter a name."); return; }
-      if(name === displayName){ showNotice("You cannot friend yourself."); return; }
-      db.ref("displayNames/"+name).once("value").then(snap => {
-        let dev = snap.val();
-        if(!dev){ showNotice("User not found."); return; }
-        db.ref("users/"+dev+"/requests").set({ [displayName]: true });
-        db.ref("users/"+myId+"/requestsSent").set({ [name]: true });
-        showNotice("Friend request sent to " + name + ".");
-        document.body.removeChild(mo);
-      });
-    };
-  }
-  function openFriendsPanel(){
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-height:400px; overflow:auto;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Your Friends</h3>
-        <div id="friendList"></div>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    db.ref("users/"+myId+"/friends").once("value").then(snap => {
-      let friendsObj = snap.val() || {};
-      let fl = document.getElementById("friendList");
-      fl.innerHTML = "";
-      if(Object.keys(friendsObj).length === 0){
-        fl.textContent = "No friends added yet.";
-        return;
-      }
-      Object.keys(friendsObj).forEach(name => {
-        let div = document.createElement("div");
-        div.style.padding = "8px";
-        div.style.marginBottom = "8px";
-        div.style.border = "1px solid var(--accent)";
-        div.style.borderRadius = "6px";
-        div.textContent = name;
-        let openBtn = document.createElement("button");
-        openBtn.textContent = "Chat";
-        openBtn.onclick = () => {
-          db.ref("displayNames/"+name).once("value").then(snap => {
-            let dev = snap.val();
-            if(!dev){ showNotice("User not found."); return; }
-            let cid = [myId, dev].sort().join("_");
-            db.ref("privateChats/"+cid).once("value").then(snap2 => {
-              if(!snap2.exists()) db.ref("privateChats/"+cid).set({});
-            });
-            db.ref("users/"+myId+"/chats/"+cid).set({ name: name, type: "private", last: Date.now() });
-            document.body.removeChild(mo);
-            openChat(cid, name, "private");
-          });
-        };
-        div.appendChild(openBtn);
-        let unfriendBtn = document.createElement("button");
-        unfriendBtn.textContent = "Unfriend";
-        unfriendBtn.onclick = () => {
-          showConfirm("Unfriend " + name + "?", () => {
-            db.ref("users/"+myId+"/friends/"+name).remove();
-            db.ref("displayNames/"+name).once("value").then(snap => {
-              let dev = snap.val();
-              if(dev) db.ref("users/"+dev+"/friends/"+displayName).remove();
-            });
-            showNotice("Unfriended " + name + ".");
-            document.body.removeChild(mo);
-          });
-        };
-        div.appendChild(unfriendBtn);
-        fl.appendChild(div);
-      });
-    });
-  }
-  function showAddChatPanel(){
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Add Chat</h3>
-        <button id="createGroupBtn">Create Group</button>
-        <button id="joinGroupBtn">Join Group</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.querySelector("#createGroupBtn").onclick = () => {
-      document.body.removeChild(mo);
-      createGroupUI();
-    };
-    mo.querySelector("#joinGroupBtn").onclick = () => {
-      document.body.removeChild(mo);
-      joinGroupUI();
-    };
-  }
-  function createGroupUI(){
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Create Group</h3>
-        <label>Group Name:</label><br/>
-        <input id="groupName" placeholder="Group Name"/><br/>
-        <label>Password (optional):</label><br/>
-        <input id="groupPass" placeholder="Password (optional)"/><br/>
-        <button id="createGroupConfirmBtn">Create Group</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.querySelector("#createGroupConfirmBtn").onclick = () => {
-      let name = document.getElementById("groupName").value.trim();
-      let gpass = document.getElementById("groupPass").value.trim();
-      if(!name){ showNotice("Group name is required."); return; }
-      let gid = "group_" + Date.now();
-      let members = {};
-      members[myId] = true;
-      db.ref("groupChats/"+gid).set({
-        name: name,
-        password: gpass,
-        createdBy: myId,
-        members: members,
-        last: Date.now()
-      }).then(() => {
-        db.ref("users/"+myId+"/chats/"+gid).set({ name: name, type: "group", last: Date.now() });
-        showNotice("Group created.");
-        document.body.removeChild(mo);
-        openChat(gid, name, "group");
-      });
-    };
-  }
-  function joinGroupUI(){
-    let mo = document.createElement("div");
-    mo.className = "modal";
-    mo.innerHTML = `
-      <div class="modalContent" style="min-width:300px;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Join Group</h3>
-        <label>Group ID:</label><br/>
-        <input id="joinGroupId" placeholder="Group ID"/><br/>
-        <label>Password (if required):</label><br/>
-        <input id="joinGroupPass" placeholder="Password (if required)"/><br/>
-        <button id="joinGroupConfirmBtn">Join Group</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.style.display = "flex";
-    mo.querySelector("#joinGroupConfirmBtn").onclick = () => {
-      let gid = document.getElementById("joinGroupId").value.trim();
-      let gpass = document.getElementById("joinGroupPass").value.trim();
-      if(!gid){ showNotice("Group ID is required."); return; }
-      db.ref("groupChats/"+gid).once("value").then(snap => {
-        let group = snap.val();
-        if(!group){ showNotice("Group not found."); return; }
-        if(group.password && group.password !== gpass){
-          showNotice("Incorrect password.");
-          return;
-        }
-        db.ref("groupChats/"+gid+"/members/"+myId).set(true);
-        db.ref("users/"+myId+"/chats/"+gid).set({ name: group.name, type: "group", last: Date.now() });
-        showNotice("Joined group: "+group.name);
-        document.body.removeChild(mo);
-        openChat(gid, group.name, "group");
-      });
-    };
-  }
-
-  /* =================== Typing & Emoji =================== */
-  function attachTypingListener(){
-    if(!currentChat || currentType==="help") return;
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-    db.ref(path).off();
-    db.ref(path).on("value", snap => {
-      let val = snap.val();
-      let t = document.getElementById("typingIndicator");
-      if(val && val !== displayName){
-        t.style.display = "block";
-        t.textContent = val + " is typing...";
-      } else {
-        t.style.display = "none";
-      }
-    });
-  }
-  function sendTyping(){
-    if(!currentChat || currentType==="help") return;
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-    db.ref(path).set(displayName);
-    setTimeout(() => { db.ref(path).set(""); }, 2000);
-  }
-
-  /* =================== Slash Commands & Autocomplete =================== */
-  const slashCmds = [
-    "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
-    "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
-    "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
-  ];
-  function slashAutoInput(e){
-    let val = e.target.value;
-    let sc = document.getElementById("slashAutocomplete");
-    if(!val.startsWith("/")){
-      sc.style.display = "none";
-      return;
-    }
-    sc.innerHTML = "";
-    let rect = e.target.getBoundingClientRect();
-    sc.style.left = rect.left + "px";
-    sc.style.top = (rect.top - 115) + "px";
-    let hits = slashCmds.filter(c => c.startsWith(val));
-    if(!hits.length){
-      sc.style.display = "none";
-      return;
-    }
-    hits.slice(0,8).forEach(cmd => {
-      let b = document.createElement("button");
-      b.textContent = cmd;
-      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-      sc.appendChild(b);
-    });
-    sc.style.display = "block";
-  }
-
-  /* =================== Client-Side Cooldown =================== */
-  let lastMessageTime = 0;
-  function canSendMessage(){
-    let nowTime = Date.now();
-    if(nowTime - lastMessageTime < 500){
-      showNotice("Please wait 0.5 seconds between messages.");
-      return false;
-    }
-    lastMessageTime = nowTime;
-    return true;
-  }
-  function sendMessage(){
-    if(!currentChat || currentType==="help") return;
-    if(!canSendMessage()) return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if(!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if(txt.startsWith("/")){
-      let parts = txt.split(" ");
-      if(parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready"){
-        processTypingRaceReady(parts[1]);
-      } else {
-        processSlashCommand(txt);
-      }
-      inp.value = "";
-      return;
-    }
-    checkTypingRaceWin(txt);
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: ""
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
-  }
-  function processSlashCommand(cmd){
-    let parts = cmd.split(" ");
-    let slash = parts[0].toLowerCase();
-    if(slash === "/roll"){
-      let sides = parseInt(parts[1],10) || 6;
-      let r = Math.floor(Math.random()*sides)+1;
-      sendSystemMessage(`🎲 Rolled a ${sides}-sided die: ${r}`);
-    }
-    else if(slash === "/ping"){
-      let t0 = Date.now();
-      db.ref("pingTest").set({ time: t0 }, () => {
-        let dt = Date.now() - t0;
-        sendSystemMessage(`Ping: ${dt}ms`);
-      });
-    }
-    else if(slash === "/8ball"){
-      let q = cmd.slice(7).trim();
-      if(!q){ showNotice("Usage: /8ball [question]"); return; }
-      let answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
-      let pick = answers[Math.floor(Math.random()*answers.length)];
-      sendSystemMessage(`8ball: ${pick}`);
-    }
-    else if(slash === "/roast"){
-      let roasts = [
-        "Your code has more bugs than a beehive.",
-        "You're slower than dial-up internet.",
-        "At least your chat is entertaining."
-      ];
-      let pick = roasts[Math.floor(Math.random()*roasts.length)];
-      sendSystemMessage(`Roast: ${pick}`);
-    }
-    else if(slash === "/tod"){
-      if(parts[1] === "truth"){
-        let truths = [
-          "What's your biggest fear?",
-          "Have you ever lied to your best friend?",
-          "What's your most embarrassing moment?"
-        ];
-        let pick = truths[Math.floor(Math.random()*truths.length)];
-        sendSystemMessage(`Truth: ${pick}`);
-      } else if(parts[1] === "dare"){
-        let dares = [
-          "Dance like a robot for 15 seconds.",
-          "Talk in a baby voice for 3 messages.",
-          "Pretend you're an alien for 10 seconds."
-        ];
-        let pick = dares[Math.floor(Math.random()*dares.length)];
-        sendSystemMessage(`Dare: ${pick}`);
-      } else { showNotice("Usage: /tod truth or /tod dare"); }
-    }
-    else if(slash === "/title"){
-      let text = parts.slice(1).join(" ");
-      if(!text){ showNotice("Usage: /title [text]"); return; }
-      sendSystemMessage(`<< ${text} >>`);
-    }
-    else if(slash === "/cf" || slash === "/coin"){
-      let guess = "";
-      if(slash === "/cf") guess = parts[1] || "";
-      else if(parts[1] === "flip") guess = parts[2] || "";
-      guess = guess.toLowerCase();
-      if(guess !== "heads" && guess !== "tails"){ showNotice("Usage: /cf heads or /coin flip tails"); return; }
-      let side = Math.random() < 0.5 ? "heads" : "tails";
-      sendSystemMessage(`Coinflip: ${side} => you chose ${guess} => ${side===guess?"You win!":"You lose."}`);
-    }
-    else if(slash === "/ship"){
-      let n = parts[1] || "";
-      if(!n){ showNotice("Usage: /ship [name]"); return; }
-      let merged = displayName.slice(0, Math.floor(displayName.length/2)) + n.slice(Math.floor(n.length/2));
-      sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
-    }
-    else if(slash === "/typingrace"){
-      const prompts = [
-        "The quick brown fox jumps over the lazy dog.",
-        "Pack my box with five dozen liquor jugs.",
-        "How vexingly quick daft zebras jump!"
-      ];
-      if(parts.length === 1){
-        let options = prompts.map((p,i)=>`${i+1}: ${p}`);
+        let options = prompts.map((p,i) => `${i+1}: ${p}`);
         sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
       } else {
         let option = parseInt(parts[1],10);
@@ -1560,14 +1052,14 @@
     });
   }
 
-  /* =================== Typing Race =================== */
+  /* =================== Typing Race Functions =================== */
   function checkTypingRaceWin(messageText){
     db.ref("games/typingrace/"+currentChat).once("value").then(snap => {
       let games = snap.val();
       if(!games)return;
       Object.keys(games).forEach(gameId => {
         let game = games[gameId];
-        if(game.status==="pending" && game.ready && Object.keys(game.ready).length>=2){
+        if(game.status==="pending" && game.ready && Object.keys(game.ready).length >= 2){
           if(messageText === game.prompt){
             sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
             db.ref("games/typingrace/"+currentChat+"/"+gameId).remove();
@@ -1615,9 +1107,38 @@
     lastMessageTime = nowTime;
     return true;
   }
+  function sendMessage(){
+    if(!currentChat || currentType==="help") return;
+    if(!canSendMessage()) return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if(!txt)return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if(txt.startsWith("/")){
+      let parts = txt.split(" ");
+      if(parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready"){
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: ""
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
 
-  /* =================== Friend & Chat UI =================== */
-  // Add Friend UI – full implementation
+  /* =================== Friend & Group Chat UI =================== */
+  // Add Friend UI
   function addFriendUI(){
     let mo = document.createElement("div");
     mo.className = "modal";
@@ -1639,7 +1160,6 @@
       db.ref("displayNames/"+friendName).once("value").then(snap => {
         let dev = snap.val();
         if(!dev){ showNotice("User not found."); return; }
-        // Write friend request
         db.ref("users/"+dev+"/requests").update({ [displayName]: true });
         db.ref("users/"+myId+"/requestsSent").update({ [friendName]: true });
         showNotice("Friend request sent to " + friendName + ".");
@@ -1647,7 +1167,7 @@
       });
     };
   }
-  // Open Friends Panel – full implementation
+  // Open Friends Panel
   function openFriendsPanel(){
     let mo = document.createElement("div");
     mo.className = "modal";
@@ -1664,7 +1184,7 @@
       let friendObj = snap.val() || {};
       let fl = document.getElementById("friendList");
       fl.innerHTML = "";
-      if(Object.keys(friendObj).length===0){
+      if(Object.keys(friendObj).length === 0){
         fl.textContent = "No friends yet.";
         return;
       }
@@ -1700,7 +1220,7 @@
               let dev = snap.val();
               if(dev) db.ref("users/"+dev+"/friends/"+displayName).remove();
             });
-            showNotice("Unfriended " + name);
+            showNotice("Unfriended " + name + ".");
             document.body.removeChild(mo);
           });
         };
@@ -1709,7 +1229,331 @@
       });
     });
   }
-  // Show Add Chat Panel – full implementation
+  // Group Chat UI: Create Group
+  function createGroupUI(){
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Create Group</h3>
+        <label>Group Name:</label><br/>
+        <input id="groupName" placeholder="Group Name"/><br/>
+        <label>Password (optional):</label><br/>
+        <input id="groupPass" placeholder="Password"/><br/>
+        <button id="createGroupConfirmBtn">Create Group</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#createGroupConfirmBtn").onclick = () => {
+      let name = document.getElementById("groupName").value.trim();
+      let gpass = document.getElementById("groupPass").value.trim();
+      if(!name){ showNotice("Group name is required."); return; }
+      let gid = "group_" + Date.now();
+      let members = {};
+      members[myId] = true;
+      db.ref("groupChats/"+gid).set({
+        name: name,
+        password: gpass,
+        createdBy: myId,
+        members: members,
+        last: Date.now()
+      }).then(() => {
+        db.ref("users/"+myId+"/chats/"+gid).set({ name: name, type: "group", last: Date.now() });
+        showNotice("Group created.");
+        document.body.removeChild(mo);
+        openChat(gid, name, "group");
+      });
+    };
+  }
+  // Group Chat UI: Join Group
+  function joinGroupUI(){
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Join Group</h3>
+        <label>Group ID:</label><br/>
+        <input id="joinGroupId" placeholder="Group ID"/><br/>
+        <label>Password (if required):</label><br/>
+        <input id="joinGroupPass" placeholder="Password"/><br/>
+        <button id="joinGroupConfirmBtn">Join Group</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#joinGroupConfirmBtn").onclick = () => {
+      let gid = document.getElementById("joinGroupId").value.trim();
+      let gpass = document.getElementById("joinGroupPass").value.trim();
+      if(!gid){ showNotice("Group ID is required."); return; }
+      db.ref("groupChats/"+gid).once("value").then(snap => {
+        let group = snap.val();
+        if(!group){ showNotice("Group not found."); return; }
+        if(group.password && group.password !== gpass){
+          showNotice("Incorrect password.");
+          return;
+        }
+        db.ref("groupChats/"+gid+"/members/"+myId).set(true);
+        db.ref("users/"+myId+"/chats/"+gid).set({ name: group.name, type: "group", last: Date.now() });
+        showNotice("Joined group: " + group.name);
+        document.body.removeChild(mo);
+        openChat(gid, group.name, "group");
+      });
+    };
+  }
+  // Show Add Chat Panel (Offers Create or Join)
+  function showAddChatPanel(){
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Add Chat</h3>
+        <button id="createGroupBtn">Create Group</button>
+        <button id="joinGroupBtn">Join Group</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#createGroupBtn").onclick = () => {
+      document.body.removeChild(mo);
+      createGroupUI();
+    };
+    mo.querySelector("#joinGroupBtn").onclick = () => {
+      document.body.removeChild(mo);
+      joinGroupUI();
+    };
+  }
+
+  /* =================== Typing & Emoji =================== */
+  function attachTypingListener(){
+    if(!currentChat || currentType==="help") return;
+    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
+    db.ref(path).off("value");
+    db.ref(path).on("value", snap => {
+      let val = snap.val();
+      let t = document.getElementById("typingIndicator");
+      if(val && val !== displayName){
+        t.style.display = "block";
+        t.textContent = val + " is typing...";
+      } else { t.style.display = "none"; }
+    });
+  }
+  function sendTyping(){
+    if(!currentChat || currentType==="help") return;
+    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
+    db.ref(path).set(displayName);
+    setTimeout(() => { db.ref(path).set(""); }, 2000);
+  }
+
+  /* =================== Slash Commands & Autocomplete =================== */
+  const slashCmds = [
+    "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
+    "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
+    "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
+  ];
+  function slashAutoInput(e){
+    let val = e.target.value;
+    let sc = document.getElementById("slashAutocomplete");
+    if(!val.startsWith("/")){
+      sc.style.display = "none";
+      return;
+    }
+    sc.innerHTML = "";
+    let rect = e.target.getBoundingClientRect();
+    sc.style.left = rect.left + "px";
+    sc.style.top = (rect.top - 115) + "px";
+    let hits = slashCmds.filter(c => c.startsWith(val));
+    if(!hits.length){ sc.style.display = "none"; return; }
+    hits.slice(0,8).forEach(cmd => {
+      let b = document.createElement("button");
+      b.textContent = cmd;
+      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+      sc.appendChild(b);
+    });
+    sc.style.display = "block";
+  }
+
+  /* =================== Client-Side Cooldown =================== */
+  let lastMessageTime = 0;
+  function canSendMessage(){
+    let nowTime = Date.now();
+    if(nowTime - lastMessageTime < 500){
+      showNotice("Please wait 0.5 seconds between messages.");
+      return false;
+    }
+    lastMessageTime = nowTime;
+    return true;
+  }
+  function sendMessage(){
+    if(!currentChat || currentType==="help") return;
+    if(!canSendMessage()) return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if(!txt)return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if(txt.startsWith("/")){
+      let parts = txt.split(" ");
+      if(parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready"){
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: ""
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
+
+  /* =================== Typing Race =================== */
+  function checkTypingRaceWin(messageText){
+    db.ref("games/typingrace/"+currentChat).once("value").then(snap => {
+      let games = snap.val();
+      if(!games)return;
+      Object.keys(games).forEach(gameId => {
+        let game = games[gameId];
+        if(game.status==="pending" && game.ready && Object.keys(game.ready).length >= 2){
+          if(messageText === game.prompt){
+            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
+            db.ref("games/typingrace/"+currentChat+"/"+gameId).remove();
+          }
+        }
+      });
+    });
+  }
+  function showTypingRacePrompt(prompt, gameId){
+    let mo = document.createElement("div");
+    mo.className = "modal no-select";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-width:500px; position:relative;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Typing Race Challenge</h3>
+        <p>Type exactly the following (cannot be selected or copied):</p>
+        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
+        <button id="readyBtn">I'm Ready</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.querySelector("#readyBtn").onclick = () => {
+      processTypingRaceReady(gameId);
+      document.body.removeChild(mo);
+    };
+  }
+  function processTypingRaceReady(gameId){
+    db.ref("games/typingrace/"+currentChat+"/"+gameId+"/ready").once("value").then(snap => {
+      let ready = snap.val() || {};
+      if(!ready[myId]){
+        db.ref("games/typingrace/"+currentChat+"/"+gameId+"/ready/"+myId).set(true);
+        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
+      }
+    });
+  }
+
+  /* =================== Friend & Group Chat UI =================== */
+  // Add Friend UI
+  function addFriendUI(){
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Add Friend</h3>
+        <label>Enter Friend's Display Name:</label><br/>
+        <input id="friendNameInput" placeholder="Friend's Name"/><br/>
+        <button id="friendSendBtn">Send Friend Request</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#friendSendBtn").onclick = () => {
+      let friendName = document.getElementById("friendNameInput").value.trim();
+      if(!friendName){ showNotice("Please enter a name."); return; }
+      if(friendName === displayName){ showNotice("You cannot add yourself."); return; }
+      db.ref("displayNames/"+friendName).once("value").then(snap => {
+        let dev = snap.val();
+        if(!dev){ showNotice("User not found."); return; }
+        db.ref("users/"+dev+"/requests").update({ [displayName]: true });
+        db.ref("users/"+myId+"/requestsSent").update({ [friendName]: true });
+        showNotice("Friend request sent to " + friendName + ".");
+        document.body.removeChild(mo);
+      });
+    };
+  }
+  // Open Friends Panel
+  function openFriendsPanel(){
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-height:400px; overflow:auto;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Your Friends</h3>
+        <div id="friendList"></div>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    db.ref("users/"+myId+"/friends").once("value").then(snap => {
+      let friendObj = snap.val() || {};
+      let fl = document.getElementById("friendList");
+      fl.innerHTML = "";
+      if(Object.keys(friendObj).length === 0){
+        fl.textContent = "No friends yet.";
+        return;
+      }
+      Object.keys(friendObj).forEach(name => {
+        let div = document.createElement("div");
+        div.style.border = "1px solid var(--accent)";
+        div.style.padding = "8px";
+        div.style.marginBottom = "8px";
+        div.style.borderRadius = "6px";
+        div.textContent = name;
+        let openBtn = document.createElement("button");
+        openBtn.textContent = "Chat";
+        openBtn.onclick = () => {
+          db.ref("displayNames/"+name).once("value").then(snap => {
+            let dev = snap.val();
+            if(!dev){ showNotice("User not found."); return; }
+            let cid = [myId, dev].sort().join("_");
+            db.ref("privateChats/"+cid).once("value").then(snap2 => {
+              if(!snap2.exists()) db.ref("privateChats/"+cid).set({});
+            });
+            db.ref("users/"+myId+"/chats/"+cid).set({ name: name, type: "private", last: Date.now() });
+            document.body.removeChild(mo);
+            openChat(cid, name, "private");
+          });
+        };
+        div.appendChild(openBtn);
+        let unfriendBtn = document.createElement("button");
+        unfriendBtn.textContent = "Unfriend";
+        unfriendBtn.onclick = () => {
+          showConfirm("Unfriend " + name + "?", () => {
+            db.ref("users/"+myId+"/friends/"+name).remove();
+            db.ref("displayNames/"+name).once("value").then(snap => {
+              let dev = snap.val();
+              if(dev) db.ref("users/"+dev+"/friends/"+displayName).remove();
+            });
+            showNotice("Unfriended " + name + ".");
+            document.body.removeChild(mo);
+          });
+        };
+        div.appendChild(unfriendBtn);
+        fl.appendChild(div);
+      });
+    });
+  }
+  // Show Add Chat Panel (for Group Chat options)
   function showAddChatPanel(){
     let mo = document.createElement("div");
     mo.className = "modal";
@@ -1798,144 +1642,33 @@
         }
         db.ref("groupChats/"+gid+"/members/"+myId).set(true);
         db.ref("users/"+myId+"/chats/"+gid).set({ name: group.name, type: "group", last: Date.now() });
-        showNotice("Joined group: "+group.name);
+        showNotice("Joined group: " + group.name);
         document.body.removeChild(mo);
         openChat(gid, group.name, "group");
       });
     };
   }
 
+  /* =================== End of Friend/Group UI =================== */
+
   /* =================== Typing & Emoji =================== */
-  function attachTypingListener(){
-    if(!currentChat || currentType==="help") return;
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-    db.ref(path).off();
-    db.ref(path).on("value", snap => {
-      let val = snap.val();
-      let t = document.getElementById("typingIndicator");
-      if(val && val !== displayName){
-        t.style.display = "block";
-        t.textContent = val + " is typing...";
-      } else { t.style.display = "none"; }
-    });
-  }
-  function sendTyping(){
-    if(!currentChat || currentType==="help") return;
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-    db.ref(path).set(displayName);
-    setTimeout(() => { db.ref(path).set(""); }, 2000);
-  }
-
-  /* =================== Slash Commands & Autocomplete =================== */
-  const slashCmds = [
-    "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
-    "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
-    "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
-  ];
-  function slashAutoInput(e){
-    let val = e.target.value;
-    let sc = document.getElementById("slashAutocomplete");
-    if(!val.startsWith("/")){
-      sc.style.display = "none";
+  function toggleEmojiPicker(){
+    let ep = document.getElementById("emojiPicker");
+    if(ep.style.display === "flex"){
+      ep.style.display = "none";
       return;
     }
-    sc.innerHTML = "";
-    let rect = e.target.getBoundingClientRect();
-    sc.style.left = rect.left + "px";
-    sc.style.top = (rect.top - 115) + "px";
-    let hits = slashCmds.filter(c => c.startsWith(val));
-    if(!hits.length){ sc.style.display = "none"; return; }
-    hits.slice(0,8).forEach(cmd => {
-      let b = document.createElement("button");
-      b.textContent = cmd;
-      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-      sc.appendChild(b);
-    });
-    sc.style.display = "block";
-  }
-
-  /* =================== Client-Side Cooldown =================== */
-  let lastMessageTime = 0;
-  function canSendMessage(){
-    let nowTime = Date.now();
-    if(nowTime - lastMessageTime < 500){
-      showNotice("Please wait 0.5 seconds between messages.");
-      return false;
-    }
-    lastMessageTime = nowTime;
-    return true;
-  }
-  function sendMessage(){
-    if(!currentChat || currentType==="help") return;
-    if(!canSendMessage()) return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if(!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if(txt.startsWith("/")){
-      let parts = txt.split(" ");
-      if(parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready"){
-        processTypingRaceReady(parts[1]);
-      } else {
-        processSlashCommand(txt);
-      }
-      inp.value = "";
-      return;
-    }
-    checkTypingRaceWin(txt);
-    let path = (currentType==="group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: ""
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
-  }
-
-  /* =================== Typing Race =================== */
-  function checkTypingRaceWin(messageText){
-    db.ref("games/typingrace/"+currentChat).once("value").then(snap => {
-      let games = snap.val();
-      if(!games) return;
-      Object.keys(games).forEach(gameId => {
-        let game = games[gameId];
-        if(game.status==="pending" && game.ready && Object.keys(game.ready).length>=2){
-          if(messageText === game.prompt){
-            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
-            db.ref("games/typingrace/"+currentChat+"/"+gameId).remove();
-          }
-        }
-      });
-    });
-  }
-  function showTypingRacePrompt(prompt, gameId){
-    let mo = document.createElement("div");
-    mo.className = "modal no-select";
-    mo.innerHTML = `
-      <div class="modalContent" style="max-width:500px; position:relative;">
-        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
-        <h3>Typing Race Challenge</h3>
-        <p>Type exactly the following (cannot be selected or copied):</p>
-        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
-        <button id="readyBtn">I'm Ready</button>
-      </div>
-    `;
-    document.body.appendChild(mo);
-    mo.querySelector("#readyBtn").onclick = () => {
-      processTypingRaceReady(gameId);
-      document.body.removeChild(mo);
-    };
-  }
-  function processTypingRaceReady(gameId){
-    db.ref("games/typingrace/"+currentChat+"/"+gameId+"/ready").once("value").then(snap => {
-      let ready = snap.val() || {};
-      if(!ready[myId]){
-        db.ref("games/typingrace/"+currentChat+"/"+gameId+"/ready/"+myId).set(true);
-        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
-      }
+    ep.innerHTML = "";
+    ep.style.display = "flex";
+    let emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
+    emojis.forEach(e => {
+      let span = document.createElement("span");
+      span.textContent = e;
+      span.onclick = () => {
+        document.getElementById("msgInput").value += e;
+        ep.style.display = "none";
+      };
+      ep.appendChild(span);
     });
   }
 

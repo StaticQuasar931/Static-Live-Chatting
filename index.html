@@ -106,7 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is not a button – it appears via the chat list */
+    /* Help Chat is not a button – it’s available in the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -127,7 +127,7 @@
       display: flex;
       gap: 5px;
     }
-    /* For group chats: show group name and your display name */
+    /* In group chats, show group name and your display name */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -157,7 +157,7 @@
       flex-direction: column;
       justify-content: center;
     }
-    .msg p { margin: 0; } /* Ensure text inside is centered vertically */
+    .msg p { margin: 0; }
     /* "to" messages (your messages) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
     /* "from" messages (others) left-aligned */
@@ -377,7 +377,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // Client-side message cooldown timestamp
+  let lastMessageTime = 0; // For client-side cooldown
   
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -627,7 +627,7 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Update last message timestamp for background chats
+        // Update last timestamp for background chats
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
         updateChatListUI(chats);
       }
@@ -786,7 +786,7 @@
       });
       childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      // Do not update "last" for the active chat so it stays in order.
+      // Only update "last" timestamp for background chats
       if (type !== "help" && cid !== currentChat) {
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
@@ -805,7 +805,7 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    // Removed "seen" feature as requested.
+    // "Seen" feature removed.
   }
   
   function loadOlderMessages() {
@@ -838,7 +838,6 @@
     if (val.sender === myId) bubble.classList.add("to");
     else if (val.sender === "_system") bubble.classList.add("console");
     else bubble.classList.add("from");
-    // Wrap text in a paragraph to center it vertically
     let p = document.createElement("p");
     p.textContent = val.text || "";
     bubble.appendChild(p);
@@ -946,7 +945,8 @@
     sc.style.display = "block";
   }
   
-  // ----- Client-Side Cooldown: No two messages within 0.5 sec -----
+  // ----- Client-Side Cooldown (0.5 sec between messages) -----
+  let lastMessageTime = 0;
   function canSendMessage() {
     let nowTime = Date.now();
     if (nowTime - lastMessageTime < 500) {
@@ -1111,7 +1111,7 @@
     });
   }
   
-  // ----- Check Typing Race Win on normal messages -----
+  // ----- Check Typing Race Win on Normal Messages -----
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value", snap => {
       let games = snap.val();
@@ -1159,7 +1159,8 @@
     });
   }
   
-  // ----- Slash Autocomplete already defined above -----
+  // ----- Slash Command Autocomplete -----
+  // (Already defined above)
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
   let lastMessageTime = 0;
@@ -1171,38 +1172,6 @@
     }
     lastMessageTime = nowTime;
     return true;
-  }
-  
-  // Modify sendMessage to enforce cooldown
-  function sendMessage() {
-    if (!currentChat || currentType === "help") return;
-    if (!canSendMessage()) return;
-    let inp = document.getElementById("msgInput");
-    let txt = inp.value.trim();
-    if (!txt) return;
-    document.getElementById("slashAutocomplete").style.display = "none";
-    if (txt.startsWith("/")) {
-      let parts = txt.split(" ");
-      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
-        processTypingRaceReady(parts[1]);
-      } else {
-        processSlashCommand(txt);
-      }
-      inp.value = "";
-      return;
-    }
-    checkTypingRaceWin(txt);
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-    db.ref(path).push({
-      sender: myId,
-      text: txt,
-      timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
-    });
-    inp.value = "";
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    sendTyping();
   }
   
   // ----- End of Code -----

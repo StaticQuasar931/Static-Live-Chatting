@@ -106,7 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is available in the chat list */
+    /* Help Chat is available via the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -340,33 +340,23 @@
 <body>
 <script>
   // ----- Firebase Setup -----
-  if (typeof firebase === "undefined") {
-    console.error("Firebase not loaded – check your network.");
-    window.firebase = { initializeApp: () => {}, database: () => ({ ref: () => ({}) }) };
-  }
-  let db = null;
-  try {
-    const config = {
-      apiKey: "YOUR_API_KEY_HERE",
-      authDomain: "static-live-chatting.firebaseapp.com",
-      databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
-      projectId: "static-live-chatting",
-      storageBucket: "static-live-chatting.appspot.com",
-      messagingSenderId: "578562140653",
-      appId: "1:578562140653:web:c12df07155627083e9dfe4"
-    };
-    firebase.initializeApp(config);
-    db = firebase.database();
-  } catch (e) {
-    console.error("Firebase init error:", e);
-    db = { ref: () => ({ once: () => {}, on: () => {}, set: () => {}, push: () => ({}) }) };
-  }
+  const firebaseConfig = {
+    apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
+    authDomain: "static-live-chatting.firebaseapp.com",
+    databaseURL: "https://static-live-chatting.firebaseapp.com",
+    projectId: "static-live-chatting",
+    storageBucket: "static-live-chatting.firebasestorage.app",
+    messagingSenderId: "578562140653",
+    appId: "1:578562140653:web:c12df07155627083e9dfe4",
+    measurementId: "G-HZ1F0B1CDS"
+  };
+  firebase.initializeApp(firebaseConfig);
+  let db = firebase.database();
   
   // ----- Helper Functions -----
   function showNotice(msg) {
     alert(msg);
   }
-  
   function showConfirm(msg, callback) {
     if (confirm(msg)) callback();
   }
@@ -384,7 +374,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // For 0.5-second cooldown
+  let lastMessageTime = 0; // 0.5-second cooldown
   
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -399,7 +389,6 @@
   // ----- Login & Settings -----
   function toggleLoginPass() {
     let pw = document.getElementById("password");
-    // Toggle the type between "password" and "text"
     pw.type = (pw.type === "password") ? "text" : "password";
   }
   
@@ -1164,7 +1153,8 @@
     });
   }
   
-  // ----- Slash Autocomplete (defined above) -----
+  // ----- Slash Autocomplete -----
+  // (Already defined in slashAutoInput above)
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
   let lastMessageTime = 0;

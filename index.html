@@ -139,7 +139,7 @@
       max-width: 70%;
       padding: 16px;
       margin: 6px;
-      border-radius: 30px;
+      border-radius: 40px;
       font-size: var(--font-size-msg);
       line-height: 1.4;
       word-wrap: break-word;
@@ -149,6 +149,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      background-clip: padding-box;
     }
     .msg p { margin: 0; }
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
@@ -165,7 +166,7 @@
       gap: 5px;
       background: rgba(0,0,0,0.6);
       padding: 5px;
-      border-radius: 6px;
+      border-radius: 30px;
       margin-bottom: 5px;
     }
     .reactionBar span { font-size: 22px; cursor: pointer; }
@@ -230,7 +231,7 @@
       padding: 6px;
       border-radius: 6px;
       display: none;
-      z-index: 50;
+      z-index: 100;
     }
     .friendMenu button {
       display: block;
@@ -395,12 +396,12 @@
           </div>
         `;
         document.body.appendChild(container);
-        container.querySelector("#yesBtn").onclick = () => {
-          document.body.removeChild(container);
+        container.querySelector("#yesBtn").onclick = () => { 
+          document.body.removeChild(container); 
           resolve(true);
         };
-        container.querySelector("#noBtn").onclick = () => {
-          document.body.removeChild(container);
+        container.querySelector("#noBtn").onclick = () => { 
+          document.body.removeChild(container); 
           resolve(false);
         };
       });
@@ -638,8 +639,15 @@
             menu.style.display = "none";
           };
           menu.appendChild(unfriendBtn);
-          d.appendChild(btn);
-          d.appendChild(menu);
+          const blockBtn = document.createElement("button");
+          blockBtn.textContent = "Block";
+          blockBtn.onclick = () => {
+            showConfirm("Block " + n + "?").then(ok => {
+              if (ok) { db.ref("users/" + myId + "/blocked/" + n).set(true); showNotice("Blocked " + n); }
+            });
+            menu.style.display = "none";
+          };
+          menu.appendChild(blockBtn);
           btn.onclick = ev => {
             ev.stopPropagation();
             menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
@@ -647,6 +655,8 @@
             menu.style.left = rect.left + "px";
             menu.style.top = rect.bottom + 2 + "px";
           };
+          d.appendChild(btn);
+          d.appendChild(menu);
           fl.appendChild(d);
         });
       }
@@ -674,7 +684,6 @@
           if (!dev) { showNotice("No user with that name found."); return; }
           db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
           db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          // Create the private chat node with proper members immediately
           db.ref("privateChats/" + [myId, dev].sort().join("_")).set({
             members: { [myId]: true, [dev]: true },
             createdAt: Date.now()
@@ -728,7 +737,6 @@
         const password = mo.querySelector("#groupPass").value.trim();
         if (!name) { showNotice("Group name cannot be empty."); return; }
         const gid = "group_" + Date.now();
-        // Create group chat with valid members object.
         db.ref("groupChats/" + gid).set({
           name: name,
           type: type,
@@ -981,6 +989,13 @@
             menu.style.display = "none";
           };
           menu.appendChild(openBtn);
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Delete Chat";
+          deleteBtn.onclick = () => {
+            confirmDeleteChat(cid, info);
+            menu.style.display = "none";
+          };
+          menu.appendChild(deleteBtn);
           const unfriendBtn = document.createElement("button");
           unfriendBtn.textContent = "Unfriend";
           unfriendBtn.onclick = () => {
@@ -1008,7 +1023,7 @@
           menu.appendChild(blockBtn);
           dots.onclick = ev => {
             ev.stopPropagation();
-            menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+            menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
             const rect = dots.getBoundingClientRect();
             menu.style.left = rect.left + "px";
             menu.style.top = rect.bottom + 2 + "px";

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Final Version</title>
+  <title>Static Live Chat – Optimized Version</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
@@ -106,7 +106,6 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is not a button – it’s available via the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -122,12 +121,10 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
-    /* Top-right container for Settings & Theme */
     #topBar .top-right {
       display: flex;
       gap: 5px;
     }
-    /* For group chats: show group name and your display name */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -153,17 +150,14 @@
       position: relative;
       cursor: pointer;
       box-shadow: var(--shadow-msg);
-      /* Use flexbox to vertically center text and include timestamp below */
+      /* Flex container to center text vertically and allow a timestamp block below */
       display: flex;
       flex-direction: column;
       justify-content: center;
-      text-align: center;
+      align-items: center;
     }
-    /* "to" messages (your messages) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
-    /* "from" messages (others' messages) left-aligned */
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
-    /* "console" messages (system/command) centered */
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
     .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
@@ -219,11 +213,7 @@
       max-height: 180px;
       overflow: auto;
     }
-    #emojiPicker span {
-      font-size: 22px;
-      margin: 6px;
-      cursor: pointer;
-    }
+    #emojiPicker span { font-size: 22px; margin: 6px; cursor: pointer; }
     .chatItem {
       background: var(--chat-item-bg);
       padding: 10px;
@@ -238,21 +228,8 @@
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
-    .chatBadge {
-      background: var(--badge);
-      color: #fff;
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      margin-left: 5px;
-    }
-    .requestItem {
-      background: var(--bubble-from);
-      padding: 10px;
-      margin-bottom: 5px;
-      border-radius: 6px;
-    }
-    /* Friend menu: three-dots options appear next to the dots */
+    .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
+    .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -280,10 +257,7 @@
       animation: blink 2s infinite;
       z-index: 1000;
     }
-    a.staticLink {
-      color: #0ff;
-      text-decoration: none;
-    }
+    a.staticLink { color: #0ff; text-decoration: none; }
     @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
     /* ===== Modal Styles ===== */
     .modal {
@@ -373,7 +347,7 @@
   // ----- Firebase Setup -----
   if (typeof firebase === "undefined") {
     console.error("Firebase not loaded – check your network.");
-    window.firebase = { initializeApp: () => { }, database: () => ({ ref: () => ({ }) }) };
+    window.firebase = { initializeApp: () => {}, database: () => ({ ref: () => ({}) }) };
   }
   let db = null;
   try {
@@ -390,7 +364,7 @@
     db = firebase.database();
   } catch (e) {
     console.error("Firebase init error:", e);
-    db = { ref: () => ({ once: () => { }, on: () => { }, set: () => { }, push: () => ({ }) }) };
+    db = { ref: () => ({ once: () => {}, on: () => {}, set: () => {}, push: () => ({}) }) };
   }
   
   // ----- Device & User Setup -----
@@ -414,7 +388,6 @@
       document.getElementById("app").style.display = "flex";
       applyTheme();
       loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      // Help chat is available via chat list.
     }
   });
   
@@ -651,17 +624,16 @@
       if (cid === "help_chat") return;
       let info = chats[cid];
       let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-      db.ref(path).off("child_added", handleMsg);
-      db.ref(path).on("child_added", handleMsg);
-      function handleMsg(snap) {
+      // Remove previous watcher to avoid duplicate events
+      db.ref(path).off("child_added");
+      db.ref(path).on("child_added", snap => {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Update "last" for background chats only
         if (cid !== currentChat) {
           db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
         }
         updateChatListUI(chats);
-      }
+      });
     });
   }
   
@@ -795,8 +767,7 @@
     area.innerHTML = "";
     document.getElementById("loadMoreBtn").style.display = "none";
     if (messagesRef) {
-      if (childAddedRef) messagesRef.off("child_added", childAddedRef);
-      if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
+      messagesRef.off();
     }
     let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
     messagesRef = db.ref(path);
@@ -809,15 +780,14 @@
         hasMoreOld = true;
         document.getElementById("loadMoreBtn").style.display = "block";
       } else { hasMoreOld = false; }
-      childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
+      messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
         let v = snap.val();
         createBubble(snap.key, v, true);
         area.scrollTop = area.scrollHeight;
         markMsgRead(snap.key, v);
       });
-      childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
+      messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      // Update "last" only for background chats.
       if (cid !== currentChat) {
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
@@ -836,15 +806,13 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    if (val.sender === myId) {
-      if (val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
-        let msgEl = document.getElementById("msg_" + mId);
-        if (msgEl && !msgEl.querySelector(".seenLabel")) {
-          let seen = document.createElement("div");
-          seen.className = "seenLabel";
-          seen.textContent = "Seen";
-          msgEl.appendChild(seen);
-        }
+    if (val.sender === myId && val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
+      let msgEl = document.getElementById("msg_" + mId);
+      if (msgEl && !msgEl.querySelector(".seenLabel")) {
+        let seen = document.createElement("div");
+        seen.className = "seenLabel";
+        seen.textContent = "Seen";
+        msgEl.appendChild(seen);
       }
     }
   }
@@ -933,8 +901,8 @@
     db.ref(path).on("value", snap => {
       let val = snap.val();
       let t = document.getElementById("typingIndicator");
-      if (val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
-      else { t.style.display = "none"; }
+      t.style.display = (val && val !== displayName) ? "block" : "none";
+      if (t.style.display === "block") t.textContent = val + " is typing...";
     });
   }
   
@@ -1186,7 +1154,315 @@
     });
   }
   
-  // ----- Slash Autocomplete is defined above -----
+  // ----- Slash Commands Autocomplete -----
+  function slashAutoInput(e) {
+    let val = e.target.value;
+    let sc = document.getElementById("slashAutocomplete");
+    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
+    sc.innerHTML = "";
+    let rect = e.target.getBoundingClientRect();
+    sc.style.left = rect.left + "px";
+    sc.style.top = (rect.top - 115) + "px";
+    let hits = slashCmds.filter(c => c.startsWith(val));
+    if (!hits.length) { sc.style.display = "none"; return; }
+    hits.slice(0, 8).forEach(cmd => {
+      let b = document.createElement("button");
+      b.textContent = cmd;
+      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+      sc.appendChild(b);
+    });
+    sc.style.display = "block";
+  }
+  
+  function sendMessage() {
+    if (!currentChat || currentType === "help") return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if (!txt) return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if (txt.startsWith("/")) {
+      let parts = txt.split(" ");
+      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
+  
+  function processSlashCommand(cmd) {
+    let parts = cmd.split(" ");
+    let slash = parts[0].toLowerCase();
+    if (slash === "/roll") {
+      let sides = parseInt(parts[1], 10) || 6;
+      let r = Math.floor(Math.random() * sides) + 1;
+      sendSystemMessage(`🎲 Rolled a ${sides}-sided die: ${r}`);
+    }
+    else if (slash === "/ping") {
+      let t0 = Date.now();
+      db.ref("pingTest").set({ time: t0 }, () => {
+        let dt = Date.now() - t0;
+        sendSystemMessage(`Ping: ${dt}ms`);
+      });
+    }
+    else if (slash === "/8ball") {
+      let q = cmd.slice(7).trim();
+      if (!q) { showNotice("Usage: /8ball [question]"); return; }
+      let answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
+      let pick = answers[Math.floor(Math.random() * answers.length)];
+      sendSystemMessage(`8ball: ${pick}`);
+    }
+    else if (slash === "/roast") {
+      let roasts = [
+        "Your code has more bugs than a beehive.",
+        "You're slower than dial-up internet.",
+        "At least your chat is entertaining."
+      ];
+      let pick = roasts[Math.floor(Math.random() * roasts.length)];
+      sendSystemMessage(`Roast: ${pick}`);
+    }
+    else if (slash === "/tod") {
+      if (parts[1] === "truth") {
+        let truths = [
+          "What's your biggest fear?",
+          "Have you ever lied to your best friend?",
+          "What's your most embarrassing moment?"
+        ];
+        let pick = truths[Math.floor(Math.random() * truths.length)];
+        sendSystemMessage(`Truth: ${pick}`);
+      } else if (parts[1] === "dare") {
+        let dares = [
+          "Dance like a robot for 15 seconds.",
+          "Talk in a baby voice for 3 messages.",
+          "Pretend you're an alien for 10 seconds."
+        ];
+        let pick = dares[Math.floor(Math.random() * dares.length)];
+        sendSystemMessage(`Dare: ${pick}`);
+      } else { showNotice("Usage: /tod truth or /tod dare"); }
+    }
+    else if (slash === "/title") {
+      let text = parts.slice(1).join(" ");
+      if (!text) { showNotice("Usage: /title [text]"); return; }
+      sendSystemMessage(`<< ${text} >>`);
+    }
+    else if (slash === "/cf" || slash === "/coin") {
+      let guess = "";
+      if (slash === "/cf") guess = parts[1] || "";
+      else if (parts[1] === "flip") guess = parts[2] || "";
+      guess = guess.toLowerCase();
+      if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
+      let side = Math.random() < 0.5 ? "heads" : "tails";
+      sendSystemMessage(`Coinflip: ${side} => you chose ${guess} => ${side === guess ? "You win!" : "You lose."}`);
+    }
+    else if (slash === "/ship") {
+      let n = parts[1] || "";
+      if (!n) { showNotice("Usage: /ship [name]"); return; }
+      let merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
+      sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
+    }
+    else if (slash === "/typingrace") {
+      const prompts = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Pack my box with five dozen liquor jugs.",
+        "How vexingly quick daft zebras jump!"
+      ];
+      if (parts.length === 1) {
+        let options = prompts.map((p, i) => `${i+1}: ${p}`);
+        sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
+      } else {
+        let option = parseInt(parts[1], 10);
+        if (isNaN(option) || option < 1 || option > prompts.length) {
+          showNotice("Invalid option. Usage: /typingrace [option number]");
+          return;
+        }
+        let prompt = prompts[option - 1];
+        let gameId = "type_" + Date.now();
+        db.ref("games/typingrace/" + currentChat + "/" + gameId).set({
+          initiator: myId,
+          prompt: prompt,
+          ready: { [myId]: true },
+          timestamp: Date.now(),
+          status: "pending"
+        });
+        sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
+        showTypingRacePrompt(prompt, gameId);
+        setTimeout(() => {
+          db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
+            if (snap.val() === "pending") {
+              db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+              sendSystemMessage(`TypingRace [${gameId}] expired.`);
+            }
+          });
+        }, 60000);
+      }
+    }
+    else {
+      showNotice("Unknown slash command: " + cmd);
+    }
+  }
+  
+  function sendSystemMessage(text) {
+    if (!currentChat || currentType === "help") return;
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: "_system",
+      text: text,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+  }
+  
+  // ----- Check Typing Race Win on Normal Messages -----
+  function checkTypingRaceWin(messageText) {
+    db.ref("games/typingrace/" + currentChat).once("value", snap => {
+      let games = snap.val();
+      if (!games) return;
+      Object.keys(games).forEach(gameId => {
+        let game = games[gameId];
+        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
+          if (messageText === game.prompt) {
+            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
+            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+          }
+        }
+      });
+    });
+  }
+  
+  // ----- Typing Race Prompt Modal (non-selectable) -----
+  function showTypingRacePrompt(prompt, gameId) {
+    let mo = document.createElement("div");
+    mo.className = "modal no-select";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-width:500px; position:relative;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Typing Race Challenge</h3>
+        <p>Type exactly the following (cannot be selected or copied):</p>
+        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
+        <button id="readyBtn">I'm Ready</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.querySelector("#readyBtn").onclick = () => {
+      processTypingRaceReady(gameId);
+      document.body.removeChild(mo);
+    };
+  }
+  
+  // ----- Typing Race Ready Command (for opponent) -----
+  function processTypingRaceReady(gameId) {
+    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
+      let ready = snap.val() || {};
+      if (!ready[myId]) {
+        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
+        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
+      }
+    });
+  }
+  
+  // ----- Slash Autocomplete -----
+  function slashAutoInput(e) {
+    let val = e.target.value;
+    let sc = document.getElementById("slashAutocomplete");
+    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
+    sc.innerHTML = "";
+    let rect = e.target.getBoundingClientRect();
+    sc.style.left = rect.left + "px";
+    sc.style.top = (rect.top - 115) + "px";
+    let hits = slashCmds.filter(c => c.startsWith(val));
+    if (!hits.length) { sc.style.display = "none"; return; }
+    hits.slice(0, 8).forEach(cmd => {
+      let b = document.createElement("button");
+      b.textContent = cmd;
+      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+      sc.appendChild(b);
+    });
+    sc.style.display = "block";
+  }
+  
+  // ----- End of Code -----
+  
+  function sendMessage() {
+    if (!currentChat || currentType === "help") return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if (!txt) return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if (txt.startsWith("/")) {
+      let parts = txt.split(" ");
+      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
+  
+  // ----- Login Screen & Other UI Functions -----
+  function showConfirm(msg, yesCb) {
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-width:400px; position:relative;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Confirm</h3>
+        <p>${msg}</p>
+        <div style="text-align:center;">
+          <button style="background:green;" id="yesBtn">Yes</button>
+          <button style="background:red;" id="noBtn">No</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.querySelector("#yesBtn").onclick = () => { document.body.removeChild(mo); yesCb(); };
+    mo.querySelector("#noBtn").onclick = () => { document.body.removeChild(mo); };
+  }
+  
+  function showNotice(msg) {
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-width:400px; position:relative;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Notice</h3>
+        <p>${msg}</p>
+        <div style="text-align:center;">
+          <button style="background:var(--accent);" id="okBtn">OK</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.querySelector("#okBtn").onclick = () => { document.body.removeChild(mo); };
+  }
   
   // ----- End of Code -----
 </script>
@@ -1196,10 +1472,10 @@
   <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
-    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
+    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()" /><br/>
     <label>Password (optional):</label><br/>
     <div style="display:flex;">
-      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
+      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()" />
       <button onclick="toggleLoginPass()">👁️</button>
     </div>
     <button onclick="doLogin()">Log In</button>

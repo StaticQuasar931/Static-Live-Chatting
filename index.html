@@ -16,7 +16,7 @@
       --chat-bg: #222;
       --bubble-to: #1e90ff;
       --bubble-from: #444;
-      --bubble-console: rgba(255,255,255,0.2);
+      --bubble-console: rgba(255, 255, 255, 0.2);
       --accent: #1e90ff;
       --badge: red;
       --chat-item-bg: #333;
@@ -268,6 +268,7 @@
       border-radius: 10px;
       max-width: 400px;
       position: relative;
+      text-align: center;
     }
     .closeBtn {
       position: absolute;
@@ -280,7 +281,7 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    /* ===== Notification (in-screen) ===== */
+    /* ===== Notification Container ===== */
     #notificationContainer {
       position: fixed;
       top: 10px;
@@ -362,7 +363,6 @@
     const db = firebase.database();
 
     // ===== Helper Functions =====
-    // Custom in-page notification (no alerts)
     function showNotice(msg) {
       const container = document.getElementById("notificationContainer");
       const note = document.createElement("div");
@@ -372,14 +372,13 @@
       setTimeout(() => { note.style.opacity = 0; }, 3000);
       setTimeout(() => { container.removeChild(note); }, 3500);
     }
-    // Custom confirmation modal – returns a Promise
     function showConfirm(msg) {
       return new Promise(resolve => {
         const container = document.createElement("div");
         container.className = "modal";
         container.style.display = "flex";
         container.innerHTML = `
-          <div class="modalContent" style="max-width:400px; text-align:center;">
+          <div class="modalContent">
             <h3>Confirm</h3>
             <p>${msg}</p>
             <button id="yesBtn" style="background:green;">Yes</button>
@@ -387,12 +386,12 @@
           </div>
         `;
         document.body.appendChild(container);
-        container.querySelector("#yesBtn").onclick = () => {
-          document.body.removeChild(container);
+        container.querySelector("#yesBtn").onclick = () => { 
+          document.body.removeChild(container); 
           resolve(true);
         };
-        container.querySelector("#noBtn").onclick = () => {
-          document.body.removeChild(container);
+        container.querySelector("#noBtn").onclick = () => { 
+          document.body.removeChild(container); 
           resolve(false);
         };
       });
@@ -427,13 +426,11 @@
 
     // ===== On Load =====
     window.addEventListener("DOMContentLoaded", () => {
-      // Close modals on ESC key
       document.addEventListener("keydown", function(e) {
         if (e.key === "Escape") {
           document.querySelectorAll(".modal").forEach(modal => { modal.style.display = "none"; });
         }
       });
-      // Click outside modal to close it
       document.addEventListener("click", function(e) {
         document.querySelectorAll(".modal").forEach(modal => {
           if (modal.style.display === "flex" && e.target === modal) { modal.style.display = "none"; }
@@ -637,7 +634,7 @@
           d.appendChild(menu);
           btn.onclick = ev => {
             ev.stopPropagation();
-            menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+            menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
             const rect = btn.getBoundingClientRect();
             menu.style.left = rect.left + "px";
             menu.style.top = rect.bottom + 2 + "px";
@@ -669,7 +666,7 @@
           if (!dev) { showNotice("No user with that name found."); return; }
           db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
           db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          // Create the private chat node (it will be fully created when the request is accepted)
+          // Create the private chat node (will be properly created when request is accepted)
           db.ref("privateChats/" + [myId, dev].sort().join("_")).set({});
           showNotice("Friend request sent to " + friendName);
           mo.style.display = "none";
@@ -720,7 +717,7 @@
         const password = mo.querySelector("#groupPass").value.trim();
         if (!name) { showNotice("Group name cannot be empty."); return; }
         const gid = "group_" + Date.now();
-        // When creating a new group chat, include a valid "members" object.
+        // Include a 'members' object so the rules pass.
         db.ref("groupChats/" + gid).set({
           name: name,
           type: type,
@@ -993,17 +990,14 @@
           blockBtn.textContent = "Block";
           blockBtn.onclick = () => {
             showConfirm("Block " + nm + "?").then(ok => {
-              if (ok) {
-                db.ref("users/" + myId + "/blocked/" + nm).set(true);
-                showNotice("Blocked " + nm);
-              }
+              if (ok) { db.ref("users/" + myId + "/blocked/" + nm).set(true); showNotice("Blocked " + nm); }
             });
             menu.style.display = "none";
           };
           menu.appendChild(blockBtn);
           dots.onclick = ev => {
             ev.stopPropagation();
-            menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+            menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
             const rect = dots.getBoundingClientRect();
             menu.style.left = rect.left + "px";
             menu.style.top = rect.bottom + 2 + "px";
@@ -1064,7 +1058,7 @@
       const gm = document.getElementById("groupMembers");
       gm.style.display = type === "group" ? "block" : "none";
       const inp = document.getElementById("msgInput");
-      inp.disabled = type === "help";
+      inp.disabled = (type === "help");
       const area = document.getElementById("messages");
       area.innerHTML = "";
       document.getElementById("loadMoreBtn").style.display = "none";
@@ -1419,7 +1413,7 @@
       const mo = document.createElement("div");
       mo.className = "modal no-select";
       mo.innerHTML =
-        "<div class='modalContent' style='max-width:500px; position:relative;'>" +
+        "<div class='modalContent' style='max-width:500px;'>" +
         "<button class='closeBtn' onclick='document.body.removeChild(this.parentElement.parentElement)'>X</button>" +
         "<h3>Typing Race Challenge</h3>" +
         "<p>Type exactly the following (cannot be selected or copied):</p>" +
@@ -1463,9 +1457,7 @@
         const parts = txt.split(" ");
         if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
           processTypingRaceReady(parts[1]);
-        } else {
-          processSlashCommand(txt);
-        }
+        } else { processSlashCommand(txt); }
         inp.value = "";
         return;
       }

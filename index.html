@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Static Live Chat</title>
-  <!-- Firebase Scripts (using compat libraries) -->
+  <!-- Firebase Scripts (compat libraries) -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;       /* your messages */
-      --bubble-from: #444;        /* others' messages */
+      --bubble-to: #1e90ff;
+      --bubble-from: #444;
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -126,7 +126,6 @@
       display: flex;
       gap: 5px;
     }
-    /* Group chat title */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -157,11 +156,8 @@
       justify-content: center;
     }
     .msg p { margin: 0; }
-    /* "to" messages (your messages) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
-    /* "from" messages (others) left-aligned */
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
-    /* "console" messages centered */
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
     .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
@@ -229,7 +225,6 @@
       margin-bottom: 5px;
       border-radius: 6px;
     }
-    /* Friend menu: three-dots options */
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -339,11 +334,10 @@
 <body>
 <script>
   // ----- Firebase Setup -----
-  // Use your provided configuration
   const firebaseConfig = {
     apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
     authDomain: "static-live-chatting.firebaseapp.com",
-    databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
+    databaseURL: "https://static-live-chatting.firebaseio.com",
     projectId: "static-live-chatting",
     storageBucket: "static-live-chatting.firebasestorage.app",
     messagingSenderId: "578562140653",
@@ -354,13 +348,25 @@
   const db = firebase.database();
   
   // ----- Helper Functions -----
-  function showNotice(msg) {
-    alert(msg);
+  function showNotice(msg) { alert(msg); }
+  function showConfirm(msg, callback) { if (confirm(msg)) callback(); }
+  
+  // Simple debounce function to reduce update frequency
+  function debounce(func, delay) {
+    let timeoutId;
+    return function(...args) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
   }
   
-  function showConfirm(msg, callback) {
-    if (confirm(msg)) callback();
-  }
+  // Debounced update for title and chat list
+  const debouncedUpdateTitle = debounce(() => {
+    const totalUnread = Object.values(chatUnread).reduce((a, b) => a + b, 0);
+    document.title = totalUnread > 0 ? `(+${totalUnread}) Static Live Chat` : "Static Live Chat";
+  }, 300);
+  
+  const debouncedUpdateChatListUI = debounce(updateChatListUI, 300);
   
   // ----- Device & User Setup -----
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
@@ -375,13 +381,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // For 0.5-second cooldown
-  
-  // ----- Update Missed Notifications (document title) -----
-  function updateTitle() {
-    const totalUnread = Object.values(chatUnread).reduce((a, b) => a + b, 0);
-    document.title = totalUnread > 0 ? `(+${totalUnread}) Static Live Chat` : "Static Live Chat";
-  }
+  let lastMessageTime = 0;
   
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -389,15 +389,17 @@
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
       applyTheme();
-      loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      updateTitle();
+      loadBlocked();
+      loadFriends();
+      loadRequests();
+      initChatWatchers();
+      debouncedUpdateTitle();
     }
   });
   
   // ----- Login & Settings -----
   function toggleLoginPass() {
     const pw = document.getElementById("password");
-    // Toggle type between "password" and "text"
     pw.type = (pw.type === "password") ? "text" : "password";
   }
   
@@ -418,7 +420,12 @@
       db.ref("users/" + myId + "/displayName").set(nm);
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
-      applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
+      applyTheme();
+      loadBlocked();
+      loadFriends();
+      loadRequests();
+      initChatWatchers();
+      debouncedUpdateTitle();
       showNotice("Logged in as " + nm);
     });
   }
@@ -619,7 +626,7 @@
     db.ref("users/" + myId + "/chats").on("value", snap => {
       const chats = snap.val() || {};
       attachAllChatWatchers(chats);
-      updateChatListUI(chats);
+      debouncedUpdateChatListUI(chats);
     });
   }
   
@@ -634,8 +641,8 @@
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
-        updateChatListUI(chats);
-        updateTitle();
+        debouncedUpdateChatListUI(chats);
+        debouncedUpdateTitle();
       }
     });
   }
@@ -756,8 +763,8 @@
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
     chatUnread[cid] = 0;
-    updateChatListUI({});
-    updateTitle();
+    updateChatListUI(chats = {}); // refresh chat list
+    debouncedUpdateTitle();
     if (type === "group") {
       document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
     } else {
@@ -796,7 +803,7 @@
       if (type !== "help" && cid !== currentChat) {
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
-      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+      Object.entries(data).forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
     if (type === "group") {
       db.ref("groupChats/" + cid + "/members").on("value", snap => {
@@ -1163,7 +1170,23 @@
     });
   }
   
-  // ----- Slash Autocomplete (defined above) -----
+  // ----- Slash Autocomplete -----
+  // (Already defined above)
+  
+  // ----- Debounce UI Updates -----
+  function debounce(func, delay) {
+    let timeoutId;
+    return function(...args) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+  }
+  const debouncedUpdateTitle = debounce(() => {
+    const totalUnread = Object.values(chatUnread).reduce((a, b) => a + b, 0);
+    document.title = totalUnread > 0 ? `(+${totalUnread}) Static Live Chat` : "Static Live Chat";
+  }, 300);
+  
+  const debouncedUpdateChatListUI = debounce(updateChatListUI, 300);
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
   function canSendMessage() {

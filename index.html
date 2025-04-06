@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;
-      --bubble-from: #444;
+      --bubble-to: #1e90ff;       /* your messages */
+      --bubble-from: #444;        /* others' messages */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -351,7 +351,7 @@
   function showNotice(msg) { alert(msg); }
   function showConfirm(msg, callback) { if (confirm(msg)) callback(); }
   
-  // Simple debounce function to reduce update frequency
+  // Simple debounce to reduce frequent UI updates
   function debounce(func, delay) {
     let timeoutId;
     return function(...args) {
@@ -359,8 +359,6 @@
       timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
   }
-  
-  // Debounced update for title and chat list
   const debouncedUpdateTitle = debounce(() => {
     const totalUnread = Object.values(chatUnread).reduce((a, b) => a + b, 0);
     document.title = totalUnread > 0 ? `(+${totalUnread}) Static Live Chat` : "Static Live Chat";
@@ -640,7 +638,10 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
+        // Instead of writing to DB on every message, update local "last" in chats if available.
+        if (chats[cid]) {
+          chats[cid].last = snap.val().timestamp;
+        }
         debouncedUpdateChatListUI(chats);
         debouncedUpdateTitle();
       }
@@ -763,7 +764,7 @@
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
     chatUnread[cid] = 0;
-    updateChatListUI(chats = {}); // refresh chat list
+    updateChatListUI({});
     debouncedUpdateTitle();
     if (type === "group") {
       document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
@@ -800,9 +801,7 @@
       });
       childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      if (type !== "help" && cid !== currentChat) {
-        db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
-      }
+      // No extra DB write here – rely on local chat data to update ordering
       Object.entries(data).forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
     if (type === "group") {
@@ -1171,22 +1170,7 @@
   }
   
   // ----- Slash Autocomplete -----
-  // (Already defined above)
-  
-  // ----- Debounce UI Updates -----
-  function debounce(func, delay) {
-    let timeoutId;
-    return function(...args) {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(this, args), delay);
-    };
-  }
-  const debouncedUpdateTitle = debounce(() => {
-    const totalUnread = Object.values(chatUnread).reduce((a, b) => a + b, 0);
-    document.title = totalUnread > 0 ? `(+${totalUnread}) Static Live Chat` : "Static Live Chat";
-  }, 300);
-  
-  const debouncedUpdateChatListUI = debounce(updateChatListUI, 300);
+  // (Defined above in slashAutoInput)
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
   function canSendMessage() {

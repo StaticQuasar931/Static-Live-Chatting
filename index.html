@@ -149,6 +149,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      background-clip: padding-box;
     }
     .msg p { margin: 0; }
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
@@ -651,12 +652,21 @@
             menu.style.display = "none";
           };
           menu.appendChild(unfriendBtn);
-          d.appendChild(btn);
-          d.appendChild(menu);
+          const blockBtn = document.createElement("button");
+          blockBtn.textContent = "Block";
+          blockBtn.onclick = () => {
+            showConfirm("Block " + n + "?").then(ok => {
+              if (ok) { db.ref("users/" + myId + "/blocked/" + n).set(true); showNotice("Blocked " + n); }
+            });
+            menu.style.display = "none";
+          };
+          menu.appendChild(blockBtn);
           btn.onclick = ev => {
             ev.stopPropagation();
             menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
           };
+          d.appendChild(btn);
+          d.appendChild(menu);
           fl.appendChild(d);
         });
       }
@@ -1209,7 +1219,8 @@
       db.ref(path).on("value", snap => {
         const val = snap.val();
         const t = document.getElementById("typingIndicator");
-        if (val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
+        // Only show typing indicator if current chat is active
+        if (currentChat && val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
         else { t.style.display = "none"; }
       });
     }
@@ -1769,7 +1780,7 @@
       db.ref(path).on("value", snap => {
         const val = snap.val();
         const t = document.getElementById("typingIndicator");
-        if (val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
+        if (currentChat && val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
         else { t.style.display = "none"; }
       });
     }
@@ -1793,6 +1804,60 @@
       });
     }
     
+    // ========= Slash Commands & Autocomplete =========
+    function slashAutoInput(e) {
+      const val = e.target.value;
+      const sc = document.getElementById("slashAutocomplete");
+      if (!val.startsWith("/")) { sc.style.display = "none"; return; }
+      sc.innerHTML = "";
+      const rect = e.target.getBoundingClientRect();
+      sc.style.left = rect.left + "px";
+      sc.style.top = rect.top - 115 + "px";
+      const hits = slashCmds.filter(c => c.startsWith(val));
+      if (!hits.length) { sc.style.display = "none"; return; }
+      hits.slice(0, 8).forEach(cmd => {
+        const b = document.createElement("button");
+        b.textContent = cmd;
+        b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+        sc.appendChild(b);
+      });
+      sc.style.display = "block";
+    }
+    
+    // ========= Client-Side Cooldown & Message Sending =========
+    function canSendMessage() {
+      const nowTime = Date.now();
+      if (nowTime - lastMessageTime < 500) {
+        showNotice("Please wait 0.5 seconds between messages.");
+        return false;
+      }
+      lastMessageTime = nowTime;
+      return true;
+    }
+    function sendMessage() {
+      if (!currentChat || currentType === "help") return;
+      if (!canSendMessage()) return;
+      const inp = document.getElementById("msgInput");
+      const txt = inp.value.trim();
+      if (!txt) return;
+      document.getElementById("slashAutocomplete").style.display = "none";
+      if (txt.startsWith("/")) {
+        processSlashCommand(txt);
+        inp.value = "";
+        return;
+      }
+      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+      db.ref(path).push({
+        sender: myId,
+        text: txt,
+        timestamp: Date.now(),
+        reaction: "",
+        readBy: { [myId]: Date.now() }
+      });
+      inp.value = "";
+      setTimeout(() => { document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight; }, 50);
+      sendTyping();
+    }
   </script>
   
   <!-- ========= Notification Container ========= -->

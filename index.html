@@ -106,7 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is not a button – it’s available in the chat list */
+    /* Help Chat is available in the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -377,7 +377,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // For client-side cooldown
+  let lastMessageTime = 0; // For 0.5-second cooldown
   
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -392,6 +392,7 @@
   // ----- Login & Settings -----
   function toggleLoginPass() {
     let pw = document.getElementById("password");
+    // Toggle between "password" and "text" so the password can be seen
     pw.type = (pw.type === "password") ? "text" : "password";
   }
   
@@ -627,7 +628,6 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Update last timestamp for background chats
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
         updateChatListUI(chats);
       }
@@ -786,7 +786,6 @@
       });
       childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      // Only update "last" timestamp for background chats
       if (type !== "help" && cid !== currentChat) {
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
@@ -805,7 +804,7 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    // "Seen" feature removed.
+    // "Seen" feature removed per request.
   }
   
   function loadOlderMessages() {
@@ -1159,8 +1158,7 @@
     });
   }
   
-  // ----- Slash Command Autocomplete -----
-  // (Already defined above)
+  // ----- Slash Autocomplete (defined above) -----
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
   let lastMessageTime = 0;

@@ -8,7 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
-    /* ===== Theme Variables ===== */
+    /* ========= Theme Variables ========= */
     :root {
       --bg-color: #111;
       --text-color: #fff;
@@ -16,7 +16,7 @@
       --chat-bg: #222;
       --bubble-to: #1e90ff;
       --bubble-from: #444;
-      --bubble-console: rgba(255, 255, 255, 0.2);
+      --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
       --chat-item-bg: #333;
@@ -78,7 +78,8 @@
       --accent: #b86af1;
       --chat-item-bg: #4d1460;
     }
-    /* ===== Global Styles ===== */
+
+    /* ========= Global Styles ========= */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -97,7 +98,8 @@
       border: none;
     }
     button { background: var(--accent); color: #fff; cursor: pointer; }
-    /* ===== Layout ===== */
+
+    /* ========= Layout ========= */
     #app { display: flex; flex: 1; }
     #sidebar {
       width: 280px;
@@ -131,7 +133,8 @@
       display: flex;
       flex-direction: column;
     }
-    /* ===== Message Bubbles ===== */
+
+    /* ========= Message Bubbles ========= */
     .msg {
       max-width: 70%;
       padding: 16px;
@@ -172,11 +175,13 @@
       margin-top: 4px;
       text-align: right;
     }
-    /* ===== Input Area ===== */
+
+    /* ========= Input Area ========= */
     #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
     #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
     #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
-    /* ===== Utility Panels ===== */
+
+    /* ========= Utility Panels ========= */
     #emojiPicker {
       display: none;
       position: absolute;
@@ -251,7 +256,8 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; }
     }
-    /* ===== Modal Styles ===== */
+
+    /* ========= Modal Styles ========= */
     .modal {
       position: fixed;
       inset: 0;
@@ -281,7 +287,8 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    /* ===== Notification Container ===== */
+
+    /* ========= Notification Container ========= */
     #notificationContainer {
       position: fixed;
       top: 10px;
@@ -300,7 +307,8 @@
       box-shadow: var(--shadow-msg);
       transition: opacity 0.5s;
     }
-    /* ===== Login Screen ===== */
+
+    /* ========= Login Screen ========= */
     #login {
       position: fixed;
       inset: 0;
@@ -310,7 +318,8 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
-    /* ===== Slash Autocomplete ===== */
+
+    /* ========= Slash Autocomplete ========= */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -348,7 +357,7 @@
     }
   </style>
   <script>
-    // ===== Firebase Initialization =====
+    // ========= Firebase Initialization =========
     const firebaseConfig = {
       apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
       authDomain: "static-live-chatting.firebaseapp.com",
@@ -362,7 +371,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ===== Helper Functions =====
+    // ========= Helper Functions =========
     function showNotice(msg) {
       const container = document.getElementById("notificationContainer");
       const note = document.createElement("div");
@@ -409,14 +418,14 @@
     }, 300);
     const debouncedUpdateChatListUI = debounce(updateChatListUI, 300);
 
-    // ===== Device & User Setup =====
+    // ========= Device & User Setup =========
     function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
     let myId = localStorage.getItem("myDeviceId");
     if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
     let displayName = localStorage.getItem("displayName") || "";
     let pass = localStorage.getItem("pass") || "";
 
-    // ===== Global Variables =====
+    // ========= Global Variables =========
     let currentChat = "", currentType = "";
     let messagesRef = null, childAddedRef = null, childChangedRef = null;
     let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
@@ -424,7 +433,7 @@
     let blocked = {}, friends = {};
     let lastMessageTime = 0;
 
-    // ===== On Load =====
+    // ========= On Load =========
     window.addEventListener("DOMContentLoaded", () => {
       document.addEventListener("keydown", function(e) {
         if (e.key === "Escape") {
@@ -448,7 +457,7 @@
       }
     });
 
-    // ===== Theme Functions =====
+    // ========= Theme Functions =========
     function applyTheme() {
       const theme = localStorage.getItem("theme") || "dark";
       document.body.className = "";
@@ -466,7 +475,7 @@
       document.getElementById("themeBtn").textContent = next + ": Theme";
     }
 
-    // ===== Login & Settings =====
+    // ========= Login & Settings =========
     function toggleLoginPass() {
       const pw = document.getElementById("password");
       pw.type = (pw.type === "password") ? "text" : "password";
@@ -566,7 +575,7 @@
       });
     }
 
-    // ===== Friends & Chat Panels =====
+    // ========= Friends & Chat Panels =========
     function openFriendsPanel() {
       const mo = document.createElement("div");
       mo.className = "modal";
@@ -666,7 +675,7 @@
           if (!dev) { showNotice("No user with that name found."); return; }
           db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
           db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          // Create the private chat node (will be properly created when request is accepted)
+          // Create a placeholder private chat (properly created upon acceptance)
           db.ref("privateChats/" + [myId, dev].sort().join("_")).set({});
           showNotice("Friend request sent to " + friendName);
           mo.style.display = "none";
@@ -692,7 +701,7 @@
       mo.querySelector("#openGroupsBtn").onclick = () => { openPublicGroups(); mo.style.display = "none"; };
     }
 
-    // ===== Group Chat Functions =====
+    // ========= Group Chat Functions =========
     function createGroupChat() {
       const mo = document.createElement("div");
       mo.className = "modal";
@@ -717,7 +726,7 @@
         const password = mo.querySelector("#groupPass").value.trim();
         if (!name) { showNotice("Group name cannot be empty."); return; }
         const gid = "group_" + Date.now();
-        // Include a 'members' object so the rules pass.
+        // When creating a group chat, include a valid "members" object.
         db.ref("groupChats/" + gid).set({
           name: name,
           type: type,
@@ -799,7 +808,7 @@
       });
     }
 
-    // ===== Chat & Message Watchers =====
+    // ========= Chat & Message Watchers =========
     function loadRequests() {
       db.ref("users/" + myId + "/requests").on("value", snap => {
         const data = snap.val() || {};
@@ -997,7 +1006,7 @@
           menu.appendChild(blockBtn);
           dots.onclick = ev => {
             ev.stopPropagation();
-            menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+            menu.style.display = menu.style.display === "flex" ? "none" : "flex";
             const rect = dots.getBoundingClientRect();
             menu.style.left = rect.left + "px";
             menu.style.top = rect.bottom + 2 + "px";
@@ -1056,7 +1065,7 @@
         document.getElementById("chatTitle").textContent = name;
       }
       const gm = document.getElementById("groupMembers");
-      gm.style.display = type === "group" ? "block" : "none";
+      gm.style.display = (type === "group") ? "block" : "none";
       const inp = document.getElementById("msgInput");
       inp.disabled = (type === "help");
       const area = document.getElementById("messages");
@@ -1183,7 +1192,7 @@
       db.ref(path).set(emoji);
     }
 
-    // ===== Typing & Emoji =====
+    // ========= Typing & Emoji =========
     function attachTypingListener() {
       if (!currentChat || currentType === "help") return;
       const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
@@ -1215,7 +1224,7 @@
       });
     }
 
-    // ===== Slash Commands & Autocomplete =====
+    // ========= Slash Commands & Autocomplete =========
     const slashCmds = [
       "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
       "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
@@ -1240,7 +1249,7 @@
       sc.style.display = "block";
     }
 
-    // ===== Client-Side Cooldown =====
+    // ========= Client-Side Cooldown =========
     function canSendMessage() {
       const nowTime = Date.now();
       if (nowTime - lastMessageTime < 500) {
@@ -1281,7 +1290,7 @@
       sendTyping();
     }
 
-    // ===== Slash Command Processing =====
+    // ========= Slash Command Processing =========
     function processSlashCommand(cmd) {
       const parts = cmd.split(" ");
       const slash = parts[0].toLowerCase();
@@ -1393,7 +1402,7 @@
       });
     }
 
-    // ===== Typing Race Check =====
+    // ========= Typing Race Check =========
     function checkTypingRaceWin(messageText) {
       db.ref("games/typingrace/" + currentChat).once("value", snap => {
         const games = snap.val();
@@ -1436,7 +1445,7 @@
       });
     }
 
-    // ===== Client-Side Cooldown =====
+    // ========= Client-Side Cooldown =========
     function canSendMessage() {
       const nowTime = Date.now();
       if (nowTime - lastMessageTime < 500) {
@@ -1457,7 +1466,9 @@
         const parts = txt.split(" ");
         if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
           processTypingRaceReady(parts[1]);
-        } else { processSlashCommand(txt); }
+        } else {
+          processSlashCommand(txt);
+        }
         inp.value = "";
         return;
       }
@@ -1476,10 +1487,10 @@
     }
   </script>
 
-  <!-- ===== Notification Container ===== -->
+  <!-- ========= Notification Container ========= -->
   <div id="notificationContainer"></div>
 
-  <!-- ===== Login Screen ===== -->
+  <!-- ========= Login Screen ========= -->
   <div id="login" style="display: flex;">
     <div style="background: var(--chat-bg); padding: 20px; border-radius: 10px; position: relative;">
       <h2>Static Live Chat</h2>
@@ -1494,7 +1505,7 @@
     </div>
   </div>
 
-  <!-- ===== Main App UI ===== -->
+  <!-- ========= Main App UI ========= -->
   <div id="app" style="display: none;">
     <div id="sidebar">
       <button onclick="openFriendsPanel()">Friends</button>

@@ -378,13 +378,13 @@
       // Close modals on ESC key
       document.addEventListener("keydown", function(e) {
         if (e.key === "Escape") {
-          document.querySelectorAll(".modal").forEach(modal => modal.style.display = "none");
+          document.querySelectorAll(".modal").forEach(modal => { modal.style.display = "none"; });
         }
       });
-      // Click outside a modal to close it
+      // Click outside modal to close it
       document.addEventListener("click", function(e) {
         document.querySelectorAll(".modal").forEach(modal => {
-          if (modal.style.display === "flex" && e.target === modal) modal.style.display = "none";
+          if (modal.style.display === "flex" && e.target === modal) { modal.style.display = "none"; }
         });
       });
       if (displayName) {
@@ -403,7 +403,7 @@
     function applyTheme() {
       const theme = localStorage.getItem("theme") || "dark";
       document.body.className = "";
-      if (theme !== "dark") document.body.classList.add(theme);
+      if (theme !== "dark") { document.body.classList.add(theme); }
     }
     function toggleTheme() {
       const themes = ["dark", "light", "blue", "green", "pink", "purple"];
@@ -412,7 +412,7 @@
       let idx = themes.indexOf(current);
       let next = themes[(idx + 1) % themes.length];
       document.body.className = "";
-      if (next !== "dark") document.body.classList.add(next);
+      if (next !== "dark") { document.body.classList.add(next); }
       localStorage.setItem("theme", next);
       document.getElementById("themeBtn").textContent = next + ": Theme";
     }
@@ -420,7 +420,7 @@
     // ===== Login & Settings =====
     function toggleLoginPass() {
       const pw = document.getElementById("password");
-      pw.type = pw.type === "password" ? "text" : "password";
+      pw.type = (pw.type === "password") ? "text" : "password";
     }
     function doLogin() {
       const nm = document.getElementById("username").value.trim();
@@ -462,7 +462,7 @@
         "</div>";
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
+      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
       mo.querySelector("#saveSetBtn").onclick = () => {
         const newN = mo.querySelector("#editName").value.trim();
         const newP = mo.querySelector("#editPass").value.trim();
@@ -496,9 +496,8 @@
       db.ref("users/" + myId + "/blocked").once("value", snap => {
         const list = snap.val() || {};
         container.innerHTML = "";
-        if (Object.keys(list).length === 0) {
-          container.textContent = "No blocked users.";
-        } else {
+        if (Object.keys(list).length === 0) { container.textContent = "No blocked users."; }
+        else {
           Object.keys(list).forEach(user => {
             const div = document.createElement("div");
             div.textContent = user;
@@ -526,11 +525,10 @@
         "<h3>Your Friends</h3><div id='frList'></div></div>";
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
+      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
       const fl = mo.querySelector("#frList");
-      if (!friends || !Object.keys(friends).length) {
-        fl.textContent = "No friends yet!";
-      } else {
+      if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
+      else {
         Object.keys(friends).forEach(n => {
           const d = document.createElement("div");
           d.style.background = "var(--chat-bg)";
@@ -552,7 +550,6 @@
               const cid = [myId, dev].sort().join("_");
               db.ref("privateChats/" + cid).once("value", snap2 => {
                 if (!snap2.exists()) {
-                  // Create new chat with a "members" property.
                   db.ref("privateChats/" + cid).set({
                     members: { [myId]: true, [dev]: true },
                     createdAt: Date.now()
@@ -572,7 +569,7 @@
               db.ref("users/" + myId + "/friends/" + n).remove();
               db.ref("displayNames/" + n).once("value", snap => {
                 const dev = snap.val();
-                if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
+                if (dev) { db.ref("users/" + dev + "/friends/" + displayName).remove(); }
               });
               showNotice("Unfriended " + n);
               mo.style.display = "none";
@@ -605,7 +602,7 @@
         "</div>";
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
+      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
       mo.querySelector("#friendSendBtn").onclick = () => {
         const friendName = mo.querySelector("#friendNameInput").value.trim();
         if (!friendName) { showNotice("Please enter a name."); return; }
@@ -616,7 +613,7 @@
           if (!dev) { showNotice("No user with that name found."); return; }
           db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
           db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
-          // Create an empty chat with members set when the request is accepted.
+          // Create a private chat node; note that its messages are not accessible until it has a 'members' property.
           db.ref("privateChats/" + [myId, dev].sort().join("_")).set({});
           showNotice("Friend request sent to " + friendName);
           mo.style.display = "none";
@@ -636,7 +633,7 @@
         "</div>";
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
+      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
       mo.querySelector("#createGroupBtn").onclick = () => {
         createGroupChat();
         mo.style.display = "none";
@@ -676,7 +673,7 @@
         const password = mo.querySelector("#groupPass").value.trim();
         if (!name) { showNotice("Group name cannot be empty."); return; }
         const gid = "group_" + Date.now();
-        // IMPORTANT: When creating a new chat node, include the "members" property.
+        // IMPORTANT: Include a 'members' object so the rules pass.
         db.ref("groupChats/" + gid).set({
           name: name,
           type: type,
@@ -717,7 +714,7 @@
             showNotice("You are not invited to this group.");
             return;
           }
-          // Add your device ID to members
+          // Add yourself to the members list.
           db.ref("groupChats/" + gid + "/members/" + myId).set(true);
           db.ref("users/" + myId + "/chats/" + gid).set({ name: group.name, type: "group", last: Date.now() });
           showNotice("Joined group " + group.name);
@@ -778,7 +775,6 @@
               const dev = sn.val();
               if (!dev) { showNotice("User not found!"); return; }
               const cid = [myId, dev].sort().join("_");
-              // Create a private chat with members (if it doesn't exist yet)
               db.ref("privateChats/" + cid).once("value", snap2 => {
                 if (!snap2.exists()) {
                   db.ref("privateChats/" + cid).set({
@@ -806,7 +802,7 @@
           const deny = document.createElement("button");
           deny.textContent = "✘";
           deny.style.background = "red";
-          deny.onclick = () => db.ref("users/" + myId + "/requests/" + from).remove();
+          deny.onclick = () => { db.ref("users/" + myId + "/requests/" + from).remove(); };
           div.appendChild(deny);
           tab.appendChild(div);
         });
@@ -825,7 +821,7 @@
             db.ref("users/" + myId + "/requestsSent/" + n).remove();
             db.ref("displayNames/" + n).once("value", sn => {
               const dev = sn.val();
-              if (dev) db.ref("users/" + dev + "/requests/" + displayName).remove();
+              if (dev) { db.ref("users/" + dev + "/requests/" + displayName).remove(); }
             });
           };
           div.appendChild(btn);
@@ -850,18 +846,14 @@
           });
           db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
         });
-        setTimeout(() => db.ref("users/" + myId + "/accepted/" + who).remove(), 3000);
+        setTimeout(() => { db.ref("users/" + myId + "/accepted/" + who).remove(); }, 3000);
       });
     }
     function loadBlocked() {
-      db.ref("users/" + myId + "/blocked").on("value", snap => {
-        blocked = snap.val() || {};
-      });
+      db.ref("users/" + myId + "/blocked").on("value", snap => { blocked = snap.val() || {}; });
     }
     function loadFriends() {
-      db.ref("users/" + myId + "/friends").on("value", snap => {
-        friends = snap.val() || {};
-      });
+      db.ref("users/" + myId + "/friends").on("value", snap => { friends = snap.val() || {}; });
     }
     function initChatWatchers() {
       db.ref("users/" + myId + "/chats").on("value", snap => {
@@ -1006,7 +998,7 @@
       currentChat = cid;
       currentType = type;
       chatUnread[cid] = 0;
-      updateChatListUI({});
+      // NOTE: Removed updateChatListUI({}) here so that the chat list isn’t cleared.
       debouncedUpdateTitle();
       if (type === "group") {
         document.getElementById("chatTitle").innerHTML =
@@ -1022,8 +1014,8 @@
       area.innerHTML = "";
       document.getElementById("loadMoreBtn").style.display = "none";
       if (messagesRef) {
-        if (childAddedRef) messagesRef.off("child_added", childAddedRef);
-        if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
+        if (childAddedRef) { messagesRef.off("child_added", childAddedRef); }
+        if (childChangedRef) { messagesRef.off("child_changed", childChangedRef); }
       }
       const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       messagesRef = db.ref(path);
@@ -1126,8 +1118,7 @@
       const t = val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
       ts.textContent = t;
       bubble.appendChild(ts);
-      if (toEnd) area.appendChild(bubble);
-      else area.prepend(bubble);
+      if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
       area.scrollTop = area.scrollHeight;
     }
     function updateBubble(mId, val) {
@@ -1149,8 +1140,8 @@
       db.ref(path).on("value", snap => {
         const val = snap.val();
         const t = document.getElementById("typingIndicator");
-        t.style.display = (val && val !== displayName) ? "block" : "none";
-        if (t.style.display === "block") { t.textContent = val + " is typing..."; }
+        if (val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
+        else { t.style.display = "none"; }
       });
     }
     function sendTyping() {
@@ -1337,9 +1328,7 @@
             });
           }, 60000);
         }
-      } else {
-        showNotice("Unknown slash command: " + cmd);
-      }
+      } else { showNotice("Unknown slash command: " + cmd); }
     }
     function sendSystemMessage(text) {
       if (!currentChat || currentType === "help") return;
@@ -1377,7 +1366,9 @@
         "<button class='closeBtn' onclick='document.body.removeChild(this.parentElement.parentElement)'>X</button>" +
         "<h3>Typing Race Challenge</h3>" +
         "<p>Type exactly the following (cannot be selected or copied):</p>" +
-        "<div style='background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;'>" + prompt + "</div>" +
+        "<div style='background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;'>" +
+        prompt +
+        "</div>" +
         "<button id='readyBtn'>I'm Ready</button>" +
         "</div>";
       document.body.appendChild(mo);
@@ -1436,8 +1427,6 @@
       document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
       sendTyping();
     }
-
-    // ===== End of Code =====
   </script>
 
   <!-- ===== Login Screen ===== -->

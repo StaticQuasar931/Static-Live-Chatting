@@ -531,7 +531,6 @@
         const btn = document.createElement("button");
         btn.textContent = "...";
         btn.style.marginLeft = "10px";
-        btn.onclick = ev => { ev.stopPropagation(); };
         const menu = document.createElement("div");
         menu.className = "friendMenu";
         const openBtn = document.createElement("button");
@@ -555,8 +554,8 @@
         unfriendBtn.onclick = () => {
           showConfirm("Unfriend " + n + "?", () => {
             db.ref("users/" + myId + "/friends/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap2 => {
-              const dev = snap2.val();
+            db.ref("displayNames/" + n).once("value", snap => {
+              const dev = snap.val();
               if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
             });
             showNotice("Unfriended " + n);
@@ -718,7 +717,6 @@
         db.ref("users/" + myId + "/chats/" + gid).set({ name: group.name, type: "group", last: Date.now() });
         showNotice("Joined group " + group.name);
         document.body.removeChild(mo);
-        openChat(gid, group.name, "group");
       });
     };
   }
@@ -739,17 +737,14 @@
       const data = snap.val() || {};
       const list = [];
       Object.entries(data).forEach(([gid, group]) => {
-        if (group.type === "open") {
-          list.push({ id: gid, name: group.name });
-        }
+        if (group.type === "open") { list.push({ id: gid, name: group.name }); }
       });
       const pl = mo.querySelector("#publicList");
-      if (!list.length) {
-        pl.textContent = "No public groups available.";
-      } else {
+      if (!list.length) { pl.textContent = "No public groups available."; }
+      else {
         list.forEach(group => {
           const btn = document.createElement("button");
-          btn.textContent = group.name + " (" + group.id + ")";
+          btn.textContent = `${group.name} (${group.id})`;
           btn.onclick = () => {
             db.ref("groupChats/" + group.id + "/members/" + myId).set(true);
             db.ref("users/" + myId + "/chats/" + group.id).set({ name: group.name, type: "group", last: Date.now() });

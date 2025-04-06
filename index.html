@@ -78,7 +78,6 @@
       --accent: #b86af1;
       --chat-item-bg: #4d1460;
     }
-
     /* ===== Global Styles ===== */
     body {
       margin: 0;
@@ -123,15 +122,8 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
-    #topBar .top-right {
-      display: flex;
-      gap: 5px;
-    }
-    #groupTitle {
-      font-size: 16px;
-      font-weight: bold;
-      margin: 5px 0;
-    }
+    #topBar .top-right { display: flex; gap: 5px; }
+    #groupTitle { font-size: 16px; font-weight: bold; margin: 5px 0; }
     #messages {
       flex: 1;
       padding: 15px;
@@ -181,12 +173,7 @@
       text-align: right;
     }
     /* ===== Input Area ===== */
-    #typingIndicator {
-      display: none;
-      font-style: italic;
-      font-size: 14px;
-      margin: 0 20px 10px;
-    }
+    #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
     #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
     #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
     /* ===== Utility Panels ===== */
@@ -341,7 +328,7 @@
     }
   </style>
   <script>
-    // ========= Firebase Initialization =========
+    // ===== Firebase Initialization =====
     const firebaseConfig = {
       apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
       authDomain: "static-live-chatting.firebaseapp.com",
@@ -355,7 +342,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ========= Helper Functions =========
+    // ===== Helper Functions =====
     function showNotice(msg) { alert(msg); }
     function showConfirm(msg, callback) { if (confirm(msg)) callback(); }
     function debounce(func, delay) {
@@ -371,14 +358,14 @@
     }, 300);
     const debouncedUpdateChatListUI = debounce(updateChatListUI, 300);
 
-    // ========= Device & User Setup =========
+    // ===== Device & User Setup =====
     function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
     let myId = localStorage.getItem("myDeviceId");
     if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
     let displayName = localStorage.getItem("displayName") || "";
     let pass = localStorage.getItem("pass") || "";
 
-    // ========= Global Variables =========
+    // ===== Global Variables =====
     let currentChat = "", currentType = "";
     let messagesRef = null, childAddedRef = null, childChangedRef = null;
     let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
@@ -386,22 +373,18 @@
     let blocked = {}, friends = {};
     let lastMessageTime = 0;
 
-    // ========= On Load =========
+    // ===== On Load =====
     window.addEventListener("DOMContentLoaded", () => {
-      // ESC key to close any open modal
+      // Close modals on ESC key
       document.addEventListener("keydown", function(e) {
         if (e.key === "Escape") {
-          const modals = document.querySelectorAll(".modal");
-          modals.forEach(modal => { modal.style.display = "none"; });
+          document.querySelectorAll(".modal").forEach(modal => modal.style.display = "none");
         }
       });
-      // Click outside modal to close it
+      // Click outside a modal to close it
       document.addEventListener("click", function(e) {
-        const modals = document.querySelectorAll(".modal");
-        modals.forEach(modal => {
-          if (modal.style.display === "flex" && e.target === modal) {
-            modal.style.display = "none";
-          }
+        document.querySelectorAll(".modal").forEach(modal => {
+          if (modal.style.display === "flex" && e.target === modal) modal.style.display = "none";
         });
       });
       if (displayName) {
@@ -416,9 +399,8 @@
       }
     });
 
-    // ========= Theme Function =========
+    // ===== Theme Functions =====
     function applyTheme() {
-      // Use localStorage value if available; default to dark
       const theme = localStorage.getItem("theme") || "dark";
       document.body.className = "";
       if (theme !== "dark") document.body.classList.add(theme);
@@ -426,9 +408,7 @@
     function toggleTheme() {
       const themes = ["dark", "light", "blue", "green", "pink", "purple"];
       let current = "dark";
-      themes.forEach(t => {
-        if (document.body.classList.contains(t)) current = t;
-      });
+      themes.forEach(t => { if (document.body.classList.contains(t)) current = t; });
       let idx = themes.indexOf(current);
       let next = themes[(idx + 1) % themes.length];
       document.body.className = "";
@@ -437,7 +417,7 @@
       document.getElementById("themeBtn").textContent = next + ": Theme";
     }
 
-    // ========= Login & Settings =========
+    // ===== Login & Settings =====
     function toggleLoginPass() {
       const pw = document.getElementById("password");
       pw.type = pw.type === "password" ? "text" : "password";
@@ -536,7 +516,7 @@
       });
     }
 
-    // ========= Friends & Chat Panels =========
+    // ===== Friends & Chat Panels =====
     function openFriendsPanel() {
       const mo = document.createElement("div");
       mo.className = "modal";
@@ -571,7 +551,13 @@
               if (!dev) { showNotice("User not found!"); return; }
               const cid = [myId, dev].sort().join("_");
               db.ref("privateChats/" + cid).once("value", snap2 => {
-                if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
+                if (!snap2.exists()) {
+                  // Create new chat with a "members" property.
+                  db.ref("privateChats/" + cid).set({
+                    members: { [myId]: true, [dev]: true },
+                    createdAt: Date.now()
+                  });
+                }
               });
               db.ref("users/" + myId + "/chats/" + cid).set({ name: n, type: "private", last: Date.now() });
               openChat(cid, n, "private");
@@ -613,33 +599,24 @@
       mo.innerHTML =
         "<div class='modalContent' style='min-width:300px;'>" +
         "<button class='closeBtn' onclick='document.body.removeChild(this.parentElement.parentElement)'>X</button>" +
-        "<h3>Add Friend by Name</h3><input id='friendNameInput' placeholder='Friend&#39;s display name'/><br/>" +
-        "<button id='friendSendBtn'>Send Request</button></div>";
+        "<h3>Add Friend by Name</h3>" +
+        "<input id='friendNameInput' placeholder='Friend&#39;s display name'/><br/>" +
+        "<button id='friendSendBtn'>Send Request</button>" +
+        "</div>";
       document.body.appendChild(mo);
       mo.style.display = "flex";
       mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       mo.querySelector("#friendSendBtn").onclick = () => {
         const friendName = mo.querySelector("#friendNameInput").value.trim();
-        if (!friendName) {
-          showNotice("Please enter a name.");
-          return;
-        }
-        if (friendName === displayName) {
-          showNotice("You cannot friend yourself.");
-          return;
-        }
-        if (blocked[friendName]) {
-          showNotice("Unblock the user first.");
-          return;
-        }
+        if (!friendName) { showNotice("Please enter a name."); return; }
+        if (friendName === displayName) { showNotice("You cannot friend yourself."); return; }
+        if (blocked[friendName]) { showNotice("Unblock the user first."); return; }
         db.ref("displayNames/" + friendName).once("value", snap => {
           const dev = snap.val();
-          if (!dev) {
-            showNotice("No user with that name found.");
-            return;
-          }
+          if (!dev) { showNotice("No user with that name found."); return; }
           db.ref("users/" + myId + "/requestsSent/" + friendName).set(true);
           db.ref("users/" + dev + "/requests/" + displayName).set({ requested: true });
+          // Create an empty chat with members set when the request is accepted.
           db.ref("privateChats/" + [myId, dev].sort().join("_")).set({});
           showNotice("Friend request sent to " + friendName);
           mo.style.display = "none";
@@ -674,7 +651,7 @@
       };
     }
 
-    // ========= Group Chat Functions =========
+    // ===== Group Chat Functions =====
     function createGroupChat() {
       const mo = document.createElement("div");
       mo.className = "modal";
@@ -697,18 +674,15 @@
         const name = mo.querySelector("#groupName").value.trim();
         const type = mo.querySelector("#groupType").value;
         const password = mo.querySelector("#groupPass").value.trim();
-        if (!name) {
-          showNotice("Group name cannot be empty.");
-          return;
-        }
+        if (!name) { showNotice("Group name cannot be empty."); return; }
         const gid = "group_" + Date.now();
-        const members = {}; members[myId] = true;
+        // IMPORTANT: When creating a new chat node, include the "members" property.
         db.ref("groupChats/" + gid).set({
           name: name,
           type: type,
           password: password,
           createdBy: myId,
-          members: members
+          members: { [myId]: true }
         });
         db.ref("users/" + myId + "/chats/" + gid).set({ name: name, type: "group", last: Date.now() });
         showNotice("Group chat created.");
@@ -731,16 +705,10 @@
       mo.querySelector("#joinGroupConfirm").onclick = () => {
         const gid = mo.querySelector("#joinGroupID").value.trim();
         const passInput = mo.querySelector("#joinGroupPass").value.trim();
-        if (!gid) {
-          showNotice("Group ID is required.");
-          return;
-        }
+        if (!gid) { showNotice("Group ID is required."); return; }
         db.ref("groupChats/" + gid).once("value", snap => {
           const group = snap.val();
-          if (!group) {
-            showNotice("Group not found.");
-            return;
-          }
+          if (!group) { showNotice("Group not found."); return; }
           if (group.type === "password" && group.password !== passInput) {
             showNotice("Incorrect password.");
             return;
@@ -749,6 +717,7 @@
             showNotice("You are not invited to this group.");
             return;
           }
+          // Add your device ID to members
           db.ref("groupChats/" + gid + "/members/" + myId).set(true);
           db.ref("users/" + myId + "/chats/" + gid).set({ name: group.name, type: "group", last: Date.now() });
           showNotice("Joined group " + group.name);
@@ -772,9 +741,8 @@
           if (group.type === "open") list.push({ id: gid, name: group.name });
         });
         const pl = mo.querySelector("#publicList");
-        if (!list.length) {
-          pl.textContent = "No public groups available.";
-        } else {
+        if (!list.length) { pl.textContent = "No public groups available."; }
+        else {
           list.forEach(group => {
             const btn = document.createElement("button");
             btn.textContent = group.name + " (" + group.id + ")";
@@ -791,7 +759,7 @@
       });
     }
 
-    // ========= Chat & Message Watchers =========
+    // ===== Chat & Message Watchers =====
     function loadRequests() {
       db.ref("users/" + myId + "/requests").on("value", snap => {
         const data = snap.val() || {};
@@ -805,18 +773,20 @@
           accept.textContent = "✔";
           accept.style.background = "green";
           accept.onclick = () => {
-            if (blocked[from]) {
-              showNotice("Unblock them first!");
-              return;
-            }
+            if (blocked[from]) { showNotice("Unblock them first!"); return; }
             db.ref("displayNames/" + from).once("value", sn => {
               const dev = sn.val();
-              if (!dev) {
-                showNotice("User not found!");
-                return;
-              }
+              if (!dev) { showNotice("User not found!"); return; }
               const cid = [myId, dev].sort().join("_");
-              db.ref("privateChats/" + cid).set({});
+              // Create a private chat with members (if it doesn't exist yet)
+              db.ref("privateChats/" + cid).once("value", snap2 => {
+                if (!snap2.exists()) {
+                  db.ref("privateChats/" + cid).set({
+                    members: { [myId]: true, [dev]: true },
+                    createdAt: Date.now()
+                  });
+                }
+              });
               db.ref("users/" + myId + "/chats/" + cid).set({ name: from, type: "private", last: Date.now() });
               db.ref("users/" + myId + "/requests/" + from).remove();
               db.ref("users/" + myId + "/friends/" + from).set(true);
@@ -871,7 +841,12 @@
           if (!dev) return;
           const cid = [myId, dev].sort().join("_");
           db.ref("privateChats/" + cid).once("value", snap2 => {
-            if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
+            if (!snap2.exists()) {
+              db.ref("privateChats/" + cid).set({
+                members: { [myId]: true, [dev]: true },
+                createdAt: Date.now()
+              });
+            }
           });
           db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
         });
@@ -947,7 +922,12 @@
               if (!dev) { showNotice("User not found!"); return; }
               const cid = [myId, dev].sort().join("_");
               db.ref("privateChats/" + cid).once("value", snap2 => {
-                if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
+                if (!snap2.exists()) {
+                  db.ref("privateChats/" + cid).set({
+                    members: { [myId]: true, [dev]: true },
+                    createdAt: Date.now()
+                  });
+                }
               });
               db.ref("users/" + myId + "/chats/" + cid).set({ name: nm, type: "private", last: Date.now() });
               openChat(cid, nm, "private");
@@ -1030,11 +1010,7 @@
       debouncedUpdateTitle();
       if (type === "group") {
         document.getElementById("chatTitle").innerHTML =
-          "<div id='groupTitle'>" +
-          name +
-          "</div><div>You: " +
-          displayName +
-          "</div>";
+          "<div id='groupTitle'>" + name + "</div><div>You: " + displayName + "</div>";
       } else {
         document.getElementById("chatTitle").textContent = name;
       }
@@ -1049,11 +1025,7 @@
         if (childAddedRef) messagesRef.off("child_added", childAddedRef);
         if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
       }
-      const path =
-        (type === "group" ? "groupChats" : "privateChats") +
-        "/" +
-        cid +
-        "/messages";
+      const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       messagesRef = db.ref(path);
       messagesRef.orderByChild("timestamp").limitToLast(50).once("value", snap => {
         const data = snap.val() || {};
@@ -1063,18 +1035,14 @@
         if (arr.length >= 50) {
           hasMoreOld = true;
           document.getElementById("loadMoreBtn").style.display = "block";
-        } else {
-          hasMoreOld = false;
-        }
+        } else { hasMoreOld = false; }
         childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
           const v = snap.val();
           createBubble(snap.key, v, true);
           area.scrollTop = area.scrollHeight;
           markMsgRead(snap.key, v);
         });
-        childChangedRef = messagesRef.on("child_changed", snap => {
-          updateBubble(snap.key, snap.val());
-        });
+        childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
         area.scrollTop = area.scrollHeight;
         Object.entries(data).forEach(([mId, mVal]) => markMsgRead(mId, mVal));
       });
@@ -1088,40 +1056,29 @@
     }
     function markMsgRead(mId, val) {
       if (!currentChat || currentType === "help") return;
-      const path =
-        (currentType === "group" ? "groupChats" : "privateChats") +
-        "/" +
-        currentChat +
-        "/messages/" +
-        mId +
-        "/readBy/" +
-        myId;
+      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
       db.ref(path).set(Date.now());
     }
     function loadOlderMessages() {
       if (!currentChat || !hasMoreOld) return;
       const btn = document.getElementById("loadMoreBtn");
       btn.disabled = true;
-      messagesRef
-        .orderByChild("timestamp")
-        .endAt(oldestStamp - 1)
-        .limitToLast(50)
-        .once("value", snap => {
-          const data = snap.val() || {};
-          const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-          if (arr.length < 1) {
-            showNotice("No older messages found!");
-            hasMoreOld = false;
-            btn.style.display = "none";
-            btn.disabled = false;
-            return;
-          }
-          oldestStamp = arr[0][1].timestamp;
-          arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
-          if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
-          arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+      messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
+        const data = snap.val() || {};
+        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+        if (arr.length < 1) {
+          showNotice("No older messages found!");
+          hasMoreOld = false;
+          btn.style.display = "none";
           btn.disabled = false;
-        });
+          return;
+        }
+        oldestStamp = arr[0][1].timestamp;
+        arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
+        if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
+        arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+        btn.disabled = false;
+      });
     }
     function createBubble(mId, val, toEnd) {
       const area = document.getElementById("messages");
@@ -1143,16 +1100,12 @@
       ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
         const span = document.createElement("span");
         span.textContent = emoji;
-        span.onclick = ev => {
-          ev.stopPropagation();
-          applyReaction(mId, emoji);
-          rBar.style.display = "none";
-        };
+        span.onclick = ev => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
         rBar.appendChild(span);
       });
       bubble.appendChild(rBar);
       bubble.addEventListener("dblclick", () => {
-        rBar.style.display = rBar.style.display === "flex" ? "none" : "flex";
+        rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
       });
       bubble.addEventListener("contextmenu", ev => {
         ev.preventDefault();
@@ -1173,7 +1126,8 @@
       const t = val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
       ts.textContent = t;
       bubble.appendChild(ts);
-      if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
+      if (toEnd) area.appendChild(bubble);
+      else area.prepend(bubble);
       area.scrollTop = area.scrollHeight;
     }
     function updateBubble(mId, val) {
@@ -1183,67 +1137,43 @@
       if (rt) rt.textContent = val.reaction || "";
     }
     function applyReaction(mId, emoji) {
-      const path =
-        (currentType === "group" ? "groupChats" : "privateChats") +
-        "/" +
-        currentChat +
-        "/messages/" +
-        mId +
-        "/reaction";
+      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
       db.ref(path).set(emoji);
     }
 
-    // ========= Typing & Emoji =========
+    // ===== Typing & Emoji =====
     function attachTypingListener() {
       if (!currentChat || currentType === "help") return;
-      const path =
-        (currentType === "group" ? "groupChats" : "privateChats") +
-        "/" +
-        currentChat +
-        "/typing";
+      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
       db.ref(path).off();
       db.ref(path).on("value", snap => {
         const val = snap.val();
         const t = document.getElementById("typingIndicator");
-        if (val && val !== displayName) {
-          t.style.display = "block";
-          t.textContent = val + " is typing...";
-        } else {
-          t.style.display = "none";
-        }
+        t.style.display = (val && val !== displayName) ? "block" : "none";
+        if (t.style.display === "block") { t.textContent = val + " is typing..."; }
       });
     }
     function sendTyping() {
       if (!currentChat || currentType === "help") return;
-      const path =
-        (currentType === "group" ? "groupChats" : "privateChats") +
-        "/" +
-        currentChat +
-        "/typing";
+      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
       db.ref(path).set(displayName);
       setTimeout(() => db.ref(path).set(""), 2000);
     }
     function toggleEmojiPicker() {
       const ep = document.getElementById("emojiPicker");
-      if (ep.style.display === "flex") {
-        ep.style.display = "none";
-        return;
-      }
+      if (ep.style.display === "flex") { ep.style.display = "none"; return; }
       ep.innerHTML = "";
       ep.style.display = "flex";
       const emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
       emojis.forEach(e => {
         const span = document.createElement("span");
         span.textContent = e;
-        span.onclick = () => {
-          document.getElementById("msgInput").value += e;
-          ep.style.display = "none";
-        };
+        span.onclick = () => { document.getElementById("msgInput").value += e; ep.style.display = "none"; };
         ep.appendChild(span);
       });
     }
 
-    // ========= Slash Commands & Autocomplete =========
+    // ===== Slash Commands & Autocomplete =====
     const slashCmds = [
       "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
       "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
@@ -1252,32 +1182,23 @@
     function slashAutoInput(e) {
       const val = e.target.value;
       const sc = document.getElementById("slashAutocomplete");
-      if (!val.startsWith("/")) {
-        sc.style.display = "none";
-        return;
-      }
+      if (!val.startsWith("/")) { sc.style.display = "none"; return; }
       sc.innerHTML = "";
       const rect = e.target.getBoundingClientRect();
       sc.style.left = rect.left + "px";
       sc.style.top = rect.top - 115 + "px";
       const hits = slashCmds.filter(c => c.startsWith(val));
-      if (!hits.length) {
-        sc.style.display = "none";
-        return;
-      }
+      if (!hits.length) { sc.style.display = "none"; return; }
       hits.slice(0, 8).forEach(cmd => {
         const b = document.createElement("button");
         b.textContent = cmd;
-        b.onclick = () => {
-          e.target.value = cmd + " ";
-          sc.style.display = "none";
-        };
+        b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
         sc.appendChild(b);
       });
       sc.style.display = "block";
     }
 
-    // ========= Client-Side Cooldown =========
+    // ===== Client-Side Cooldown =====
     function canSendMessage() {
       const nowTime = Date.now();
       if (nowTime - lastMessageTime < 500) {
@@ -1296,11 +1217,7 @@
       document.getElementById("slashAutocomplete").style.display = "none";
       if (txt.startsWith("/")) {
         const parts = txt.split(" ");
-        if (
-          parts[0].toLowerCase() === "/typingrace" &&
-          parts[2] &&
-          parts[2].toLowerCase() === "ready"
-        ) {
+        if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
           processTypingRaceReady(parts[1]);
         } else {
           processSlashCommand(txt);
@@ -1309,11 +1226,7 @@
         return;
       }
       checkTypingRaceWin(txt);
-      const path =
-        (currentType === "group" ? "groupChats" : "privateChats") +
-        "/" +
-        currentChat +
-        "/messages";
+      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
       db.ref(path).push({
         sender: myId,
         text: txt,
@@ -1322,12 +1235,11 @@
         readBy: { [myId]: Date.now() }
       });
       inp.value = "";
-      document.getElementById("messages").scrollTop =
-        document.getElementById("messages").scrollHeight;
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
       sendTyping();
     }
 
-    // ========= Slash Command Processing =========
+    // ===== Slash Command Processing =====
     function processSlashCommand(cmd) {
       const parts = cmd.split(" ");
       const slash = parts[0].toLowerCase();
@@ -1343,10 +1255,7 @@
         });
       } else if (slash === "/8ball") {
         const q = cmd.slice(7).trim();
-        if (!q) {
-          showNotice("Usage: /8ball [question]");
-          return;
-        }
+        if (!q) { showNotice("Usage: /8ball [question]"); return; }
         const answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
         const pick = answers[Math.floor(Math.random() * answers.length)];
         sendSystemMessage("8ball: " + pick);
@@ -1375,33 +1284,22 @@
           ];
           const pick = dares[Math.floor(Math.random() * dares.length)];
           sendSystemMessage("Dare: " + pick);
-        } else {
-          showNotice("Usage: /tod truth or /tod dare");
-        }
+        } else { showNotice("Usage: /tod truth or /tod dare"); }
       } else if (slash === "/title") {
         const text = parts.slice(1).join(" ");
-        if (!text) {
-          showNotice("Usage: /title [text]");
-          return;
-        }
+        if (!text) { showNotice("Usage: /title [text]"); return; }
         sendSystemMessage("<< " + text + " >>");
       } else if (slash === "/cf" || slash === "/coin") {
         let guess = "";
         if (slash === "/cf") guess = parts[1] || "";
         else if (parts[1] === "flip") guess = parts[2] || "";
         guess = guess.toLowerCase();
-        if (guess !== "heads" && guess !== "tails") {
-          showNotice("Usage: /cf heads or /coin flip tails");
-          return;
-        }
+        if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
         const side = Math.random() < 0.5 ? "heads" : "tails";
         sendSystemMessage("Coinflip: " + side + " => you chose " + guess + " => " + (side === guess ? "You win!" : "You lose."));
       } else if (slash === "/ship") {
         const n = parts[1] || "";
-        if (!n) {
-          showNotice("Usage: /ship [name]");
-          return;
-        }
+        if (!n) { showNotice("Usage: /ship [name]"); return; }
         const merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
         sendSystemMessage("Ship: " + displayName + " + " + n + " => " + merged + " 💘");
       } else if (slash === "/typingrace") {
@@ -1455,7 +1353,7 @@
       });
     }
 
-    // ========= Typing Race Check =========
+    // ===== Typing Race Check =====
     function checkTypingRaceWin(messageText) {
       db.ref("games/typingrace/" + currentChat).once("value", snap => {
         const games = snap.val();
@@ -1479,9 +1377,7 @@
         "<button class='closeBtn' onclick='document.body.removeChild(this.parentElement.parentElement)'>X</button>" +
         "<h3>Typing Race Challenge</h3>" +
         "<p>Type exactly the following (cannot be selected or copied):</p>" +
-        "<div style='background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;'>" +
-        prompt +
-        "</div>" +
+        "<div style='background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;'>" + prompt + "</div>" +
         "<button id='readyBtn'>I'm Ready</button>" +
         "</div>";
       document.body.appendChild(mo);
@@ -1500,7 +1396,7 @@
       });
     }
 
-    // ========= Client-Side Cooldown =========
+    // ===== Client-Side Cooldown =====
     function canSendMessage() {
       const nowTime = Date.now();
       if (nowTime - lastMessageTime < 500) {
@@ -1537,13 +1433,14 @@
         readBy: { [myId]: Date.now() }
       });
       inp.value = "";
-      document.getElementById("messages").scrollTop =
-        document.getElementById("messages").scrollHeight;
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
       sendTyping();
     }
+
+    // ===== End of Code =====
   </script>
 
-  <!-- ========= Login Screen ========= -->
+  <!-- ===== Login Screen ===== -->
   <div id="login" style="display: flex;">
     <div style="background: var(--chat-bg); padding: 20px; border-radius: 10px; position: relative;">
       <h2>Static Live Chat</h2>
@@ -1558,7 +1455,7 @@
     </div>
   </div>
 
-  <!-- ========= Main App UI ========= -->
+  <!-- ===== Main App UI ===== -->
   <div id="app" style="display: none;">
     <div id="sidebar">
       <button onclick="openFriendsPanel()">Friends</button>

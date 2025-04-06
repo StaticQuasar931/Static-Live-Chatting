@@ -106,7 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is not a button – it’s available in the chat list */
+    /* Help Chat is not a button – it’s available via the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -127,7 +127,7 @@
       display: flex;
       gap: 5px;
     }
-    /* In group chats, show group name and your display name */
+    /* For group chats: show group name and your display name */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -153,13 +153,17 @@
       position: relative;
       cursor: pointer;
       box-shadow: var(--shadow-msg);
+      /* Use flexbox to vertically center text and include timestamp below */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       text-align: center;
     }
     /* "to" messages (your messages) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
     /* "from" messages (others' messages) left-aligned */
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
-    /* "console" messages centered */
+    /* "console" messages (system/command) centered */
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
     .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
@@ -176,13 +180,32 @@
       margin-bottom: 5px;
     }
     .reactionBar span { font-size: 22px; cursor: pointer; }
-    .timestamp { position: absolute; font-size: 10px; opacity: 0.7; bottom: -14px; }
-    .mineTime { right: 10px; }
-    .otherTime { left: 10px; }
-    .seenLabel { font-size: 10px; color: var(--accent); margin-top: 2px; text-align: right; }
-    #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
-    #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
-    #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
+    .timestamp {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+    .seenLabel {
+      font-size: 10px;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+    #typingIndicator {
+      display: none;
+      font-style: italic;
+      font-size: 14px;
+      margin: 0 20px 10px;
+    }
+    #inputArea {
+      display: flex;
+      padding: 10px;
+      background: var(--sidebar-color);
+    }
+    #inputArea input {
+      flex: 1;
+      margin-right: 5px;
+      font-size: 17px;
+    }
     #emojiPicker {
       display: none;
       position: absolute;
@@ -196,7 +219,11 @@
       max-height: 180px;
       overflow: auto;
     }
-    #emojiPicker span { font-size: 22px; margin: 6px; cursor: pointer; }
+    #emojiPicker span {
+      font-size: 22px;
+      margin: 6px;
+      cursor: pointer;
+    }
     .chatItem {
       background: var(--chat-item-bg);
       padding: 10px;
@@ -211,9 +238,21 @@
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
-    .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
-    .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
-    /* Friend menu: three-dots options */
+    .chatBadge {
+      background: var(--badge);
+      color: #fff;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-left: 5px;
+    }
+    .requestItem {
+      background: var(--bubble-from);
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+    }
+    /* Friend menu: three-dots options appear next to the dots */
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -241,7 +280,10 @@
       animation: blink 2s infinite;
       z-index: 1000;
     }
-    a.staticLink { color: #0ff; text-decoration: none; }
+    a.staticLink {
+      color: #0ff;
+      text-decoration: none;
+    }
     @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
     /* ===== Modal Styles ===== */
     .modal {
@@ -319,7 +361,11 @@
       z-index: 10;
     }
     /* ===== Typing Race Prompt Modal (non-selectable) ===== */
-    .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+    .no-select {
+      user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -368,7 +414,7 @@
       document.getElementById("app").style.display = "flex";
       applyTheme();
       loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      // Help chat is available via the chat list.
+      // Help chat is available via chat list.
     }
   });
   
@@ -610,22 +656,22 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Update "last" timestamp for background chats only
-        db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
+        // Update "last" for background chats only
+        if (cid !== currentChat) {
+          db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
+        }
         updateChatListUI(chats);
       }
     });
   }
   
   function updateChatListUI(chats) {
-    // Sort chats by "last" timestamp; active chat does not change order once open.
     let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
     let cl = document.getElementById("chatList");
     cl.innerHTML = "";
     arr.forEach(([cid, info]) => {
       let div = document.createElement("div");
       div.className = "chatItem";
-      // Highlight active chat but do not re-sort it.
       if (cid === currentChat) div.classList.add("active");
       let nm = info.name || cid;
       if (info.type === "private" && blocked[nm]) nm += " [Blocked]";
@@ -771,11 +817,9 @@
       });
       childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      // Do not update "last" for the active chat so it stays in place.
-      if (type !== "help") {
-        if (cid !== currentChat) {
-          db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
-        }
+      // Update "last" only for background chats.
+      if (cid !== currentChat) {
+        db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
       arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
@@ -1094,7 +1138,7 @@
     });
   }
   
-  // Check Typing Race Win on normal messages
+  // ----- Check Typing Race Win on Normal Messages -----
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value", snap => {
       let games = snap.val();
@@ -1111,7 +1155,7 @@
     });
   }
   
-  // Typing Race Prompt Modal (non-selectable)
+  // ----- Typing Race Prompt Modal (non-selectable) -----
   function showTypingRacePrompt(prompt, gameId) {
     let mo = document.createElement("div");
     mo.className = "modal no-select";
@@ -1131,7 +1175,7 @@
     };
   }
   
-  // Typing Race Ready Command (for opponent)
+  // ----- Typing Race Ready Command (for opponent) -----
   function processTypingRaceReady(gameId) {
     db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
       let ready = snap.val() || {};

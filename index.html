@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Static Live Chat – Final Version</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
@@ -106,7 +106,6 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is not a button – it’s available in the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -127,7 +126,7 @@
       display: flex;
       gap: 5px;
     }
-    /* In group chats, show group name and your display name */
+    /* Group chat title */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -153,11 +152,14 @@
       position: relative;
       cursor: pointer;
       box-shadow: var(--shadow-msg);
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
+    .msg p { margin: 0; }
     /* "to" messages (your messages) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
-    /* "from" messages (others' messages) left-aligned */
+    /* "from" messages (others) left-aligned */
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
     /* "console" messages centered */
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
@@ -176,10 +178,12 @@
       margin-bottom: 5px;
     }
     .reactionBar span { font-size: 22px; cursor: pointer; }
-    .timestamp { position: absolute; font-size: 10px; opacity: 0.7; bottom: -14px; }
-    .mineTime { right: 10px; }
-    .otherTime { left: 10px; }
-    .seenLabel { font-size: 10px; color: var(--accent); margin-top: 2px; text-align: right; }
+    .timestamp {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 4px;
+      text-align: right;
+    }
     #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
     #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
     #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
@@ -211,8 +215,20 @@
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
-    .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
-    .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
+    .chatBadge {
+      background: var(--badge);
+      color: #fff;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-left: 5px;
+    }
+    .requestItem {
+      background: var(--bubble-from);
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+    }
     /* Friend menu: three-dots options */
     .friendMenu {
       position: absolute;
@@ -242,12 +258,12 @@
       z-index: 1000;
     }
     a.staticLink { color: #0ff; text-decoration: none; }
-    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     /* ===== Modal Styles ===== */
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -279,10 +295,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       z-index: 999;
     }
-    /* ===== Slash Command Autocomplete ===== */
+    /* ===== Slash Autocomplete ===== */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -318,66 +334,65 @@
       opacity: 0.8;
       z-index: 10;
     }
-    /* ===== Typing Race Prompt Modal (non-selectable) ===== */
-    .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
   </style>
 </head>
 <body>
 <script>
   // ----- Firebase Setup -----
-  if (typeof firebase === "undefined") {
-    console.error("Firebase not loaded – check your network.");
-    window.firebase = { initializeApp: () => { }, database: () => ({ ref: () => ({ }) }) };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
+    authDomain: "static-live-chatting.firebaseapp.com",
+    databaseURL: "https://static-live-chatting.firebaseio.com",
+    projectId: "static-live-chatting",
+    storageBucket: "static-live-chatting.appspot.com",
+    messagingSenderId: "578562140653",
+    appId: "1:578562140653:web:c12df07155627083e9dfe4",
+    measurementId: "G-HZ1F0B1CDS"
+  };
+  firebase.initializeApp(firebaseConfig);
+  let db = firebase.database();
+
+  // ----- Helper Functions -----
+  function showNotice(msg) {
+    alert(msg);
   }
-  let db = null;
-  try {
-    const config = {
-      apiKey: "YOUR_API_KEY_HERE",
-      authDomain: "static-live-chatting.firebaseapp.com",
-      databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
-      projectId: "static-live-chatting",
-      storageBucket: "static-live-chatting.appspot.com",
-      messagingSenderId: "578562140653",
-      appId: "1:578562140653:web:c12df07155627083e9dfe4"
-    };
-    firebase.initializeApp(config);
-    db = firebase.database();
-  } catch (e) {
-    console.error("Firebase init error:", e);
-    db = { ref: () => ({ once: () => { }, on: () => { }, set: () => { }, push: () => ({ }) }) };
+  function showConfirm(msg, callback) {
+    if (confirm(msg)) callback();
   }
-  
+
   // ----- Device & User Setup -----
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
   let myId = localStorage.getItem("myDeviceId");
   if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
   let displayName = localStorage.getItem("displayName") || "";
   let pass = localStorage.getItem("pass") || "";
-  
-  // ----- Global Variables -----
+
+  // ----- Global Variables & Cooldown -----
   let currentChat = "", currentType = "";
   let messagesRef = null, childAddedRef = null, childChangedRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  
+  let lastMessageTime = 0; // 0.5-second cooldown
+
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
     if (displayName) {
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
       applyTheme();
-      loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      // Help chat is available via the chat list.
+      loadBlocked();
+      loadFriends();
+      loadRequests();
+      initChatWatchers();
     }
   });
-  
+
   // ----- Login & Settings -----
   function toggleLoginPass() {
     let pw = document.getElementById("password");
     pw.type = (pw.type === "password") ? "text" : "password";
   }
-  
   function doLogin() {
     let nm = document.getElementById("username").value.trim();
     let p = document.getElementById("password").value.trim();
@@ -395,11 +410,14 @@
       db.ref("users/" + myId + "/displayName").set(nm);
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
-      applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
+      applyTheme();
+      loadBlocked();
+      loadFriends();
+      loadRequests();
+      initChatWatchers();
       showNotice("Logged in as " + nm);
     });
   }
-  
   function openSettings() {
     let mo = document.createElement("div");
     mo.className = "modal";
@@ -451,7 +469,6 @@
     };
     loadBlockedForSettings(mo.querySelector("#blockedList"));
   }
-  
   function loadBlockedForSettings(container) {
     db.ref("users/" + myId + "/blocked").once("value", snap => {
       let list = snap.val() || {};
@@ -475,7 +492,7 @@
       }
     });
   }
-  
+
   // ----- Theming -----
   function applyTheme() {
     let themes = ["dark", "light", "blue", "green", "pink", "purple"];
@@ -497,7 +514,7 @@
   function setThemeLabel(lab) {
     document.getElementById("themeBtn").textContent = `${lab}: Theme`;
   }
-  
+
   // ----- Chat & Message Watchers -----
   function loadRequests() {
     db.ref("users/" + myId + "/requests").on("value", snap => {
@@ -579,19 +596,16 @@
       setTimeout(() => db.ref("users/" + myId + "/accepted/" + who).remove(), 3000);
     });
   }
-  
   function loadBlocked() {
     db.ref("users/" + myId + "/blocked").on("value", snap => {
       blocked = snap.val() || {};
     });
   }
-  
   function loadFriends() {
     db.ref("users/" + myId + "/friends").on("value", snap => {
       friends = snap.val() || {};
     });
   }
-  
   function initChatWatchers() {
     db.ref("users/" + myId + "/chats").on("value", snap => {
       let chats = snap.val() || {};
@@ -599,7 +613,6 @@
       updateChatListUI(chats);
     });
   }
-  
   function attachAllChatWatchers(chats) {
     Object.keys(chats).forEach(cid => {
       if (cid === "help_chat") return;
@@ -610,22 +623,18 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Update "last" timestamp for background chats only
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
         updateChatListUI(chats);
       }
     });
   }
-  
   function updateChatListUI(chats) {
-    // Sort chats by "last" timestamp; active chat does not change order once open.
     let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
     let cl = document.getElementById("chatList");
     cl.innerHTML = "";
     arr.forEach(([cid, info]) => {
       let div = document.createElement("div");
       div.className = "chatItem";
-      // Highlight active chat but do not re-sort it.
       if (cid === currentChat) div.classList.add("active");
       let nm = info.name || cid;
       if (info.type === "private" && blocked[nm]) nm += " [Blocked]";
@@ -705,7 +714,6 @@
       cl.appendChild(div);
     });
   }
-  
   function confirmDeleteChat(cid, info) {
     if (info.type === "group") {
       db.ref("groupChats/" + cid + "/createdBy").once("value", snap => {
@@ -731,7 +739,6 @@
       });
     }
   }
-  
   function openChat(cid, name, type) {
     currentChat = cid; currentType = type;
     chatUnread[cid] = 0;
@@ -771,11 +778,8 @@
       });
       childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      // Do not update "last" for the active chat so it stays in place.
-      if (type !== "help") {
-        if (cid !== currentChat) {
-          db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
-        }
+      if (type !== "help" && cid !== currentChat) {
+        db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
       arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
@@ -787,24 +791,11 @@
     }
     attachTypingListener();
   }
-  
   function markMsgRead(mId, val) {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    if (val.sender === myId) {
-      if (val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
-        let msgEl = document.getElementById("msg_" + mId);
-        if (msgEl && !msgEl.querySelector(".seenLabel")) {
-          let seen = document.createElement("div");
-          seen.className = "seenLabel";
-          seen.textContent = "Seen";
-          msgEl.appendChild(seen);
-        }
-      }
-    }
   }
-  
   function loadOlderMessages() {
     if (!currentChat || !hasMoreOld) return;
     let btn = document.getElementById("loadMoreBtn");
@@ -826,7 +817,6 @@
       btn.disabled = false;
     });
   }
-  
   function createBubble(mId, val, toEnd) {
     let area = document.getElementById("messages");
     if (document.getElementById("msg_" + mId)) return;
@@ -835,7 +825,9 @@
     if (val.sender === myId) bubble.classList.add("to");
     else if (val.sender === "_system") bubble.classList.add("console");
     else bubble.classList.add("from");
-    bubble.innerHTML = val.text || "";
+    let p = document.createElement("p");
+    p.textContent = val.text || "";
+    bubble.appendChild(p);
     let rt = document.createElement("span");
     rt.className = "reactionTag";
     if (val.reaction) rt.textContent = val.reaction;
@@ -869,18 +861,16 @@
     let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
     ts.textContent = t;
     bubble.appendChild(ts);
-    if (val.sender === myId) ts.classList.add("mineTime"); else ts.classList.add("otherTime");
     if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
     area.scrollTop = area.scrollHeight;
   }
-  
   function updateBubble(mId, val) {
     let b = document.getElementById("msg_" + mId);
     if (!b) return;
     let rt = b.querySelector(".reactionTag");
     if (rt) rt.textContent = val.reaction || "";
   }
-  
+
   // ----- Typing & Emoji -----
   function attachTypingListener() {
     if (!currentChat || currentType === "help") return;
@@ -893,14 +883,12 @@
       else { t.style.display = "none"; }
     });
   }
-  
   function sendTyping() {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
     db.ref(path).set(displayName);
     setTimeout(() => db.ref(path).set(""), 2000);
   }
-  
   function toggleEmojiPicker() {
     let ep = document.getElementById("emojiPicker");
     if (ep.style.display === "flex") { ep.style.display = "none"; return; }
@@ -914,14 +902,13 @@
       ep.appendChild(span);
     });
   }
-  
+
   // ----- Slash Commands & Autocomplete -----
   const slashCmds = [
     "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
     "/title", "/cf heads", "/cf tails", "/coin flip heads", "/coin flip tails",
     "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
   ];
-  
   function slashAutoInput(e) {
     let val = e.target.value;
     let sc = document.getElementById("slashAutocomplete");
@@ -940,9 +927,20 @@
     });
     sc.style.display = "block";
   }
-  
+
+  // ----- Client-Side Cooldown -----
+  function canSendMessage() {
+    let nowTime = Date.now();
+    if (nowTime - lastMessageTime < 500) {
+      showNotice("Please wait 0.5 seconds between messages.");
+      return false;
+    }
+    lastMessageTime = nowTime;
+    return true;
+  }
   function sendMessage() {
     if (!currentChat || currentType === "help") return;
+    if (!canSendMessage()) return;
     let inp = document.getElementById("msgInput");
     let txt = inp.value.trim();
     if (!txt) return;
@@ -970,7 +968,6 @@
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     sendTyping();
   }
-  
   function processSlashCommand(cmd) {
     let parts = cmd.split(" ");
     let slash = parts[0].toLowerCase();
@@ -1081,7 +1078,6 @@
       showNotice("Unknown slash command: " + cmd);
     }
   }
-  
   function sendSystemMessage(text) {
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
@@ -1093,8 +1089,7 @@
       readBy: { [myId]: Date.now() }
     });
   }
-  
-  // Check Typing Race Win on normal messages
+  // ----- Check Typing Race Win on Normal Messages -----
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value", snap => {
       let games = snap.val();
@@ -1110,8 +1105,7 @@
       });
     });
   }
-  
-  // Typing Race Prompt Modal (non-selectable)
+  // ----- Typing Race Prompt Modal (non-selectable) -----
   function showTypingRacePrompt(prompt, gameId) {
     let mo = document.createElement("div");
     mo.className = "modal no-select";
@@ -1130,8 +1124,7 @@
       document.body.removeChild(mo);
     };
   }
-  
-  // Typing Race Ready Command (for opponent)
+  // ----- Typing Race Ready Command (for opponent) -----
   function processTypingRaceReady(gameId) {
     db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
       let ready = snap.val() || {};
@@ -1141,9 +1134,55 @@
       }
     });
   }
-  
-  // ----- Slash Autocomplete is defined above -----
-  
+  // ----- Client-Side Cooldown -----
+  function canSendMessage() {
+    let nowTime = Date.now();
+    if (nowTime - lastMessageTime < 500) {
+      showNotice("Please wait 0.5 seconds between messages.");
+      return false;
+    }
+    lastMessageTime = nowTime;
+    return true;
+  }
+  function sendMessage() {
+    if (!currentChat || currentType === "help") return;
+    if (!canSendMessage()) return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if (!txt) return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if (txt.startsWith("/")) {
+      let parts = txt.split(" ");
+      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
+
+  // ----- Placeholder Functions for Missing UI -----
+  function addFriendUI() { alert("Add Friend UI placeholder. Replace with full implementation."); }
+  function openFriendsPanel() { alert("Open Friends Panel placeholder. Replace with full implementation."); }
+  function showAddChatPanel() { alert("Add Chat Panel placeholder. Replace with full implementation."); }
+  function applyReaction(mId, emoji) {
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
+    db.ref(path).set(emoji);
+  }
   // ----- End of Code -----
 </script>
 
@@ -1152,10 +1191,11 @@
   <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
-    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
+    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()" />
+    <br/>
     <label>Password (optional):</label><br/>
     <div style="display:flex;">
-      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
+      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()" />
       <button onclick="toggleLoginPass()">👁️</button>
     </div>
     <button onclick="doLogin()">Log In</button>

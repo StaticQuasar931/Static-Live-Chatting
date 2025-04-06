@@ -106,7 +106,6 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* Help Chat is available via the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -127,7 +126,7 @@
       display: flex;
       gap: 5px;
     }
-    /* In group chats, show group name and your display name */
+    /* Group chat title */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -352,7 +351,7 @@
   };
   firebase.initializeApp(firebaseConfig);
   let db = firebase.database();
-  
+
   // ----- Helper Functions -----
   function showNotice(msg) {
     alert(msg);
@@ -360,22 +359,22 @@
   function showConfirm(msg, callback) {
     if (confirm(msg)) callback();
   }
-  
+
   // ----- Device & User Setup -----
   function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
   let myId = localStorage.getItem("myDeviceId");
   if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
   let displayName = localStorage.getItem("displayName") || "";
   let pass = localStorage.getItem("pass") || "";
-  
+
   // ----- Global Variables & Cooldown -----
   let currentChat = "", currentType = "";
   let messagesRef = null, childAddedRef = null, childChangedRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // 0.5-second cooldown
-  
+  let lastMessageTime = 0; // 0.5-second cooldown timer
+
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
     if (displayName) {
@@ -385,13 +384,12 @@
       loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
     }
   });
-  
+
   // ----- Login & Settings -----
   function toggleLoginPass() {
     let pw = document.getElementById("password");
     pw.type = (pw.type === "password") ? "text" : "password";
   }
-  
   function doLogin() {
     let nm = document.getElementById("username").value.trim();
     let p = document.getElementById("password").value.trim();
@@ -413,7 +411,6 @@
       showNotice("Logged in as " + nm);
     });
   }
-  
   function openSettings() {
     let mo = document.createElement("div");
     mo.className = "modal";
@@ -465,7 +462,6 @@
     };
     loadBlockedForSettings(mo.querySelector("#blockedList"));
   }
-  
   function loadBlockedForSettings(container) {
     db.ref("users/" + myId + "/blocked").once("value", snap => {
       let list = snap.val() || {};
@@ -489,7 +485,7 @@
       }
     });
   }
-  
+
   // ----- Theming -----
   function applyTheme() {
     let themes = ["dark", "light", "blue", "green", "pink", "purple"];
@@ -511,7 +507,7 @@
   function setThemeLabel(lab) {
     document.getElementById("themeBtn").textContent = `${lab}: Theme`;
   }
-  
+
   // ----- Chat & Message Watchers -----
   function loadRequests() {
     db.ref("users/" + myId + "/requests").on("value", snap => {
@@ -940,7 +936,6 @@
   }
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
-  let lastMessageTime = 0;
   function canSendMessage() {
     let nowTime = Date.now();
     if (nowTime - lastMessageTime < 500) {
@@ -1154,10 +1149,9 @@
   }
   
   // ----- Slash Autocomplete -----
-  // (Already defined in slashAutoInput above)
+  // (Handled by slashAutoInput)
   
-  // ----- Client-Side Cooldown (0.5 sec between messages) -----
-  let lastMessageTime = 0;
+  // ----- Client-Side Cooldown -----
   function canSendMessage() {
     let nowTime = Date.now();
     if (nowTime - lastMessageTime < 500) {
@@ -1176,10 +1170,11 @@
   <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
-    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
+    <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()" />
+    <br/>
     <label>Password (optional):</label><br/>
     <div style="display:flex;">
-      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
+      <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()" />
       <button onclick="toggleLoginPass()">👁️</button>
     </div>
     <button onclick="doLogin()">Log In</button>

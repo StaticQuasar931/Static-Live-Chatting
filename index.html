@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Static Live Chat</title>
-  <!-- Firebase Scripts (compat libraries) -->
+  <!-- Firebase Scripts (using compat libraries) -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
@@ -526,6 +526,18 @@
     document.getElementById("themeBtn").textContent = `${lab}: Theme`;
   }
   
+  // ----- Stub Functions for Friends & Group Chat Panels -----
+  // You can later expand these functions as needed.
+  function openFriendsPanel() {
+    alert("Open Friends Panel (stub)");
+  }
+  function addFriendUI() {
+    alert("Add Friend UI (stub)");
+  }
+  function showAddChatPanel() {
+    alert("Show Add Chat Panel (stub)");
+  }
+  
   // ----- Chat & Message Watchers -----
   function loadRequests() {
     db.ref("users/" + myId + "/requests").on("value", snap => {
@@ -638,10 +650,8 @@
       function handleMsg(snap) {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        // Instead of writing to DB on every message, update local "last" in chats if available.
-        if (chats[cid]) {
-          chats[cid].last = snap.val().timestamp;
-        }
+        // Update local "last" without a DB write
+        if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
         debouncedUpdateChatListUI(chats);
         debouncedUpdateTitle();
       }
@@ -801,7 +811,6 @@
       });
       childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
-      // No extra DB write here – rely on local chat data to update ordering
       Object.entries(data).forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
     if (type === "group") {
@@ -894,6 +903,11 @@
     if (!b) return;
     const rt = b.querySelector(".reactionTag");
     if (rt) rt.textContent = val.reaction || "";
+  }
+  
+  function applyReaction(mId, emoji) {
+    const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
+    db.ref(path).set(emoji);
   }
   
   // ----- Typing & Emoji -----
@@ -1168,9 +1182,6 @@
       }
     });
   }
-  
-  // ----- Slash Autocomplete -----
-  // (Defined above in slashAutoInput)
   
   // ----- Client-Side Cooldown (0.5 sec between messages) -----
   function canSendMessage() {

@@ -3,23 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Updated Version</title>
+  <title>Static Live Chat – Polished & Enhanced</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
-    /* Theme Variables */
+    /* ============ Theme Variables ============ */
     :root {
       --bg-color: #111;
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;        /* your messages */
-      --bubble-from: #444;         /* others' messages */
+      --bubble-to: #1e90ff;        /* messages from you */
+      --bubble-from: #444;         /* messages from others */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
       --chat-item-bg: #333;
+      --font-size-msg: 19px;
+      --shadow-msg: 0px 2px 4px rgba(0,0,0,0.3);
     }
     body.light {
       --bg-color: #f4f4f4;
@@ -94,7 +96,7 @@
       border: none;
     }
     button { background: var(--accent); color: #fff; cursor: pointer; }
-    /* Layout */
+    /* ============ Layout ============ */
     #app { display: flex; flex: 1; height: 100%; }
     #sidebar {
       width: 280px;
@@ -104,6 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
+    /* Remove Help button – Help chat is always present */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -119,6 +122,11 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
+    /* Settings button now only appears on top right */
+    #topBar .top-right {
+      display: flex;
+      gap: 5px;
+    }
     #messages {
       flex: 1;
       padding: 15px;
@@ -126,23 +134,21 @@
       display: flex;
       flex-direction: column;
     }
-    /* Message Bubble Classes */
+    /* ============ Message Bubble Styles ============ */
     .msg {
       max-width: 70%;
-      padding: 12px 16px;
+      padding: 16px;
       margin: 6px;
-      border-radius: 20px;
-      font-size: 17px;
+      border-radius: 25px;
+      font-size: var(--font-size-msg);
       line-height: 1.4;
       word-wrap: break-word;
       position: relative;
       cursor: pointer;
+      box-shadow: var(--shadow-msg);
     }
-    /* "to" messages (your messages) aligned right */
-    .to { align-self: flex-end; background: var(--bubble-to); color: #fff; border-bottom-right-radius: 5px; }
-    /* "from" messages (other user) aligned left */
-    .from { align-self: flex-start; background: var(--bubble-from); color: #fff; border-bottom-left-radius: 5px; }
-    /* "console" messages (system/command) centered */
+    .to { align-self: flex-end; background: var(--bubble-to); color: #fff; border-bottom-right-radius: 10px; }
+    .from { align-self: flex-start; background: var(--bubble-from); color: #fff; border-bottom-left-radius: 10px; }
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
     .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
@@ -190,11 +196,27 @@
       align-items: center;
       cursor: pointer;
       transition: background 0.2s;
+      position: relative;
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
     .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
     .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
+    /* Friend menu: 3 dots options appear next to dots */
+    .friendMenu {
+      position: absolute;
+      background: var(--chat-bg);
+      padding: 6px;
+      border-radius: 6px;
+      display: none;
+      z-index: 50;
+    }
+    .friendMenu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 2px 0;
+    }
     #staticMenu {
       position: fixed;
       bottom: 10px;
@@ -210,7 +232,7 @@
     }
     a.staticLink { color: #0ff; text-decoration: none; }
     @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-    /* Modal Styles */
+    /* ============ Modal Styles ============ */
     .modal {
       position: fixed;
       inset: 0;
@@ -239,7 +261,7 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    /* Login Screen */
+    /* ============ Login Screen ============ */
     #login {
       position: fixed;
       inset: 0;
@@ -249,7 +271,7 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
-    /* Slash Command Autocomplete */
+    /* ============ Slash Command Autocomplete ============ */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -341,7 +363,7 @@
       document.getElementById("app").style.display = "flex";
       applyTheme();
       loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      setupHelpChat();
+      // Help Chat is always available via chat list.
     }
   });
   
@@ -371,7 +393,6 @@
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
       applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      setupHelpChat();
       showNotice("Logged in as " + nm);
     });
   }
@@ -503,7 +524,7 @@
             db.ref("users/" + myId + "/friends/" + from).set(true);
             db.ref("users/" + dev + "/friends/" + displayName).set(true);
             db.ref("users/" + dev + "/accepted/" + displayName).set(true);
-            // Notify the other user with a system message (they will see it when they open the chat)
+            // Notify other user via a system message.
             db.ref("privateChats/" + cid + "/messages").push({
               sender: "_system",
               text: `${from} accepted your friend request!`,
@@ -596,7 +617,7 @@
   }
   
   function updateChatListUI(chats) {
-    // Sort chats by the "last" timestamp (descending)
+    // Sort chats by last message timestamp descending.
     let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
     let cl = document.getElementById("chatList");
     cl.innerHTML = "";
@@ -618,10 +639,62 @@
         right.appendChild(badge);
       }
       if (info.type !== "help") {
-        let del = document.createElement("button");
-        del.textContent = "🗑";
-        del.onclick = (ev) => { ev.stopPropagation(); confirmDeleteChat(cid, info); };
-        right.appendChild(del);
+        let dots = document.createElement("span");
+        dots.textContent = "⋮";
+        dots.style.cursor = "pointer";
+        dots.style.position = "relative";
+        // Friend menu appears near the dots.
+        let menu = document.createElement("div");
+        menu.className = "friendMenu";
+        let openBtn = document.createElement("button");
+        openBtn.textContent = "Open Chat";
+        openBtn.onclick = () => {
+          db.ref("displayNames/" + nm).once("value", snap => {
+            let dev = snap.val();
+            if (!dev) { showNotice("User not found!"); return; }
+            let cid = [myId, dev].sort().join("_");
+            db.ref("privateChats/" + cid).once("value", snap2 => {
+              if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
+            });
+            db.ref("users/" + myId + "/chats/" + cid).set({ name: nm, type: "private", last: Date.now() });
+            openChat(cid, nm, "private");
+          });
+          menu.style.display = "none";
+        };
+        menu.appendChild(openBtn);
+        let unfriendBtn = document.createElement("button");
+        unfriendBtn.textContent = "Unfriend";
+        unfriendBtn.onclick = () => {
+          showConfirm("Unfriend " + nm + "?", () => {
+            db.ref("users/" + myId + "/friends/" + nm).remove();
+            db.ref("displayNames/" + nm).once("value", snap2 => {
+              let dev = snap2.val();
+              if (dev) db.ref("users/" + dev + "/friends/" + displayName).remove();
+            });
+            showNotice("Unfriended " + nm);
+          });
+          menu.style.display = "none";
+        };
+        menu.appendChild(unfriendBtn);
+        let blockBtn = document.createElement("button");
+        blockBtn.textContent = "Block";
+        blockBtn.onclick = () => {
+          showConfirm("Block " + nm + "?", () => {
+            db.ref("users/" + myId + "/blocked/" + nm).set(true);
+            showNotice("Blocked " + nm);
+          });
+          menu.style.display = "none";
+        };
+        menu.appendChild(blockBtn);
+        dots.onclick = (ev) => {
+          ev.stopPropagation();
+          menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+          let rect = dots.getBoundingClientRect();
+          menu.style.left = rect.left + "px";
+          menu.style.top = (rect.bottom + 2) + "px";
+        };
+        right.appendChild(dots);
+        right.appendChild(menu);
       }
       div.appendChild(right);
       div.onclick = () => {
@@ -713,9 +786,7 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    // If the message was sent by me, check if it has been seen by the other party and update UI
     if (val.sender === myId) {
-      // For simplicity, assume if readBy contains any other uid (not me) then mark as seen
       if (val.readBy && Object.keys(val.readBy).some(uid => uid !== myId)) {
         let msgEl = document.getElementById("msg_" + mId);
         if (msgEl && !msgEl.querySelector(".seenLabel")) {
@@ -758,23 +829,16 @@
     if (document.getElementById("msg_" + mId)) return;
     let bubble = document.createElement("div");
     bubble.id = "msg_" + mId;
-    // Determine position by sender:
-    // If sender equals myId, use class "to" (right aligned)
-    // If sender equals "_system", use "console" (centered)
-    // Otherwise, use "from" (left aligned)
     if (val.sender === myId) bubble.classList.add("to");
     else if (val.sender === "_system") bubble.classList.add("console");
     else bubble.classList.add("from");
-  
     bubble.innerHTML = val.text || "";
     let rt = document.createElement("span");
     rt.className = "reactionTag";
     if (val.reaction) rt.textContent = val.reaction;
     bubble.appendChild(rt);
-  
     let rBar = document.createElement("div");
     rBar.className = "reactionBar";
-    // Reaction options now include thumbs down 👎
     ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
       let span = document.createElement("span");
       span.textContent = emoji;
@@ -855,7 +919,7 @@
   }
   
   /*******************
-   * Slash Commands & Games
+   * Slash Commands & Live Autocomplete
    *******************/
   const slashCmds = [
     "/roll", "/ping", "/8ball", "/roast", "/tod truth", "/tod dare",
@@ -871,6 +935,7 @@
     let rect = e.target.getBoundingClientRect();
     sc.style.left = rect.left + "px";
     sc.style.top = (rect.top - 115) + "px";
+    // Live filtering: for /typingrace, also list options if partial input
     let hits = slashCmds.filter(c => c.startsWith(val));
     if (!hits.length) { sc.style.display = "none"; return; }
     hits.slice(0, 8).forEach(cmd => {
@@ -976,8 +1041,32 @@
       let merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
       sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
     }
-    // Additional interactive commands (RPS, GuessNumber, TypingRace, Vote) would be implemented similarly.
-    else { showNotice("Unknown slash command: " + cmd); }
+    else if (slash === "/typingrace") {
+      // For typing race, show available prompts live via autocomplete.
+      // For simplicity, we assume a set of three prompts.
+      const prompts = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Pack my box with five dozen liquor jugs.",
+        "How vexingly quick daft zebras jump!"
+      ];
+      // If no additional parameters, list the prompts
+      if (parts.length === 1) {
+        let options = prompts.map((p, i) => `${i+1}: ${p}`);
+        sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
+      } else {
+        let option = parseInt(parts[1], 10);
+        if (isNaN(option) || option < 1 || option > prompts.length) {
+          showNotice("Invalid option. Usage: /typingrace [option number]");
+          return;
+        }
+        let prompt = prompts[option - 1];
+        // Start the typing race game
+        startTypingRaceGame(prompt);
+      }
+    }
+    else {
+      showNotice("Unknown slash command: " + cmd);
+    }
   }
   
   function sendSystemMessage(text) {
@@ -990,6 +1079,28 @@
       reaction: "",
       readBy: { [myId]: Date.now() }
     });
+  }
+  
+  /*******************
+   * Typing Race Game
+   *******************/
+  function startTypingRaceGame(prompt) {
+    let gameId = "type_" + Date.now();
+    db.ref("games/typingrace/" + currentChat + "/" + gameId).set({
+      initiator: myId,
+      prompt: prompt,
+      timestamp: Date.now(),
+      status: "pending"
+    });
+    sendSystemMessage(`TypingRace [${gameId}]: Type exactly:\n"${prompt}"\nto win! First correct message within 60 seconds wins.`);
+    setTimeout(() => {
+      db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
+        if (snap.val() === "pending") {
+          db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+          sendSystemMessage(`TypingRace [${gameId}] expired.`);
+        }
+      });
+    }, 60000);
   }
   
   /*******************
@@ -1063,15 +1174,12 @@
         d.style.marginBottom = "8px";
         d.style.borderRadius = "6px";
         d.textContent = n;
-        let dotBtn = document.createElement("button");
-        dotBtn.textContent = "...";
-        dotBtn.style.marginLeft = "10px";
+        let dots = document.createElement("span");
+        dots.textContent = "⋮";
+        dots.style.cursor = "pointer";
+        dots.style.position = "relative";
         let menu = document.createElement("div");
-        menu.style.display = "none";
-        menu.style.position = "absolute";
-        menu.style.background = "var(--chat-bg)";
-        menu.style.padding = "6px";
-        menu.style.borderRadius = "6px";
+        menu.className = "friendMenu";
         let openBtn = document.createElement("button");
         openBtn.textContent = "Open Chat";
         openBtn.onclick = () => {
@@ -1112,14 +1220,14 @@
           menu.style.display = "none";
         };
         menu.appendChild(blockBtn);
-        dotBtn.onclick = (ev) => {
+        dots.onclick = (ev) => {
           ev.stopPropagation();
           menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-          let rect = dotBtn.getBoundingClientRect();
+          let rect = dots.getBoundingClientRect();
           menu.style.left = rect.left + "px";
-          menu.style.top = (rect.top + 25) + "px";
+          menu.style.top = (rect.bottom + 2) + "px";
         };
-        d.appendChild(dotBtn);
+        d.appendChild(dots);
         d.appendChild(menu);
         fl.appendChild(d);
       });
@@ -1127,7 +1235,7 @@
   }
   
   /*******************
-   * Help Chat (Read-only)
+   * Help Chat (Read-only, available via chat list)
    *******************/
   function setupHelpChat() {
     db.ref("users/" + myId + "/chats/help_chat").set({ name: "Help (info)", type: "help", last: 0 });
@@ -1222,9 +1330,7 @@
   <div id="sidebar">
     <button onclick="openFriendsPanel()">Friends</button>
     <button onclick="addFriendUI()">Add Friend</button>
-    <button onclick="openSettings()">Settings</button>
-    <button onclick="openHelpChat()">Help</button>
-    <button onclick="document.body.removeChild(document.getElementById('modalAddChat')||document.createElement('div')); showAddChatPanel()">Add Chat</button>
+    <button onclick="showAddChatPanel()">Add Chat</button>
     <h3>Friend Requests</h3>
     <div id="requestsTab"></div>
     <div id="requestsSentTab" style="margin-top:8px;color:#ccc;"></div>
@@ -1235,8 +1341,9 @@
   <div id="chatPanel">
     <div id="topBar">
       <div id="chatTitle">No Chat</div>
-      <div>
+      <div class="top-right">
         <button id="themeBtn" onclick="toggleTheme()">Dark: Theme</button>
+        <button onclick="openSettings()">Settings</button>
       </div>
     </div>
     <div id="groupMembers" style="padding:5px 15px; display:none; font-size:14px;"></div>
@@ -1256,5 +1363,89 @@
 <div id="staticMenu">
   <a href="https://sites.google.com/view/staticquasar931" target="_blank" class="staticLink">More Unblocked Games by Static</a>
 </div>
+
+<!-- Add Chat / Group Chat Panel -->
+<script>
+  function showAddChatPanel() {
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.id = "modalAddChat";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:320px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Add Chat</h3>
+        <button onclick="showCreateGroup(); document.body.removeChild(document.getElementById('modalAddChat'))">Create Group</button><br/>
+        <button onclick="showJoinGroup(); document.body.removeChild(document.getElementById('modalAddChat'))">Join Group</button><br/>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+  }
+  
+  function showCreateGroup() {
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Create Group</h3>
+        <input id="groupName" placeholder="Group Name"/><br/>
+        <select id="groupType">
+          <option value="open">Open</option>
+          <option value="password">Password</option>
+          <option value="invite">Invite Only</option>
+        </select><br/>
+        <input id="groupPassword" placeholder="Password (if needed)"/><br/>
+        <button id="createGroupBtn">Create</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#createGroupBtn").onclick = () => {
+      let name = mo.querySelector("#groupName").value.trim();
+      let type = mo.querySelector("#groupType").value;
+      let pwd = mo.querySelector("#groupPassword").value.trim();
+      if (!name) { showNotice("No group name!"); return; }
+      let gid = "group_" + Date.now();
+      let members = {};
+      members[myId] = true;
+      db.ref("groupChats/" + gid).set({ name: name, type: type, password: pwd, createdBy: myId, members: members });
+      db.ref("users/" + myId + "/chats/" + gid).set({ name: name, type: "group", last: Date.now() });
+      document.body.removeChild(mo);
+      openChat(gid, name, "group");
+    };
+  }
+  
+  function showJoinGroup() {
+    let mo = document.createElement("div");
+    mo.className = "modal";
+    mo.innerHTML = `
+      <div class="modalContent" style="min-width:300px;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Join Group</h3>
+        <input id="joinGroupID" placeholder="Group ID"/><br/>
+        <input id="joinGroupPassword" placeholder="Password (if needed)"/><br/>
+        <button id="joinGroupBtn">Join</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.style.display = "flex";
+    mo.querySelector("#joinGroupBtn").onclick = () => {
+      let id = mo.querySelector("#joinGroupID").value.trim();
+      let pwd = mo.querySelector("#joinGroupPassword").value.trim();
+      if (!id) { showNotice("No group ID typed!"); return; }
+      db.ref("groupChats/" + id).once("value", snap => {
+        let group = snap.val();
+        if (!group) { showNotice("Group not found!"); return; }
+        if (group.type === "password" && group.password !== pwd) { showNotice("Wrong password!"); return; }
+        if (group.type === "invite" && !(group.members && group.members[myId])) { showNotice("Not invited!"); return; }
+        db.ref("groupChats/" + id + "/members/" + myId).set(true);
+        db.ref("users/" + myId + "/chats/" + id).set({ name: group.name, type: "group", last: Date.now() });
+        document.body.removeChild(mo);
+        openChat(id, group.name, "group");
+      });
+    };
+  }
+</script>
 </body>
 </html>

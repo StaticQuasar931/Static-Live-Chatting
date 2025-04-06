@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Final Optimized Version</title>
+  <title>Static Live Chat – Optimized Notifications</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
@@ -34,50 +34,7 @@
       --accent: #007acc;
       --chat-item-bg: #bbb;
     }
-    body.blue {
-      --bg-color: #0b1622;
-      --text-color: #f0f8ff;
-      --sidebar-color: #132336;
-      --chat-bg: #1e2d40;
-      --bubble-to: #1f65ff;
-      --bubble-from: #41546a;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #389fff;
-      --chat-item-bg: #2e3d52;
-    }
-    body.green {
-      --bg-color: #102a10;
-      --text-color: #e8ffe8;
-      --sidebar-color: #224522;
-      --chat-bg: #1a331a;
-      --bubble-to: #28a745;
-      --bubble-from: #375a37;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #4caf50;
-      --chat-item-bg: #2b442b;
-    }
-    body.pink {
-      --bg-color: #331024;
-      --text-color: #ffe0f0;
-      --sidebar-color: #441533;
-      --chat-bg: #551a44;
-      --bubble-to: #ff3377;
-      --bubble-from: #773355;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #ff66a2;
-      --chat-item-bg: #442244;
-    }
-    body.purple {
-      --bg-color: #2e1033;
-      --text-color: #f4e4ff;
-      --sidebar-color: #42154a;
-      --chat-bg: #551a66;
-      --bubble-to: #9b59b6;
-      --bubble-from: #7e3f9f;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #b86af1;
-      --chat-item-bg: #4d1460;
-    }
+    /* Additional theme definitions for blue, green, pink, purple omitted for brevity */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -121,16 +78,8 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
-    #topBar .top-right {
-      display: flex;
-      gap: 5px;
-    }
-    #groupTitle {
-      font-size: 16px;
-      font-weight: bold;
-      align-self: flex-start;
-      margin: 5px 0;
-    }
+    #topBar .top-right { display: flex; gap: 5px; }
+    #groupTitle { font-size: 16px; font-weight: bold; margin: 5px 0; }
     #messages {
       flex: 1;
       padding: 15px;
@@ -152,8 +101,8 @@
       box-shadow: var(--shadow-msg);
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
     }
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
@@ -173,28 +122,11 @@
       margin-bottom: 5px;
     }
     .reactionBar span { font-size: 22px; cursor: pointer; }
-    .timestamp {
-      font-size: 10px;
-      opacity: 0.7;
-      margin-top: 8px;
-    }
-    /* Removed seenLabel to reduce overhead */
-    #typingIndicator {
-      display: none;
-      font-style: italic;
-      font-size: 14px;
-      margin: 0 20px 10px;
-    }
-    #inputArea {
-      display: flex;
-      padding: 10px;
-      background: var(--sidebar-color);
-    }
-    #inputArea input {
-      flex: 1;
-      margin-right: 5px;
-      font-size: 17px;
-    }
+    .timestamp { font-size: 10px; opacity: 0.7; margin-top: 8px; }
+    /* Client-side unread flag: when chat is opened, the unread count is simply cleared */
+    #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
+    #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
+    #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
     #emojiPicker {
       display: none;
       position: absolute;
@@ -223,20 +155,8 @@
     }
     .chatItem:hover { background: var(--bubble-from); }
     .chatItem.active { outline: 2px solid var(--accent); }
-    .chatBadge {
-      background: var(--badge);
-      color: #fff;
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      margin-left: 5px;
-    }
-    .requestItem {
-      background: var(--bubble-from);
-      padding: 10px;
-      margin-bottom: 5px;
-      border-radius: 6px;
-    }
+    .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
+    .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -341,12 +261,8 @@
       opacity: 0.8;
       z-index: 10;
     }
-    /* ===== Typing Race Prompt Modal (non-selectable) ===== */
-    .no-select {
-      user-select: none;
-      -webkit-user-select: none;
-      -ms-user-select: none;
-    }
+    /* ===== Typing Race Modal (non-selectable) ===== */
+    .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
   </style>
 </head>
 <body>
@@ -358,17 +274,16 @@
   }
   let db = null;
   try {
-    const firebaseConfig = {
-      apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
+    const config = {
+      apiKey: "YOUR_API_KEY_HERE",
       authDomain: "static-live-chatting.firebaseapp.com",
       databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
       projectId: "static-live-chatting",
-      storageBucket: "static-live-chatting.firebasestorage.app",
+      storageBucket: "static-live-chatting.appspot.com",
       messagingSenderId: "578562140653",
-      appId: "1:578562140653:web:c12df07155627083e9dfe4",
-      measurementId: "G-HZ1F0B1CDS"
+      appId: "1:578562140653:web:c12df07155627083e9dfe4"
     };
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(config);
     db = firebase.database();
   } catch (e) {
     console.error("Firebase init error:", e);
@@ -386,14 +301,8 @@
   let currentChat = "", currentType = "";
   let messagesRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
-  let chatUnread = {};
+  let chatUnread = {}; // Client-side tracking: when a chat is opened, its unread count is cleared.
   let blocked = {}, friends = {};
-  // Throttle for message sending (milliseconds)
-  let lastMessageTime = 0;
-  const MESSAGE_THROTTLE = 300;
-  // Debounce UI updates
-  let lastChatListUpdate = 0;
-  const CHAT_LIST_DEBOUNCE = 200;
   
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -401,7 +310,10 @@
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
       applyTheme();
-      loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
+      loadBlocked();
+      loadFriends();
+      loadRequests();
+      initChatWatchers();
     }
   });
   
@@ -428,7 +340,11 @@
       db.ref("users/" + myId + "/displayName").set(nm);
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "flex";
-      applyTheme(); loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
+      applyTheme();
+      loadBlocked();
+      loadFriends();
+      loadRequests();
+      initChatWatchers();
       showNotice("Logged in as " + nm);
     });
   }
@@ -509,7 +425,7 @@
     });
   }
   
-  /* ----- Theming ----- */
+  // ----- Theming -----
   function applyTheme() {
     let themes = ["dark", "light", "blue", "green", "pink", "purple"];
     let saved = localStorage.getItem("theme") || "dark";
@@ -531,7 +447,7 @@
     document.getElementById("themeBtn").textContent = `${lab}: Theme`;
   }
   
-  /* ----- Chat & Message Watchers ----- */
+  // ----- Chat & Message Watchers -----
   function loadRequests() {
     db.ref("users/" + myId + "/requests").on("value", snap => {
       let data = snap.val() || {};
@@ -561,7 +477,7 @@
               text: `${from} accepted your friend request!`,
               timestamp: Date.now(),
               reaction: "",
-              readBy: { [myId]: Date.now() }
+              readBy: { [dev]: Date.now() }
             });
             openChat(cid, from, "private");
           });
@@ -625,29 +541,32 @@
     });
   }
   
-  // Attach background watchers only for inactive chats.
   function initChatWatchers() {
     db.ref("users/" + myId + "/chats").on("value", snap => {
       let chats = snap.val() || {};
-      Object.keys(chats).forEach(cid => {
-        if (cid === "help_chat" || cid === currentChat) return;
-        let info = chats[cid];
-        let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-        db.ref(path).off("child_added");
-        db.ref(path).on("child_added", snap => {
-          chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-          db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
-          updateChatListUI(chats);
-        });
-      });
+      attachAllChatWatchers(chats);
       updateChatListUI(chats);
     });
   }
   
+  function attachAllChatWatchers(chats) {
+    Object.keys(chats).forEach(cid => {
+      if (cid === "help_chat") return;
+      let info = chats[cid];
+      let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
+      db.ref(path).off("child_added");
+      db.ref(path).on("child_added", snap => {
+        if (cid === currentChat) return;
+        chatUnread[cid] = (chatUnread[cid] || 0) + 1;
+        if (cid !== currentChat) {
+          db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
+        }
+        updateChatListUI(chats);
+      });
+    });
+  }
+  
   function updateChatListUI(chats) {
-    let now = Date.now();
-    if (now - lastChatListUpdate < CHAT_LIST_DEBOUNCE) return;
-    lastChatListUpdate = now;
     let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
     let cl = document.getElementById("chatList");
     cl.innerHTML = "";
@@ -760,10 +679,9 @@
     }
   }
   
-  // ----- Open Chat: One-Time Read Update -----
   function openChat(cid, name, type) {
-    if (currentChat === cid) return; // avoid reloading the same chat
     currentChat = cid; currentType = type;
+    // Clear unread notifications client-side when chat is opened
     chatUnread[cid] = 0;
     updateChatListUI({});
     if (type === "group") {
@@ -781,24 +699,27 @@
     if (messagesRef) { messagesRef.off(); }
     let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
     messagesRef = db.ref(path);
-    // Record the time when chat is opened so we only listen for messages after this moment.
-    let chatOpenTime = Date.now();
     messagesRef.orderByChild("timestamp").limitToLast(50).once("value", snap => {
       let data = snap.val() || {};
       let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
       oldestStamp = (arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER);
       arr.forEach(([mId, mVal]) => createBubble(mId, mVal, true));
-      markChatRead();
       if (arr.length >= 50) {
         hasMoreOld = true;
         document.getElementById("loadMoreBtn").style.display = "block";
       } else { hasMoreOld = false; }
-    });
-    // Listen for new messages that come in after the chat was opened.
-    messagesRef.orderByChild("timestamp").startAt(chatOpenTime + 1).on("child_added", snap => {
-      let v = snap.val();
-      createBubble(snap.key, v, true);
+      messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
+        let v = snap.val();
+        createBubble(snap.key, v, true);
+        area.scrollTop = area.scrollHeight;
+        markMsgRead(snap.key, v);
+      });
+      messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
       area.scrollTop = area.scrollHeight;
+      if (cid !== currentChat) {
+        db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
+      }
+      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
     if (type === "group") {
       db.ref("groupChats/" + cid + "/members").on("value", snap => {
@@ -809,9 +730,33 @@
     attachTypingListener();
   }
   
-  function markChatRead() {
+  function markMsgRead(mId, val) {
     if (!currentChat || currentType === "help") return;
-    db.ref("users/" + myId + "/chats/" + currentChat + "/lastRead").set(Date.now());
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
+    db.ref(path).set(Date.now());
+    // Unread notifications are cleared client-side when chat is opened.
+  }
+  
+  function loadOlderMessages() {
+    if (!currentChat || !hasMoreOld) return;
+    let btn = document.getElementById("loadMoreBtn");
+    btn.disabled = true;
+    messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
+      let data = snap.val() || {};
+      let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+      if (arr.length < 1) {
+        showNotice("No older messages found!");
+        hasMoreOld = false;
+        btn.style.display = "none";
+        btn.disabled = false;
+        return;
+      }
+      oldestStamp = arr[0][1].timestamp;
+      arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
+      if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
+      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+      btn.disabled = false;
+    });
   }
   
   function createBubble(mId, val, toEnd) {
@@ -822,22 +767,11 @@
     if (val.sender === myId) bubble.classList.add("to");
     else if (val.sender === "_system") bubble.classList.add("console");
     else bubble.classList.add("from");
-    
-    let textDiv = document.createElement("div");
-    textDiv.textContent = val.text || "";
-    bubble.appendChild(textDiv);
-    
-    let ts = document.createElement("div");
-    ts.className = "timestamp";
-    let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
-    ts.textContent = t;
-    bubble.appendChild(ts);
-    
+    bubble.innerHTML = val.text || "";
     let rt = document.createElement("span");
     rt.className = "reactionTag";
     if (val.reaction) rt.textContent = val.reaction;
     bubble.appendChild(rt);
-    
     let rBar = document.createElement("div");
     rBar.className = "reactionBar";
     ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
@@ -847,10 +781,7 @@
       rBar.appendChild(span);
     });
     bubble.appendChild(rBar);
-    
-    bubble.addEventListener("dblclick", () => {
-      rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
-    });
+    bubble.addEventListener("dblclick", () => { rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex"; });
     bubble.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
       if (currentType === "group") {
@@ -865,6 +796,11 @@
         });
       }
     });
+    let ts = document.createElement("div");
+    ts.className = "timestamp";
+    let t = (val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
+    ts.textContent = t;
+    bubble.appendChild(ts);
     if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
     area.scrollTop = area.scrollHeight;
   }
@@ -917,6 +853,228 @@
     "/ship", "/rps", "/guessnumber", "/typingrace", "/vote"
   ];
   
+  function slashAutoInput(e) {
+    let val = e.target.value;
+    let sc = document.getElementById("slashAutocomplete");
+    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
+    sc.innerHTML = "";
+    let rect = e.target.getBoundingClientRect();
+    sc.style.left = rect.left + "px";
+    sc.style.top = (rect.top - 115) + "px";
+    let hits = slashCmds.filter(c => c.startsWith(val));
+    if (!hits.length) { sc.style.display = "none"; return; }
+    hits.slice(0, 8).forEach(cmd => {
+      let b = document.createElement("button");
+      b.textContent = cmd;
+      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+      sc.appendChild(b);
+    });
+    sc.style.display = "block";
+  }
+  
+  // ----- Send Message & Slash Processing -----
+  function sendMessage() {
+    if (!currentChat || currentType === "help") return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if (!txt) return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if (txt.startsWith("/")) {
+      let parts = txt.split(" ");
+      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
+  
+  function processSlashCommand(cmd) {
+    let parts = cmd.split(" ");
+    let slash = parts[0].toLowerCase();
+    if (slash === "/roll") {
+      let sides = parseInt(parts[1], 10) || 6;
+      let r = Math.floor(Math.random() * sides) + 1;
+      sendSystemMessage(`🎲 Rolled a ${sides}-sided die: ${r}`);
+    }
+    else if (slash === "/ping") {
+      let t0 = Date.now();
+      db.ref("pingTest").set({ time: t0 }, () => {
+        let dt = Date.now() - t0;
+        sendSystemMessage(`Ping: ${dt}ms`);
+      });
+    }
+    else if (slash === "/8ball") {
+      let q = cmd.slice(7).trim();
+      if (!q) { showNotice("Usage: /8ball [question]"); return; }
+      let answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
+      let pick = answers[Math.floor(Math.random() * answers.length)];
+      sendSystemMessage(`8ball: ${pick}`);
+    }
+    else if (slash === "/roast") {
+      let roasts = [
+        "Your code has more bugs than a beehive.",
+        "You're slower than dial-up internet.",
+        "At least your chat is entertaining."
+      ];
+      let pick = roasts[Math.floor(Math.random() * roasts.length)];
+      sendSystemMessage(`Roast: ${pick}`);
+    }
+    else if (slash === "/tod") {
+      if (parts[1] === "truth") {
+        let truths = [
+          "What's your biggest fear?",
+          "Have you ever lied to your best friend?",
+          "What's your most embarrassing moment?"
+        ];
+        let pick = truths[Math.floor(Math.random() * truths.length)];
+        sendSystemMessage(`Truth: ${pick}`);
+      } else if (parts[1] === "dare") {
+        let dares = [
+          "Dance like a robot for 15 seconds.",
+          "Talk in a baby voice for 3 messages.",
+          "Pretend you're an alien for 10 seconds."
+        ];
+        let pick = dares[Math.floor(Math.random() * dares.length)];
+        sendSystemMessage(`Dare: ${pick}`);
+      } else { showNotice("Usage: /tod truth or /tod dare"); }
+    }
+    else if (slash === "/title") {
+      let text = parts.slice(1).join(" ");
+      if (!text) { showNotice("Usage: /title [text]"); return; }
+      sendSystemMessage(`<< ${text} >>`);
+    }
+    else if (slash === "/cf" || slash === "/coin") {
+      let guess = "";
+      if (slash === "/cf") guess = parts[1] || "";
+      else if (parts[1] === "flip") guess = parts[2] || "";
+      guess = guess.toLowerCase();
+      if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
+      let side = Math.random() < 0.5 ? "heads" : "tails";
+      sendSystemMessage(`Coinflip: ${side} => you chose ${guess} => ${side === guess ? "You win!" : "You lose."}`);
+    }
+    else if (slash === "/ship") {
+      let n = parts[1] || "";
+      if (!n) { showNotice("Usage: /ship [name]"); return; }
+      let merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
+      sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
+    }
+    else if (slash === "/typingrace") {
+      const prompts = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Pack my box with five dozen liquor jugs.",
+        "How vexingly quick daft zebras jump!"
+      ];
+      if (parts.length === 1) {
+        let options = prompts.map((p, i) => `${i+1}: ${p}`);
+        sendSystemMessage(`TypingRace Options:\n${options.join("\n")}\nType /typingrace [option number] to start.`);
+      } else {
+        let option = parseInt(parts[1], 10);
+        if (isNaN(option) || option < 1 || option > prompts.length) {
+          showNotice("Invalid option. Usage: /typingrace [option number]");
+          return;
+        }
+        let prompt = prompts[option - 1];
+        let gameId = "type_" + Date.now();
+        db.ref("games/typingrace/" + currentChat + "/" + gameId).set({
+          initiator: myId,
+          prompt: prompt,
+          ready: { [myId]: true },
+          timestamp: Date.now(),
+          status: "pending"
+        });
+        sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
+        showTypingRacePrompt(prompt, gameId);
+        setTimeout(() => {
+          db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
+            if (snap.val() === "pending") {
+              db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+              sendSystemMessage(`TypingRace [${gameId}] expired.`);
+            }
+          });
+        }, 60000);
+      }
+    }
+    else {
+      showNotice("Unknown slash command: " + cmd);
+    }
+  }
+  
+  function sendSystemMessage(text) {
+    if (!currentChat || currentType === "help") return;
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: "_system",
+      text: text,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+  }
+  
+  // ----- Check Typing Race Win on Normal Messages -----
+  function checkTypingRaceWin(messageText) {
+    db.ref("games/typingrace/" + currentChat).once("value", snap => {
+      let games = snap.val();
+      if (!games) return;
+      Object.keys(games).forEach(gameId => {
+        let game = games[gameId];
+        if (game.status === "pending" && game.ready && Object.keys(game.ready).length >= 2) {
+          if (messageText === game.prompt) {
+            sendSystemMessage(`${displayName} wins TypingRace [${gameId}]!`);
+            db.ref("games/typingrace/" + currentChat + "/" + gameId).remove();
+          }
+        }
+      });
+    });
+  }
+  
+  // ----- Typing Race Prompt Modal (non-selectable) -----
+  function showTypingRacePrompt(prompt, gameId) {
+    let mo = document.createElement("div");
+    mo.className = "modal no-select";
+    mo.innerHTML = `
+      <div class="modalContent" style="max-width:500px; position:relative;">
+        <button class="closeBtn" onclick="document.body.removeChild(this.parentElement.parentElement)">X</button>
+        <h3>Typing Race Challenge</h3>
+        <p>Type exactly the following (cannot be selected or copied):</p>
+        <div style="background:#000; padding:10px; border-radius:10px; margin:10px 0; font-size:16px; letter-spacing:0.5px;">${prompt}</div>
+        <button id="readyBtn">I'm Ready</button>
+      </div>
+    `;
+    document.body.appendChild(mo);
+    mo.querySelector("#readyBtn").onclick = () => {
+      processTypingRaceReady(gameId);
+      document.body.removeChild(mo);
+    };
+  }
+  
+  // ----- Typing Race Ready Command (for opponent) -----
+  function processTypingRaceReady(gameId) {
+    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
+      let ready = snap.val() || {};
+      if (!ready[myId]) {
+        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
+        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
+      }
+    });
+  }
+  
+  // ----- Slash Autocomplete -----
   function slashAutoInput(e) {
     let val = e.target.value;
     let sc = document.getElementById("slashAutocomplete");

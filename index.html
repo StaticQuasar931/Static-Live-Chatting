@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Static Live Chat – Polished & Enhanced</title>
+  <title>Static Live Chat – Final Version</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
-    /* ============ Theme Variables ============ */
+    /* ===== Theme Variables ===== */
     :root {
       --bg-color: #111;
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;          /* your messages */
-      --bubble-from: #444;           /* others' messages */
+      --bubble-to: #1e90ff;       /* your messages */
+      --bubble-from: #444;        /* others' messages */
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -96,7 +96,7 @@
       border: none;
     }
     button { background: var(--accent); color: #fff; cursor: pointer; }
-    /* ============ Layout ============ */
+    /* ===== Layout ===== */
     #app { display: flex; flex: 1; height: 100%; }
     #sidebar {
       width: 280px;
@@ -106,7 +106,7 @@
       padding: 10px;
       overflow-y: auto;
     }
-    /* No separate Help button – Help chat is in the chat list */
+    /* Help Chat is not a button; it’s available in the chat list */
     #chatPanel {
       flex: 1;
       display: flex;
@@ -127,7 +127,7 @@
       display: flex;
       gap: 5px;
     }
-    /* For group chats: show group name (left) and your name */
+    /* For group chats: show group name and your display name */
     #groupTitle {
       font-size: 16px;
       font-weight: bold;
@@ -141,12 +141,12 @@
       display: flex;
       flex-direction: column;
     }
-    /* ============ Message Bubble Styles ============ */
+    /* ===== Message Bubble Styles ===== */
     .msg {
       max-width: 70%;
       padding: 16px;
       margin: 6px;
-      border-radius: 25px;
+      border-radius: 30px;
       font-size: var(--font-size-msg);
       line-height: 1.4;
       word-wrap: break-word;
@@ -154,11 +154,11 @@
       cursor: pointer;
       box-shadow: var(--shadow-msg);
     }
-    /* "to" messages (your messages) right-aligned */
+    /* "to" messages (from you) right-aligned */
     .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
-    /* "from" messages (others) left-aligned */
+    /* "from" messages (from others) left-aligned */
     .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
-    /* "console" messages centered */
+    /* "console" messages (system/command) centered */
     .console { align-self: center; background: var(--bubble-console); font-style: italic; }
     .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
@@ -212,7 +212,7 @@
     .chatItem.active { outline: 2px solid var(--accent); }
     .chatBadge { background: var(--badge); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 12px; margin-left: 5px; }
     .requestItem { background: var(--bubble-from); padding: 10px; margin-bottom: 5px; border-radius: 6px; }
-    /* Friend menu: three-dots options appear next to the dots */
+    /* Friend menu: three-dots options near the dots */
     .friendMenu {
       position: absolute;
       background: var(--chat-bg);
@@ -242,7 +242,7 @@
     }
     a.staticLink { color: #0ff; text-decoration: none; }
     @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-    /* ============ Modal Styles ============ */
+    /* ===== Modal Styles ===== */
     .modal {
       position: fixed;
       inset: 0;
@@ -271,7 +271,7 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    /* ============ Login Screen ============ */
+    /* ===== Login Screen ===== */
     #login {
       position: fixed;
       inset: 0;
@@ -281,7 +281,7 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
-    /* ============ Slash Command Autocomplete ============ */
+    /* ===== Slash Command Autocomplete ===== */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -317,7 +317,7 @@
       opacity: 0.8;
       z-index: 10;
     }
-    /* ============ Typing Race Prompt Modal (non-selectable) ============ */
+    /* ===== Typing Race Prompt Modal (non-selectable) ===== */
     .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
   </style>
 </head>
@@ -367,7 +367,6 @@
       document.getElementById("app").style.display = "flex";
       applyTheme();
       loadBlocked(); loadFriends(); loadRequests(); initChatWatchers();
-      // Help Chat is available via chat list.
     }
   });
   
@@ -938,7 +937,6 @@
     if (!txt) return;
     document.getElementById("slashAutocomplete").style.display = "none";
     if (txt.startsWith("/")) {
-      // Special handling for /typingrace ready command
       let parts = txt.split(" ");
       if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
         processTypingRaceReady(parts[1]);
@@ -1057,7 +1055,6 @@
           status: "pending"
         });
         sendSystemMessage(`TypingRace [${gameId}]: ${displayName} has challenged a race. Opponent, type "/typingrace ${gameId} ready" to accept.`);
-        // Immediately show the prompt modal so that it cannot be copied.
         showTypingRacePrompt(prompt, gameId);
         setTimeout(() => {
           db.ref("games/typingrace/" + currentChat + "/" + gameId + "/status").once("value", snap => {
@@ -1086,7 +1083,7 @@
     });
   }
   
-  // Check Typing Race Win
+  // Check Typing Race Win on normal messages
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value", snap => {
       let games = snap.val();
@@ -1123,14 +1120,25 @@
     };
   }
   
-  // Slash Command Autocomplete already implemented above.
+  // Typing Race Ready Command (for opponent)
+  function processTypingRaceReady(gameId) {
+    db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready").once("value", snap => {
+      let ready = snap.val() || {};
+      if (!ready[myId]) {
+        db.ref("games/typingrace/" + currentChat + "/" + gameId + "/ready/" + myId).set(true);
+        sendSystemMessage(`${displayName} is ready for TypingRace [${gameId}].`);
+      }
+    });
+  }
+  
+  // Slash Command Autocomplete is defined above.
   
   // ------------------ End of Code ------------------
 </script>
 
 <!-- Login Screen -->
 <div id="login" style="display:flex;">
-  <div style="background:var(--chat-bg);padding:20px;border-radius:10px;position:relative;">
+  <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
     <h2>Static Live Chat</h2>
     <label>Display Name (unique):</label><br/>
     <input id="username" placeholder="Your Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
@@ -1151,7 +1159,7 @@
     <button onclick="showAddChatPanel()">Add Chat</button>
     <h3>Friend Requests</h3>
     <div id="requestsTab"></div>
-    <div id="requestsSentTab" style="margin-top:8px;color:#ccc;"></div>
+    <div id="requestsSentTab" style="margin-top:8px; color:#ccc;"></div>
     <hr/>
     <h3>Chats</h3>
     <div id="chatList"></div>
@@ -1169,7 +1177,7 @@
     <div id="messages"></div>
     <div id="typingIndicator"></div>
     <div id="inputArea">
-      <input id="msgInput" placeholder="Type '/' for commands" oninput="slashAutoInput(event)" onkeypress="if(event.key==='Enter') { sendMessage(); sendTyping(); }"/>
+      <input id="msgInput" placeholder="Type '/' for commands" oninput="slashAutoInput(event)" onkeypress="if(event.key==='Enter'){ sendMessage(); sendTyping(); }" />
       <button onclick="toggleEmojiPicker()">😀</button>
       <button onclick="sendMessage()">Send</button>
     </div>

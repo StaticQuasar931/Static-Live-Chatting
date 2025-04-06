@@ -335,8 +335,6 @@
       opacity: 0.8;
       z-index: 10;
     }
-    /* ===== Typing Race Prompt Modal (non-selectable) ===== */
-    .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
   </style>
 </head>
 <body>
@@ -344,7 +342,7 @@
   // ----- Firebase Setup -----
   if (typeof firebase === "undefined") {
     console.error("Firebase not loaded – check your network.");
-    window.firebase = { initializeApp: () => { }, database: () => ({ ref: () => ({ }) }) };
+    window.firebase = { initializeApp: () => {}, database: () => ({ ref: () => ({}) }) };
   }
   let db = null;
   try {
@@ -361,7 +359,16 @@
     db = firebase.database();
   } catch (e) {
     console.error("Firebase init error:", e);
-    db = { ref: () => ({ once: () => { }, on: () => { }, set: () => { }, push: () => ({ }) }) };
+    db = { ref: () => ({ once: () => {}, on: () => {}, set: () => {}, push: () => ({}) }) };
+  }
+  
+  // ----- Helper Functions -----
+  function showNotice(msg) {
+    alert(msg);
+  }
+  
+  function showConfirm(msg, callback) {
+    if (confirm(msg)) callback();
   }
   
   // ----- Device & User Setup -----
@@ -392,7 +399,7 @@
   // ----- Login & Settings -----
   function toggleLoginPass() {
     let pw = document.getElementById("password");
-    // Toggle between "password" and "text" so the password can be seen
+    // Toggle the type between "password" and "text"
     pw.type = (pw.type === "password") ? "text" : "password";
   }
   
@@ -804,7 +811,6 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
     db.ref(path).set(Date.now());
-    // "Seen" feature removed per request.
   }
   
   function loadOlderMessages() {

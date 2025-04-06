@@ -14,8 +14,8 @@
       --text-color: #fff;
       --sidebar-color: #1c1c1c;
       --chat-bg: #222;
-      --bubble-to: #1e90ff;       /* your messages */
-      --bubble-from: #444;        /* others' messages */
+      --bubble-to: #1e90ff;
+      --bubble-from: #444;
       --bubble-console: rgba(255,255,255,0.2);
       --accent: #1e90ff;
       --badge: red;
@@ -342,7 +342,7 @@
   const firebaseConfig = {
     apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
     authDomain: "static-live-chatting.firebaseapp.com",
-    databaseURL: "https://static-live-chatting-default-rtdb.firebaseio.com",
+    databaseURL: "https://static-live-chatting.firebaseio.com",
     projectId: "static-live-chatting",
     storageBucket: "static-live-chatting.appspot.com",
     messagingSenderId: "578562140653",
@@ -373,7 +373,7 @@
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
-  let lastMessageTime = 0; // 0.5-second cooldown timer
+  let lastMessageTime = 0; // For 0.5-second cooldown
 
   // ----- On Load Initialization -----
   window.addEventListener("DOMContentLoaded", () => {
@@ -1137,19 +1137,46 @@
     lastMessageTime = nowTime;
     return true;
   }
+  function sendMessage() {
+    if (!currentChat || currentType === "help") return;
+    if (!canSendMessage()) return;
+    let inp = document.getElementById("msgInput");
+    let txt = inp.value.trim();
+    if (!txt) return;
+    document.getElementById("slashAutocomplete").style.display = "none";
+    if (txt.startsWith("/")) {
+      let parts = txt.split(" ");
+      if (parts[0].toLowerCase() === "/typingrace" && parts[2] && parts[2].toLowerCase() === "ready") {
+        processTypingRaceReady(parts[1]);
+      } else {
+        processSlashCommand(txt);
+      }
+      inp.value = "";
+      return;
+    }
+    checkTypingRaceWin(txt);
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+    db.ref(path).push({
+      sender: myId,
+      text: txt,
+      timestamp: Date.now(),
+      reaction: "",
+      readBy: { [myId]: Date.now() }
+    });
+    inp.value = "";
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    sendTyping();
+  }
+
   // ----- Placeholder Functions for Missing Features -----
-  function addFriendUI() {
-    // Placeholder implementation – replace with your full UI as needed
-    alert("Add Friend UI is not implemented yet.");
+  function addFriendUI() { alert("Add Friend UI placeholder. Replace with full implementation."); }
+  function openFriendsPanel() { alert("Open Friends Panel placeholder. Replace with full implementation."); }
+  function showAddChatPanel() { alert("Add Chat Panel placeholder. Replace with full implementation."); }
+  function applyReaction(mId, emoji) {
+    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
+    db.ref(path).set(emoji);
   }
-  function openFriendsPanel() {
-    // Placeholder implementation – replace with your full UI as needed
-    alert("Open Friends Panel is not implemented yet.");
-  }
-  function showAddChatPanel() {
-    // Placeholder implementation – replace with your full UI as needed
-    alert("Add Chat Panel is not implemented yet.");
-  }
+
   // ----- End of Code -----
 </script>
 

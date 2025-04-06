@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Static Live Chat – Optimized</title>
+  <title>Static Live Chat – Optimized (No Spam)</title>
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
-    /* ===== Theme Variables ===== */
+    /* Theme Variables */
     :root {
       --bg-color: #111;
       --text-color: #fff;
@@ -100,12 +100,8 @@
       color: #fff;
       cursor: pointer;
     }
-    /* ===== Layout ===== */
-    #app {
-      display: flex;
-      flex: 1;
-      height: 100%;
-    }
+    /* Layout */
+    #app { display: flex; flex: 1; height: 100%; }
     #sidebar {
       width: 280px;
       background: var(--sidebar-color);
@@ -129,18 +125,8 @@
       font-size: 18px;
       background: var(--chat-bg);
     }
-    /* Top-right container for Settings & Theme */
-    #topBar .top-right {
-      display: flex;
-      gap: 5px;
-    }
-    /* Group chat title */
-    #groupTitle {
-      font-size: 16px;
-      font-weight: bold;
-      align-self: flex-start;
-      margin: 5px 0;
-    }
+    #topBar .top-right { display: flex; gap: 5px; }
+    #groupTitle { font-size: 16px; font-weight: bold; align-self: flex-start; margin: 5px 0; }
     #messages {
       flex: 1;
       padding: 15px;
@@ -148,7 +134,7 @@
       display: flex;
       flex-direction: column;
     }
-    /* ===== Message Bubble Styles ===== */
+    /* Message Bubbles */
     .msg {
       max-width: 70%;
       padding: 16px;
@@ -164,31 +150,11 @@
       flex-direction: column;
       justify-content: center;
     }
-    .msg p {
-      margin: 0;
-    }
-    .to {
-      align-self: flex-end;
-      background: var(--bubble-to);
-      color: #fff;
-    }
-    .from {
-      align-self: flex-start;
-      background: var(--bubble-from);
-      color: #fff;
-    }
-    .console {
-      align-self: center;
-      background: var(--bubble-console);
-      font-style: italic;
-    }
-    .reactionTag {
-      font-size: 14px;
-      opacity: 0.8;
-      position: absolute;
-      top: 5px;
-      right: 10px;
-    }
+    .msg p { margin: 0; }
+    .to { align-self: flex-end; background: var(--bubble-to); color: #fff; }
+    .from { align-self: flex-start; background: var(--bubble-from); color: #fff; }
+    .console { align-self: center; background: var(--bubble-console); font-style: italic; }
+    .reactionTag { font-size: 14px; opacity: 0.8; position: absolute; top: 5px; right: 10px; }
     .reactionBar {
       position: absolute;
       bottom: 100%;
@@ -197,37 +163,16 @@
       display: none;
       flex-direction: row;
       gap: 5px;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0,0,0,0.6);
       padding: 5px;
       border-radius: 6px;
       margin-bottom: 5px;
     }
-    .reactionBar span {
-      font-size: 22px;
-      cursor: pointer;
-    }
-    .timestamp {
-      font-size: 10px;
-      opacity: 0.7;
-      margin-top: 4px;
-      text-align: right;
-    }
-    #typingIndicator {
-      display: none;
-      font-style: italic;
-      font-size: 14px;
-      margin: 0 20px 10px;
-    }
-    #inputArea {
-      display: flex;
-      padding: 10px;
-      background: var(--sidebar-color);
-    }
-    #inputArea input {
-      flex: 1;
-      margin-right: 5px;
-      font-size: 17px;
-    }
+    .reactionBar span { font-size: 22px; cursor: pointer; }
+    .timestamp { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; }
+    #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
+    #inputArea { display: flex; padding: 10px; background: var(--sidebar-color); }
+    #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
     #emojiPicker {
       display: none;
       position: absolute;
@@ -241,11 +186,7 @@
       max-height: 180px;
       overflow: auto;
     }
-    #emojiPicker span {
-      font-size: 22px;
-      margin: 6px;
-      cursor: pointer;
-    }
+    #emojiPicker span { font-size: 22px; margin: 6px; cursor: pointer; }
     .chatItem {
       background: var(--chat-item-bg);
       padding: 10px;
@@ -258,12 +199,8 @@
       transition: background 0.2s;
       position: relative;
     }
-    .chatItem:hover {
-      background: var(--bubble-from);
-    }
-    .chatItem.active {
-      outline: 2px solid var(--accent);
-    }
+    .chatItem:hover { background: var(--bubble-from); }
+    .chatItem.active { outline: 2px solid var(--accent); }
     .chatBadge {
       background: var(--badge);
       color: #fff;
@@ -305,18 +242,12 @@
       animation: blink 2s infinite;
       z-index: 1000;
     }
-    a.staticLink {
-      color: #0ff;
-      text-decoration: none;
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
+    a.staticLink { color: #0ff; text-decoration: none; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -347,7 +278,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       z-index: 999;
     }
     #slashAutocomplete {
@@ -420,7 +351,7 @@
 
   // ----- Global Variables & Cooldown -----
   let currentChat = "", currentType = "";
-  let messagesRef = null, childAddedRef = null, childChangedRef = null;
+  let messagesRef = null;
   let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
   let chatUnread = {};
   let blocked = {}, friends = {};
@@ -491,7 +422,9 @@
     `;
     document.body.appendChild(mo);
     mo.style.display = "flex";
-    mo.addEventListener("click", (ev) => { if (ev.target === mo) document.body.removeChild(mo); });
+    mo.addEventListener("click", (ev) => {
+      if (ev.target === mo) document.body.removeChild(mo);
+    });
     mo.querySelector("#saveSetBtn").onclick = () => {
       let newN = mo.querySelector("#editName").value.trim();
       let newP = mo.querySelector("#editPass").value.trim();
@@ -598,8 +531,7 @@
                 sender: "_system",
                 text: `${from} accepted your friend request!`,
                 timestamp: Date.now(),
-                reaction: "",
-                readBy: { [dev]: Date.now() }
+                reaction: ""
               });
             }).then(() => openChat(cid, from, "private"));
           });
@@ -643,9 +575,7 @@
         if (!dev) return;
         let cid = [myId, dev].sort().join("_");
         db.ref("privateChats/" + cid).once("value").then(snap2 => {
-          if (!snap2.exists()) {
-            db.ref("privateChats/" + cid).set({});
-          }
+          if (!snap2.exists()) db.ref("privateChats/" + cid).set({});
         });
         db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
       });
@@ -678,7 +608,6 @@
       db.ref(path).on("child_added", snap => {
         if (cid === currentChat) return;
         chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-        db.ref("users/" + myId + "/chats/" + cid + "/last").set(snap.val().timestamp);
         updateChatListUI(chats);
       });
     });
@@ -803,7 +732,8 @@
     chatUnread[cid] = 0;
     updateChatListUI({});
     if (type === "group") {
-      document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
+      document.getElementById("chatTitle").innerHTML =
+        `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
     } else {
       document.getElementById("chatTitle").textContent = name;
     }
@@ -814,9 +744,7 @@
     let area = document.getElementById("messages");
     area.innerHTML = "";
     document.getElementById("loadMoreBtn").style.display = "none";
-    if (messagesRef) {
-      messagesRef.off();
-    }
+    if (messagesRef) { messagesRef.off(); }
     let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
     messagesRef = db.ref(path);
     messagesRef.orderByChild("timestamp").limitToLast(50).once("value").then(snap => {
@@ -834,7 +762,6 @@
         let v = snap.val();
         createBubble(snap.key, v, true);
         area.scrollTop = area.scrollHeight;
-        markMsgRead(snap.key, v);
       });
       messagesRef.on("child_changed", snap => {
         updateBubble(snap.key, snap.val());
@@ -843,7 +770,6 @@
       if (type !== "help" && cid !== currentChat) {
         db.ref("users/" + myId + "/chats/" + cid + "/last").set(Date.now());
       }
-      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
     });
     if (type === "group") {
       db.ref("groupChats/" + cid + "/members").on("value", snap => {
@@ -853,11 +779,7 @@
     }
     attachTypingListener();
   }
-  function markMsgRead(mId, val) {
-    if (!currentChat || currentType === "help") return;
-    let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
-    db.ref(path).set(Date.now());
-  }
+  // (markMsgRead removed to prevent spamming)
   function loadOlderMessages() {
     if (!currentChat || !hasMoreOld) return;
     let btn = document.getElementById("loadMoreBtn");
@@ -874,11 +796,7 @@
       }
       oldestStamp = arr[0][1].timestamp;
       arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
-      if (arr.length < 50) {
-        hasMoreOld = false;
-        btn.style.display = "none";
-      }
-      arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+      if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
       btn.disabled = false;
     });
   }
@@ -899,20 +817,14 @@
     bubble.appendChild(p);
     let rt = document.createElement("span");
     rt.className = "reactionTag";
-    if (val.reaction) {
-      rt.textContent = val.reaction;
-    }
+    if (val.reaction) rt.textContent = val.reaction;
     bubble.appendChild(rt);
     let rBar = document.createElement("div");
     rBar.className = "reactionBar";
     ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
       let span = document.createElement("span");
       span.textContent = emoji;
-      span.onclick = (ev) => {
-        ev.stopPropagation();
-        applyReaction(mId, emoji);
-        rBar.style.display = "none";
-      };
+      span.onclick = (ev) => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
       rBar.appendChild(span);
     });
     bubble.appendChild(rBar);
@@ -974,16 +886,11 @@
     if (!currentChat || currentType === "help") return;
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
     db.ref(path).set(displayName);
-    setTimeout(() => {
-      db.ref(path).set("");
-    }, 2000);
+    setTimeout(() => { db.ref(path).set(""); }, 2000);
   }
   function toggleEmojiPicker() {
     let ep = document.getElementById("emojiPicker");
-    if (ep.style.display === "flex") {
-      ep.style.display = "none";
-      return;
-    }
+    if (ep.style.display === "flex") { ep.style.display = "none"; return; }
     ep.innerHTML = "";
     ep.style.display = "flex";
     let emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
@@ -1007,26 +914,17 @@
   function slashAutoInput(e) {
     let val = e.target.value;
     let sc = document.getElementById("slashAutocomplete");
-    if (!val.startsWith("/")) {
-      sc.style.display = "none";
-      return;
-    }
+    if (!val.startsWith("/")) { sc.style.display = "none"; return; }
     sc.innerHTML = "";
     let rect = e.target.getBoundingClientRect();
     sc.style.left = rect.left + "px";
     sc.style.top = (rect.top - 115) + "px";
     let hits = slashCmds.filter(c => c.startsWith(val));
-    if (!hits.length) {
-      sc.style.display = "none";
-      return;
-    }
+    if (!hits.length) { sc.style.display = "none"; return; }
     hits.slice(0, 8).forEach(cmd => {
       let b = document.createElement("button");
       b.textContent = cmd;
-      b.onclick = () => {
-        e.target.value = cmd + " ";
-        sc.style.display = "none";
-      };
+      b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
       sc.appendChild(b);
     });
     sc.style.display = "block";
@@ -1059,14 +957,13 @@
       inp.value = "";
       return;
     }
-    checkTypingRaceWin(txt);
+    // (No repeated read updates to reduce spam.)
     let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
     db.ref(path).push({
       sender: myId,
       text: txt,
       timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
+      reaction: ""
     });
     inp.value = "";
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
@@ -1189,10 +1086,10 @@
       sender: "_system",
       text: text,
       timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
+      reaction: ""
     });
   }
+  // ----- Typing Race Functions -----
   function checkTypingRaceWin(messageText) {
     db.ref("games/typingrace/" + currentChat).once("value").then(snap => {
       let games = snap.val();
@@ -1269,15 +1166,14 @@
       sender: myId,
       text: txt,
       timestamp: Date.now(),
-      reaction: "",
-      readBy: { [myId]: Date.now() }
+      reaction: ""
     });
     inp.value = "";
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     sendTyping();
   }
 
-  // ----- Placeholder Functions for Missing UI Features -----
+  // ----- Placeholder UI Functions -----
   function addFriendUI() { alert("Add Friend UI placeholder."); }
   function openFriendsPanel() { alert("Open Friends Panel placeholder."); }
   function showAddChatPanel() { alert("Add Chat Panel placeholder."); }

@@ -8,7 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-database-compat.js"></script>
   <style>
-    /* ========== Theme Variables ========== */
+    /* ========= Theme Variables ========= */
     :root {
       --bg-color: #111;
       --text-color: #fff;
@@ -20,7 +20,9 @@
       --accent: #1e90ff;
       --badge: red;
       --chat-item-bg: #333;
-      --font-size-msg: 18px;
+      --font-size-msg: 16px;
+      --max-bubble-width: 60%;
+      --bubble-padding: 10px 16px;
       --shadow-msg: 0px 2px 4px rgba(0,0,0,0.3);
     }
     body.light {
@@ -34,52 +36,7 @@
       --accent: #007acc;
       --chat-item-bg: #bbb;
     }
-    body.blue {
-      --bg-color: #0b1622;
-      --text-color: #f0f8ff;
-      --sidebar-color: #132336;
-      --chat-bg: #1e2d40;
-      --bubble-to: #1f65ff;
-      --bubble-from: #41546a;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #389fff;
-      --chat-item-bg: #2e3d52;
-    }
-    body.green {
-      --bg-color: #102a10;
-      --text-color: #e8ffe8;
-      --sidebar-color: #224522;
-      --chat-bg: #1a331a;
-      --bubble-to: #28a745;
-      --bubble-from: #375a37;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #4caf50;
-      --chat-item-bg: #2b442b;
-    }
-    body.pink {
-      --bg-color: #331024;
-      --text-color: #ffe0f0;
-      --sidebar-color: #441533;
-      --chat-bg: #551a44;
-      --bubble-to: #ff3377;
-      --bubble-from: #773355;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #ff66a2;
-      --chat-item-bg: #442244;
-    }
-    body.purple {
-      --bg-color: #2e1033;
-      --text-color: #f4e4ff;
-      --sidebar-color: #42154a;
-      --chat-bg: #551a66;
-      --bubble-to: #9b59b6;
-      --bubble-from: #7e3f9f;
-      --bubble-console: rgba(255,255,255,0.2);
-      --accent: #b86af1;
-      --chat-item-bg: #4d1460;
-    }
-
-    /* ========== Global Styles ========== */
+    /* ========= Global Styles ========= */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -98,8 +55,7 @@
       border: none;
     }
     button { background: var(--accent); color: #fff; cursor: pointer; }
-
-    /* ========== Layout ========== */
+    /* ========= Layout ========= */
     #app {
       display: flex;
       flex: 1;
@@ -120,17 +76,16 @@
       background: var(--chat-bg);
       position: relative;
     }
-    /* Fix header and input to be fixed; only messages scroll */
+    /* Fixed header and input; only messages scroll */
     #topBar, #inputArea { flex-shrink: 0; }
     #topBar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px;
-      font-size: 18px;
       background: var(--chat-bg);
+      font-size: 18px;
     }
-    #topBar .top-right { display: flex; gap: 5px; }
     #chatTitle { font-weight: bold; }
     #messages {
       flex: 1;
@@ -138,36 +93,36 @@
       overflow-y: auto;
       background: var(--chat-bg);
     }
-
-    /* ========== Message Bubbles ========== */
+    /* ========= Message Bubbles ========= */
     .msg {
-      max-width: 70%;
-      padding: 12px 20px;
-      margin: 6px auto;
-      border-radius: 9999px; /* Fully pill-shaped */
+      max-width: var(--max-bubble-width);
+      padding: var(--bubble-padding);
+      margin: 6px;
+      border-radius: 9999px;
       font-size: var(--font-size-msg);
       line-height: 1.4;
-      text-align: center;
       word-wrap: break-word;
       position: relative;
-      cursor: pointer;
       box-shadow: var(--shadow-msg);
       background-clip: padding-box;
     }
     .to { 
       align-self: flex-end; 
       background: var(--bubble-to); 
-      color: #fff; 
+      color: #fff;
+      text-align: right;
     }
     .from { 
       align-self: flex-start; 
       background: var(--bubble-from); 
-      color: #fff; 
+      color: #fff;
+      text-align: left;
     }
     .console { 
       align-self: center; 
       background: var(--bubble-console); 
       font-style: italic; 
+      text-align: center;
     }
     .reactionTag {
       font-size: 14px;
@@ -196,8 +151,7 @@
       margin-top: 4px;
       text-align: right;
     }
-
-    /* ========== Input Area ========== */
+    /* ========= Input Area ========= */
     #typingIndicator { display: none; font-style: italic; font-size: 14px; margin: 0 20px 10px; }
     #inputArea {
       display: flex;
@@ -205,8 +159,7 @@
       background: var(--sidebar-color);
     }
     #inputArea input { flex: 1; margin-right: 5px; font-size: 17px; }
-
-    /* ========== Utility Panels ========== */
+    /* ========= Utility Panels ========= */
     #emojiPicker {
       display: none;
       position: absolute;
@@ -257,10 +210,6 @@
       display: none;
       z-index: 100;
     }
-    .friendMenu.show {
-      left: calc(100% + 5px);
-      top: 0;
-    }
     .friendMenu button {
       display: block;
       width: 100%;
@@ -285,8 +234,7 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; }
     }
-
-    /* ========== Modal Styles ========== */
+    /* ========= Modal Styles ========= */
     .modal {
       position: fixed;
       inset: 0;
@@ -316,8 +264,7 @@
       border-radius: 4px;
       padding: 3px 8px;
     }
-    
-    /* ========== Notification Container ========== */
+    /* ========= Notification Container ========= */
     #notificationContainer {
       position: fixed;
       top: 10px;
@@ -336,8 +283,7 @@
       box-shadow: var(--shadow-msg);
       transition: opacity 0.5s;
     }
-    
-    /* ========== Login Screen ========== */
+    /* ========= Login Screen ========= */
     #login {
       position: fixed;
       inset: 0;
@@ -347,8 +293,7 @@
       background: rgba(0,0,0,0.7);
       z-index: 999;
     }
-    
-    /* ========== Slash Autocomplete ========== */
+    /* ========= Slash Autocomplete ========= */
     #slashAutocomplete {
       display: none;
       position: absolute;
@@ -386,7 +331,7 @@
     }
   </style>
   <script>
-    // ========== Firebase Initialization ==========
+    // ========= Firebase Initialization =========
     const firebaseConfig = {
       apiKey: "AIzaSyBO7EHU4-_b2NHf7UFYTB8Wolv73Z0P8Fw",
       authDomain: "static-live-chatting.firebaseapp.com",
@@ -399,7 +344,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ========== Helper Functions ==========
+    // ========= Helper Functions =========
     function showNotice(msg) {
       const container = document.getElementById("notificationContainer");
       const note = document.createElement("div");
@@ -446,14 +391,14 @@
     }, 300);
     const debouncedUpdateChatListUI = debounce(updateChatListUI, 300);
 
-    // ========== Device & User Setup ==========
+    // ========= Device & User Setup =========
     function genId() { return "dev_" + Math.random().toString(36).slice(2) + "_" + Date.now(); }
     let myId = localStorage.getItem("myDeviceId");
     if (!myId) { myId = genId(); localStorage.setItem("myDeviceId", myId); }
     let displayName = localStorage.getItem("displayName") || "";
     let pass = localStorage.getItem("pass") || "";
 
-    // ========== Global Variables ==========
+    // ========= Global Variables =========
     let currentChat = "", currentType = "";
     let messagesRef = null, childAddedRef = null, childChangedRef = null;
     let oldestStamp = Number.MAX_SAFE_INTEGER, hasMoreOld = false;
@@ -466,8 +411,7 @@
       "/ship", "/rps", "/guessnumber", "/vote"
     ];
 
-    // ========== Auto-Scroll Function ==========
-    // Auto-scroll the messages container if the user is near the bottom
+    // ========= Auto-Scroll =========
     function autoScroll() {
       const area = document.getElementById("messages");
       const tolerance = 50;
@@ -476,36 +420,33 @@
       }
     }
 
-    // ========== On Load ==========
+    // ========= On Load =========
     window.addEventListener("DOMContentLoaded", () => {
-      document.addEventListener("keydown", function(e) {
+      document.addEventListener("keydown", e => {
         if (e.key === "Escape") {
-          document.querySelectorAll(".modal").forEach(modal => { modal.style.display = "none"; });
+          document.querySelectorAll(".modal").forEach(modal => modal.style.display = "none");
         }
       });
-      document.addEventListener("click", function(e) {
+      document.addEventListener("click", e => {
         document.querySelectorAll(".modal").forEach(modal => {
-          if (modal.style.display === "flex" && e.target === modal) { modal.style.display = "none"; }
+          if (modal.style.display === "flex" && e.target === modal) modal.style.display = "none";
         });
       });
-      // Auto-login if displayName exists
       if (displayName) {
         document.getElementById("login").style.display = "none";
         document.getElementById("app").style.display = "flex";
         applyTheme();
-        loadBlocked();
-        loadFriends();
-        loadRequests();
+        loadBlocked(); loadFriends(); loadRequests();
         initChatWatchers();
         debouncedUpdateTitle();
       }
     });
 
-    // ========== Theme Functions ==========
+    // ========= Theme Functions =========
     function applyTheme() {
       const theme = localStorage.getItem("theme") || "dark";
       document.body.className = "";
-      if (theme !== "dark") { document.body.classList.add(theme); }
+      if (theme !== "dark") document.body.classList.add(theme);
       setThemeLabel(theme);
     }
     function toggleTheme() {
@@ -515,7 +456,7 @@
       let idx = themes.indexOf(current);
       let next = themes[(idx + 1) % themes.length];
       document.body.className = "";
-      if (next !== "dark") { document.body.classList.add(next); }
+      if (next !== "dark") document.body.classList.add(next);
       localStorage.setItem("theme", next);
       setThemeLabel(next);
     }
@@ -523,7 +464,7 @@
       document.getElementById("themeBtn").textContent = lab + ": Theme";
     }
 
-    // ========== Login & Settings ==========
+    // ========= Login & Settings =========
     function toggleLoginPass() {
       const pw = document.getElementById("password");
       pw.type = (pw.type === "password") ? "text" : "password";
@@ -535,7 +476,7 @@
       db.ref("displayNames/" + nm).once("value", snap => {
         const val = snap.val();
         if (val && val !== myId) {
-          showNotice("That display name is already taken by another device!");
+          showNotice("That display name is already taken!");
           return;
         }
         displayName = nm; pass = p;
@@ -546,9 +487,7 @@
         document.getElementById("login").style.display = "none";
         document.getElementById("app").style.display = "flex";
         applyTheme();
-        loadBlocked();
-        loadFriends();
-        loadRequests();
+        loadBlocked(); loadFriends(); loadRequests();
         initChatWatchers();
         showNotice("Logged in as " + nm);
       });
@@ -574,7 +513,7 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       mo.querySelector("#saveSetBtn").onclick = () => {
         const newN = mo.querySelector("#editName").value.trim();
         const newP = mo.querySelector("#editPass").value.trim();
@@ -582,7 +521,7 @@
         db.ref("displayNames/" + newN).once("value", snap => {
           const val = snap.val();
           if (val && val !== myId) {
-            showNotice("That name is taken by another device!");
+            showNotice("That name is taken!");
             return;
           }
           displayName = newN; pass = newP;
@@ -595,7 +534,7 @@
         });
       };
       mo.querySelector("#logoutBtn").onclick = () => {
-        showConfirm("Are you sure you want to log out?").then(ok => {
+        showConfirm("Log out?").then(ok => {
           if (ok) {
             localStorage.removeItem("myDeviceId");
             localStorage.removeItem("displayName");
@@ -610,7 +549,7 @@
       db.ref("users/" + myId + "/blocked").once("value", snap => {
         const list = snap.val() || {};
         container.innerHTML = "";
-        if (Object.keys(list).length === 0) { container.textContent = "No blocked users."; }
+        if (Object.keys(list).length === 0) container.textContent = "No blocked users.";
         else {
           Object.keys(list).forEach(user => {
             const div = document.createElement("div");
@@ -619,7 +558,7 @@
             unblk.textContent = "Unblock";
             unblk.onclick = () => {
               db.ref("users/" + myId + "/blocked/" + user).remove();
-              showNotice(user + " has been unblocked.");
+              showNotice(user + " unblocked.");
               loadBlockedForSettings(container);
             };
             div.appendChild(unblk);
@@ -629,7 +568,7 @@
       });
     }
 
-    // ========== Friends & Chat Panels ==========
+    // ========= Friends & Chat Panels =========
     function openFriendsPanel() {
       const mo = document.createElement("div");
       mo.className = "modal";
@@ -642,9 +581,9 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       const fl = mo.querySelector("#frList");
-      if (!friends || !Object.keys(friends).length) { fl.textContent = "No friends yet!"; }
+      if (!friends || !Object.keys(friends).length) fl.textContent = "No friends yet!";
       else {
         Object.keys(friends).forEach(n => {
           const d = document.createElement("div");
@@ -670,18 +609,18 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       mo.querySelector("#friendSendBtn").onclick = () => {
         const n = mo.querySelector("#friendNameInput").value.trim();
         if (!n) { showNotice("Please enter a name."); return; }
-        if (n === displayName) { showNotice("You cannot friend yourself."); return; }
+        if (n === displayName) { showNotice("Cannot friend yourself."); return; }
         if (blocked[n]) { showNotice("Unblock the user first."); return; }
         db.ref("displayNames/" + n).once("value", snap => {
           const dev = snap.val();
-          if (!dev) { showNotice("No user with that name found."); return; }
-          if (friends[n]) { showNotice("You're already friends with " + n + "!"); return; }
+          if (!dev) { showNotice("User not found."); return; }
+          if (friends[n]) { showNotice("Already friends with " + n); return; }
           db.ref(`users/${myId}/requestsSent/${n}`).once("value", snap2 => {
-            if (snap2.exists()) { showNotice("Already pending request."); return; }
+            if (snap2.exists()) { showNotice("Request already pending."); return; }
             db.ref(`users/${dev}/requests/${displayName}`).set({ requested: true });
             db.ref(`users/${myId}/requestsSent/${n}`).set(true);
             db.ref(`privateChats/${[myId,dev].sort().join("_")}`).set({});
@@ -705,7 +644,7 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
     }
     function showCreatePanel() {
       const mo = document.createElement("div");
@@ -726,7 +665,7 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       mo.querySelector("#createGroupBtn").onclick = () => {
         const nm = mo.querySelector("#groupName").value.trim();
         const ty = mo.querySelector("#groupType").value;
@@ -754,7 +693,7 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       mo.querySelector("#joinGroupBtn").onclick = () => {
         const id = mo.querySelector("#joinGroupID").value.trim();
         const pw = mo.querySelector("#joinGroupPassword").value.trim();
@@ -783,7 +722,7 @@
       `;
       document.body.appendChild(mo);
       mo.style.display = "flex";
-      mo.addEventListener("click", ev => { if (ev.target === mo) { mo.style.display = "none"; } });
+      mo.addEventListener("click", ev => { if (ev.target === mo) mo.style.display = "none"; });
       db.ref("groupChats").once("value", snap => {
         const data = snap.val() || {};
         const pl = mo.querySelector("#publicList");
@@ -805,7 +744,7 @@
       });
     }
 
-    // ========== Chat & Message Watchers ==========
+    // ========= Chat & Message Watchers =========
     function loadRequests() {
       db.ref("users/" + myId + "/requests").on("value", snap => {
         const data = snap.val() || {};
@@ -879,7 +818,7 @@
       });
       db.ref("users/" + myId + "/accepted").on("child_added", snap => {
         const who = snap.key;
-        showNotice(`${who} accepted your request!`);
+        showNotice(`${who} accepted your friend request!`);
         db.ref("users/" + myId + "/requestsSent/" + who).remove();
         db.ref("displayNames/" + who).once("value", snap => {
           const dev = snap.val();
@@ -921,7 +860,7 @@
         function handleMsg(snap) {
           if (cid === currentChat) return;
           chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-          if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
+          if (chats[cid]) chats[cid].last = snap.val().timestamp;
           debouncedUpdateChatListUI(chats);
           debouncedUpdateTitle();
         }
@@ -948,7 +887,6 @@
           badge.textContent = "+" + chatUnread[cid];
           right.appendChild(badge);
         }
-        // Add a delete button to remove the chat (only for non-help chats)
         if (info.type !== "help") {
           const delBtn = document.createElement("button");
           delBtn.textContent = "🗑";
@@ -959,10 +897,7 @@
           right.appendChild(delBtn);
         }
         div.appendChild(right);
-        div.onclick = () => {
-          if (info.type === "help") { /* Help chat not available */ }
-          else { openChat(cid, nm, info.type); }
-        };
+        div.onclick = () => { openChat(cid, nm, info.type); };
         cl.appendChild(div);
       });
     }
@@ -975,7 +910,7 @@
               if (ok) {
                 db.ref("groupChats/" + cid + "/members/" + myId).remove();
                 db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Left group chat successfully.");
+                showNotice("Left group chat.");
               }
             });
           } else {
@@ -983,7 +918,7 @@
               if (ok) {
                 db.ref("groupChats/" + cid).remove();
                 db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Group chat deleted for all members!");
+                showNotice("Group deleted.");
               }
             });
           }
@@ -992,7 +927,7 @@
         showConfirm("Remove private chat with " + info.name + "?").then(ok => {
           if (ok) {
             db.ref("users/" + myId + "/chats/" + cid).remove();
-            showNotice("Private chat removed from your side.");
+            showNotice("Chat removed.");
           }
         });
       }
@@ -1015,8 +950,8 @@
       area.innerHTML = "";
       document.getElementById("loadMoreBtn").style.display = "none";
       if (messagesRef) {
-        if (childAddedRef) { messagesRef.off("child_added", childAddedRef); }
-        if (childChangedRef) { messagesRef.off("child_changed", childChangedRef); }
+        if (childAddedRef) messagesRef.off("child_added", childAddedRef);
+        if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
       }
       const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       messagesRef = db.ref(path);
@@ -1136,7 +1071,7 @@
       db.ref(path).set(emoji);
     }
 
-    // ========== Typing & Emoji ==========
+    // ========= Typing & Emoji =========
     function attachTypingListener() {
       if (!currentChat || currentType === "help") return;
       const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
@@ -1154,21 +1089,8 @@
       db.ref(path).set(displayName);
       setTimeout(() => db.ref(path).set(""), 2000);
     }
-    function toggleEmojiPicker() {
-      const ep = document.getElementById("emojiPicker");
-      if (ep.style.display === "flex") { ep.style.display = "none"; return; }
-      ep.innerHTML = "";
-      ep.style.display = "flex";
-      const emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
-      emojis.forEach(e => {
-        const span = document.createElement("span");
-        span.textContent = e;
-        span.onclick = () => { document.getElementById("msgInput").value += e; ep.style.display = "none"; };
-        ep.appendChild(span);
-      });
-    }
 
-    // ========== Slash Commands & Autocomplete ==========
+    // ========= Slash Commands & Autocomplete =========
     function slashAutoInput(e) {
       const val = e.target.value;
       const sc = document.getElementById("slashAutocomplete");
@@ -1188,11 +1110,11 @@
       sc.style.display = "block";
     }
 
-    // ========== Client-Side Cooldown & Message Sending ==========
+    // ========= Cooldown & Sending =========
     function canSendMessage() {
       const nowTime = Date.now();
       if (nowTime - lastMessageTime < 500) {
-        showNotice("Please wait 0.5 seconds between messages.");
+        showNotice("Wait 0.5 seconds between messages.");
         return false;
       }
       lastMessageTime = nowTime;
@@ -1311,7 +1233,7 @@
       });
     }
 
-    // ========== Friend Request & Chat Watchers ==========
+    // ========= Friend Request & Chat Watchers =========
     function loadRequests() {
       db.ref("users/" + myId + "/requests").on("value", snap => {
         const data = snap.val() || {};
@@ -1427,7 +1349,7 @@
         function handleMsg(snap) {
           if (cid === currentChat) return;
           chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-          if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
+          if (chats[cid]) chats[cid].last = snap.val().timestamp;
           debouncedUpdateChatListUI(chats);
           debouncedUpdateTitle();
         }
@@ -1454,7 +1376,6 @@
           badge.textContent = "+" + chatUnread[cid];
           right.appendChild(badge);
         }
-        // Add delete button for non-help chats
         if (info.type !== "help") {
           const delBtn = document.createElement("button");
           delBtn.textContent = "🗑";
@@ -1465,10 +1386,7 @@
           right.appendChild(delBtn);
         }
         div.appendChild(right);
-        div.onclick = () => {
-          if (info.type === "help") { /* Help chat removed */ }
-          else { openChat(cid, nm, info.type); }
-        };
+        div.onclick = () => openChat(cid, nm, info.type);
         cl.appendChild(div);
       });
     }
@@ -1481,7 +1399,7 @@
               if (ok) {
                 db.ref("groupChats/" + cid + "/members/" + myId).remove();
                 db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Left group chat successfully.");
+                showNotice("Left group chat.");
               }
             });
           } else {
@@ -1489,7 +1407,7 @@
               if (ok) {
                 db.ref("groupChats/" + cid).remove();
                 db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Group chat deleted for all members!");
+                showNotice("Group deleted.");
               }
             });
           }
@@ -1498,7 +1416,7 @@
         showConfirm("Remove private chat with " + info.name + "?").then(ok => {
           if (ok) {
             db.ref("users/" + myId + "/chats/" + cid).remove();
-            showNotice("Private chat removed from your side.");
+            showNotice("Chat removed.");
           }
         });
       }
@@ -1521,8 +1439,8 @@
       area.innerHTML = "";
       document.getElementById("loadMoreBtn").style.display = "none";
       if (messagesRef) {
-        if (childAddedRef) { messagesRef.off("child_added", childAddedRef); }
-        if (childChangedRef) { messagesRef.off("child_changed", childChangedRef); }
+        if (childAddedRef) messagesRef.off("child_added", childAddedRef);
+        if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
       }
       const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
       messagesRef = db.ref(path);
@@ -1530,7 +1448,7 @@
         const data = snap.val() || {};
         const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
         oldestStamp = arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, true); });
+        arr.forEach(([mId, mVal]) => createBubble(mId, mVal, true));
         if (arr.length >= 100) {
           hasMoreOld = true;
           document.getElementById("loadMoreBtn").style.display = "block";
@@ -1541,9 +1459,9 @@
           autoScroll();
           markMsgRead(snap.key, v);
         });
-        childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
+        childChangedRef = messagesRef.on("child_changed", snap => updateBubble(snap.key, snap.val()));
         autoScroll();
-        Object.entries(data).forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
+        Object.entries(data).forEach(([mId, mVal]) => markMsgRead(mId, mVal));
       });
       if (type === "group") {
         db.ref("groupChats/" + cid + "/members").on("value", snap => {
@@ -1573,9 +1491,9 @@
           return;
         }
         oldestStamp = arr[0][1].timestamp;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, false); });
+        arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
         if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
-        arr.forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
+        arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
         btn.disabled = false;
       });
     }
@@ -1642,512 +1560,7 @@
       db.ref(path).set(emoji);
     }
 
-    // ========== Typing & Emoji ==========
-    function attachTypingListener() {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-      db.ref(path).off();
-      db.ref(path).on("value", snap => {
-        const val = snap.val();
-        const t = document.getElementById("typingIndicator");
-        if (currentChat && val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
-        else { t.style.display = "none"; }
-      });
-    }
-    function sendTyping() {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-      db.ref(path).set(displayName);
-      setTimeout(() => db.ref(path).set(""), 2000);
-    }
-    function toggleEmojiPicker() {
-      const ep = document.getElementById("emojiPicker");
-      if (ep.style.display === "flex") { ep.style.display = "none"; return; }
-      ep.innerHTML = "";
-      ep.style.display = "flex";
-      const emojis = [..."😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍😘🥰😗😙😚😋😛😝😜🤪🤨🧐🤓😎🥸🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔"];
-      emojis.forEach(e => {
-        const span = document.createElement("span");
-        span.textContent = e;
-        span.onclick = () => { document.getElementById("msgInput").value += e; ep.style.display = "none"; };
-        ep.appendChild(span);
-      });
-    }
-
-    // ========== Slash Commands & Autocomplete ==========
-    function slashAutoInput(e) {
-      const val = e.target.value;
-      const sc = document.getElementById("slashAutocomplete");
-      if (!val.startsWith("/")) { sc.style.display = "none"; return; }
-      sc.innerHTML = "";
-      const rect = e.target.getBoundingClientRect();
-      sc.style.left = rect.left + "px";
-      sc.style.top = rect.top - 115 + "px";
-      const hits = slashCmds.filter(c => c.startsWith(val));
-      if (!hits.length) { sc.style.display = "none"; return; }
-      hits.slice(0, 8).forEach(cmd => {
-        const b = document.createElement("button");
-        b.textContent = cmd;
-        b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-        sc.appendChild(b);
-      });
-      sc.style.display = "block";
-    }
-
-    // ========== Client-Side Cooldown & Message Sending ==========
-    function canSendMessage() {
-      const nowTime = Date.now();
-      if (nowTime - lastMessageTime < 500) {
-        showNotice("Please wait 0.5 seconds between messages.");
-        return false;
-      }
-      lastMessageTime = nowTime;
-      return true;
-    }
-    function sendMessage() {
-      if (!currentChat || currentType === "help") return;
-      if (!canSendMessage()) return;
-      const inp = document.getElementById("msgInput");
-      const txt = inp.value.trim();
-      if (!txt) return;
-      document.getElementById("slashAutocomplete").style.display = "none";
-      if (txt.startsWith("/")) {
-        processSlashCommand(txt);
-        inp.value = "";
-        return;
-      }
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-      db.ref(path).push({
-        sender: myId,
-        text: txt,
-        timestamp: Date.now(),
-        reaction: "",
-        readBy: { [myId]: Date.now() }
-      });
-      inp.value = "";
-      setTimeout(() => { autoScroll(); }, 50);
-      sendTyping();
-    }
-    function processSlashCommand(cmd) {
-      const parts = cmd.split(" ");
-      const slash = parts[0].toLowerCase();
-      if (slash === "/roll") {
-        const sides = parseInt(parts[1], 10) || 6;
-        const r = Math.floor(Math.random() * sides) + 1;
-        sendSystemMessage("🎲 Rolled a " + sides + "-sided die: " + r);
-      } else if (slash === "/ping") {
-        const t0 = Date.now();
-        db.ref("pingTest").set({ time: t0 }, () => {
-          const dt = Date.now() - t0;
-          sendSystemMessage("Ping: " + dt + "ms");
-        });
-      } else if (slash === "/8ball") {
-        const q = cmd.slice(7).trim();
-        if (!q) { showNotice("Usage: /8ball [question]"); return; }
-        const answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
-        const pick = answers[Math.floor(Math.random() * answers.length)];
-        sendSystemMessage("8ball: " + pick);
-      } else if (slash === "/roast") {
-        const roasts = [
-          "Your code has more bugs than a beehive.",
-          "You're slower than dial‑up internet.",
-          "At least your chat is entertaining."
-        ];
-        const pick = roasts[Math.floor(Math.random() * roasts.length)];
-        sendSystemMessage("Roast: " + pick);
-      } else if (slash === "/tod") {
-        if (parts[1] === "truth") {
-          const truths = [
-            "What's your biggest fear?",
-            "Have you ever lied to your best friend?",
-            "What's your most embarrassing moment?"
-          ];
-          const pick = truths[Math.floor(Math.random() * truths.length)];
-          sendSystemMessage("Truth: " + pick);
-        } else if (parts[1] === "dare") {
-          const dares = [
-            "Dance like a robot for 15 seconds.",
-            "Talk in a baby voice for 3 messages.",
-            "Pretend you're an alien for 10 seconds."
-          ];
-          const pick = dares[Math.floor(Math.random() * dares.length)];
-          sendSystemMessage("Dare: " + pick);
-        } else { showNotice("Usage: /tod truth or /tod dare"); }
-      } else if (slash === "/title") {
-        const text = parts.slice(1).join(" ");
-        if (!text) { showNotice("Usage: /title [text]"); return; }
-        sendSystemMessage("<< " + text + " >>");
-      } else if (slash === "/cf" || slash === "/coin") {
-        let guess = "";
-        if (slash === "/cf") guess = parts[1] || "";
-        else if (parts[1] === "flip") guess = parts[2] || "";
-        guess = guess.toLowerCase();
-        if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
-        const side = Math.random() < 0.5 ? "heads" : "tails";
-        sendSystemMessage("Coinflip: " + side + " => you chose " + guess + " => " + (side === guess ? "You win!" : "You lose."));
-      } else if (slash === "/ship") {
-        const n = parts[1] || "";
-        if (!n) { showNotice("Usage: /ship [name]"); return; }
-        const merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
-        sendSystemMessage("Ship: " + displayName + " + " + n + " => " + merged + " 💘");
-      } else if (slash === "/rps") {
-        sendSystemMessage("[RPS] " + displayName + " played rock (placeholder)");
-      } else if (slash === "/guessnumber") {
-        sendSystemMessage("[GuessNumber] Waiting for opponent (placeholder)");
-      } else if (slash === "/vote") {
-        const rest = cmd.slice(slash.length).trim();
-        const parts = rest.split("|").map(x => x.trim());
-        if (parts.length < 2) { showNotice("Usage: /vote question|opt1|opt2"); return; }
-        let out = "Vote: " + parts[0] + "\n";
-        parts.slice(1).forEach(o => { out += "- " + o + "\n"; });
-        sendSystemMessage(out);
-      } else {
-        showNotice("Unknown slash command: " + cmd);
-      }
-    }
-    function sendSystemMessage(text) {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-      db.ref(path).push({
-        sender: "_system",
-        text: text,
-        timestamp: Date.now(),
-        reaction: "",
-        readBy: { [myId]: Date.now() }
-      });
-    }
-
-    // ========== Friend Request & Chat Watchers ==========
-    function loadRequests() {
-      db.ref("users/" + myId + "/requests").on("value", snap => {
-        const data = snap.val() || {};
-        const tab = document.getElementById("requestsTab");
-        tab.innerHTML = "";
-        Object.keys(data).forEach(from => {
-          const div = document.createElement("div");
-          div.className = "requestItem";
-          div.textContent = `${from} wants to chat. `;
-          const accept = document.createElement("button");
-          accept.textContent = "✔";
-          accept.style.background = "green";
-          accept.onclick = () => {
-            if (blocked[from]) { showNotice("Unblock them first!"); return; }
-            db.ref("displayNames/" + from).once("value", snap => {
-              const dev = snap.val();
-              if (!dev) { showNotice("User not found!"); return; }
-              const cid = [myId, dev].sort().join("_");
-              db.ref("privateChats/" + cid).once("value", snap2 => {
-                if (!snap2.exists()) {
-                  db.ref("privateChats/" + cid).set({
-                    members: { [myId]: true, [dev]: true },
-                    createdAt: Date.now()
-                  });
-                }
-              });
-              db.ref("users/" + myId + "/chats/" + cid).set({ name: from, type: "private", last: Date.now() });
-              db.ref("users/" + myId + "/requests/" + from).remove();
-              db.ref("users/" + myId + "/friends/" + from).set(true);
-              db.ref("users/" + dev + "/friends/" + displayName).set(true);
-              db.ref("users/" + dev + "/accepted/" + displayName).set(true);
-              db.ref("privateChats/" + cid + "/messages").push({
-                sender: "_system",
-                text: `${from} accepted your friend request!`,
-                timestamp: Date.now(),
-                reaction: "",
-                readBy: { [dev]: Date.now() }
-              });
-              openChat(cid, from, "private");
-            });
-          };
-          div.appendChild(accept);
-          const deny = document.createElement("button");
-          deny.textContent = "✘";
-          deny.style.background = "red";
-          deny.onclick = () => { db.ref("users/" + myId + "/requests/" + from).remove(); };
-          div.appendChild(deny);
-          tab.appendChild(div);
-        });
-      });
-      db.ref("users/" + myId + "/requestsSent").on("value", snap => {
-        const st = document.getElementById("requestsSentTab");
-        st.innerHTML = "<strong>Requests Sent:</strong><br/>";
-        const out = snap.val() || {};
-        Object.keys(out).forEach(n => {
-          const div = document.createElement("div");
-          div.className = "requestItem";
-          div.textContent = `(Pending) ${n} `;
-          const btn = document.createElement("button");
-          btn.textContent = "Cancel";
-          btn.onclick = () => {
-            db.ref("users/" + myId + "/requestsSent/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap => {
-              const dev = snap.val();
-              if (dev) { db.ref("users/" + dev + "/requests/" + displayName).remove(); }
-            });
-          };
-          div.appendChild(btn);
-          st.appendChild(div);
-        });
-      });
-      db.ref("users/" + myId + "/accepted").on("child_added", snap => {
-        const who = snap.key;
-        showNotice(`${who} accepted your friend request!`);
-        db.ref("users/" + myId + "/requestsSent/" + who).remove();
-        db.ref("displayNames/" + who).once("value", snap => {
-          const dev = snap.val();
-          if (!dev) return;
-          const cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).once("value", snap2 => {
-            if (!snap2.exists()) {
-              db.ref("privateChats/" + cid).set({
-                members: { [myId]: true, [dev]: true },
-                createdAt: Date.now()
-              });
-            }
-          });
-          db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
-        });
-        setTimeout(() => { db.ref("users/" + myId + "/accepted/" + who).remove(); }, 3000);
-      });
-    }
-    function loadBlocked() {
-      db.ref("users/" + myId + "/blocked").on("value", snap => { blocked = snap.val() || {}; });
-    }
-    function loadFriends() {
-      db.ref("users/" + myId + "/friends").on("value", snap => { friends = snap.val() || {}; });
-    }
-    function initChatWatchers() {
-      db.ref("users/" + myId + "/chats").on("value", snap => {
-        const chats = snap.val() || {};
-        attachAllChatWatchers(chats);
-        debouncedUpdateChatListUI(chats);
-      });
-    }
-    function attachAllChatWatchers(chats) {
-      Object.keys(chats).forEach(cid => {
-        if (cid === "help_chat") return;
-        const info = chats[cid];
-        const path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-        db.ref(path).off("child_added", handleMsg);
-        db.ref(path).on("child_added", handleMsg);
-        function handleMsg(snap) {
-          if (cid === currentChat) return;
-          chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-          if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
-          debouncedUpdateChatListUI(chats);
-          debouncedUpdateTitle();
-        }
-      });
-    }
-    function updateChatListUI(chats) {
-      const arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-      const cl = document.getElementById("chatList");
-      cl.innerHTML = "";
-      arr.forEach(([cid, info]) => {
-        const div = document.createElement("div");
-        div.className = "chatItem";
-        if (cid === currentChat) div.classList.add("active");
-        let nm = info.name || cid;
-        if (info.type === "private" && blocked[nm]) nm += " [Blocked]";
-        if (info.type === "help") nm = "Help (info)";
-        div.textContent = nm;
-        const right = document.createElement("div");
-        right.style.display = "flex";
-        right.style.alignItems = "center";
-        if (chatUnread[cid]) {
-          const badge = document.createElement("span");
-          badge.className = "chatBadge";
-          badge.textContent = "+" + chatUnread[cid];
-          right.appendChild(badge);
-        }
-        if (info.type !== "help") {
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "🗑";
-          delBtn.onclick = ev => {
-            ev.stopPropagation();
-            confirmDeleteChat(cid, info);
-          };
-          right.appendChild(delBtn);
-        }
-        div.appendChild(right);
-        div.onclick = () => {
-          if (info.type === "help") { /* Help chat not available */ }
-          else { openChat(cid, nm, info.type); }
-        };
-        cl.appendChild(div);
-      });
-    }
-    function confirmDeleteChat(cid, info) {
-      if (info.type === "group") {
-        db.ref("groupChats/" + cid + "/createdBy").once("value", snap => {
-          const own = snap.val();
-          if (own !== myId) {
-            showConfirm("Leave group " + info.name + "?").then(ok => {
-              if (ok) {
-                db.ref("groupChats/" + cid + "/members/" + myId).remove();
-                db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Left group chat successfully.");
-              }
-            });
-          } else {
-            showConfirm("Delete group " + info.name + "?").then(ok => {
-              if (ok) {
-                db.ref("groupChats/" + cid).remove();
-                db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Group chat deleted for all members!");
-              }
-            });
-          }
-        });
-      } else {
-        showConfirm("Remove private chat with " + info.name + "?").then(ok => {
-          if (ok) {
-            db.ref("users/" + myId + "/chats/" + cid).remove();
-            showNotice("Private chat removed from your side.");
-          }
-        });
-      }
-    }
-    function openChat(cid, name, type) {
-      currentChat = cid;
-      currentType = type;
-      chatUnread[cid] = 0;
-      debouncedUpdateTitle();
-      if (type === "group") {
-        document.getElementById("chatTitle").innerHTML = `<div id='groupTitle'>${name}</div><div>You: ${displayName}</div>`;
-      } else {
-        document.getElementById("chatTitle").textContent = name;
-      }
-      const gm = document.getElementById("groupMembers");
-      gm.style.display = (type === "group") ? "block" : "none";
-      const inp = document.getElementById("msgInput");
-      inp.disabled = (type === "help");
-      const area = document.getElementById("messages");
-      area.innerHTML = "";
-      document.getElementById("loadMoreBtn").style.display = "none";
-      if (messagesRef) {
-        if (childAddedRef) { messagesRef.off("child_added", childAddedRef); }
-        if (childChangedRef) { messagesRef.off("child_changed", childChangedRef); }
-      }
-      const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-      messagesRef = db.ref(path);
-      messagesRef.orderByChild("timestamp").limitToLast(100).once("value", snap => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-        oldestStamp = arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, true); });
-        if (arr.length >= 100) {
-          hasMoreOld = true;
-          document.getElementById("loadMoreBtn").style.display = "block";
-        } else { hasMoreOld = false; }
-        childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
-          const v = snap.val();
-          createBubble(snap.key, v, true);
-          autoScroll();
-          markMsgRead(snap.key, v);
-        });
-        childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
-        autoScroll();
-        Object.entries(data).forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
-      });
-      if (type === "group") {
-        db.ref("groupChats/" + cid + "/members").on("value", snap => {
-          const members = Object.keys(snap.val() || {});
-          gm.textContent = "Members: " + members.join(", ");
-        });
-      }
-      attachTypingListener();
-    }
-    function markMsgRead(mId, mVal) {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
-      db.ref(path).set(Date.now());
-    }
-    function loadOlderMessages() {
-      if (!currentChat || !hasMoreOld) return;
-      const btn = document.getElementById("loadMoreBtn");
-      btn.disabled = true;
-      messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-        if (arr.length < 1) {
-          showNotice("No older messages found.");
-          hasMoreOld = false;
-          btn.style.display = "none";
-          btn.disabled = false;
-          return;
-        }
-        oldestStamp = arr[0][1].timestamp;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, false); });
-        if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
-        arr.forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
-        btn.disabled = false;
-      });
-    }
-    function createBubble(mId, val, toEnd) {
-      const area = document.getElementById("messages");
-      if (document.getElementById("msg_" + mId)) return;
-      const bubble = document.createElement("div");
-      bubble.id = "msg_" + mId;
-      bubble.className = "msg";
-      if (val.sender === myId) bubble.classList.add("to");
-      else if (val.sender === "_system") bubble.classList.add("console");
-      else bubble.classList.add("from");
-      const p = document.createElement("p");
-      p.textContent = val.text || "";
-      bubble.appendChild(p);
-      const rt = document.createElement("span");
-      rt.className = "reactionTag";
-      if (val.reaction) rt.textContent = val.reaction;
-      bubble.appendChild(rt);
-      const rBar = document.createElement("div");
-      rBar.className = "reactionBar";
-      ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.onclick = ev => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
-        rBar.appendChild(span);
-      });
-      bubble.appendChild(rBar);
-      bubble.addEventListener("dblclick", () => {
-        rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
-      });
-      bubble.addEventListener("contextmenu", ev => {
-        ev.preventDefault();
-        if (currentType === "group") {
-          db.ref("groupChats/" + currentChat + "/createdBy").once("value", snap => {
-            if (snap.val() === myId) {
-              showConfirm("Remove this message?").then(ok => {
-                if (ok) {
-                  db.ref("groupChats/" + currentChat + "/messages/" + mId).remove();
-                  const el = document.getElementById("msg_" + mId);
-                  if (el) el.remove();
-                }
-              });
-            }
-          });
-        }
-      });
-      const ts = document.createElement("div");
-      ts.className = "timestamp";
-      const t = val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-      ts.textContent = t;
-      bubble.appendChild(ts);
-      if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
-      setTimeout(() => { autoScroll(); }, 50);
-    }
-    function updateBubble(mId, val) {
-      const b = document.getElementById("msg_" + mId);
-      if (!b) return;
-      const rt = b.querySelector(".reactionTag");
-      if (rt) rt.textContent = val.reaction || "";
-    }
-    function applyReaction(mId, emoji) {
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-      db.ref(path).set(emoji);
-    }
-
-    // ========== Typing & Emoji ==========
+    // ========= Typing & Emoji =========
     function attachTypingListener() {
       if (!currentChat || currentType === "help") return;
       const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
@@ -2166,1004 +1579,20 @@
       setTimeout(() => db.ref(path).set(""), 2000);
     }
 
-    // ========== Slash Commands & Autocomplete ==========
-    function slashAutoInput(e) {
-      const val = e.target.value;
-      const sc = document.getElementById("slashAutocomplete");
-      if (!val.startsWith("/")) { sc.style.display = "none"; return; }
-      sc.innerHTML = "";
-      const rect = e.target.getBoundingClientRect();
-      sc.style.left = rect.left + "px";
-      sc.style.top = rect.top - 115 + "px";
-      const hits = slashCmds.filter(c => c.startsWith(val));
-      if (!hits.length) { sc.style.display = "none"; return; }
-      hits.slice(0, 8).forEach(cmd => {
-        const b = document.createElement("button");
-        b.textContent = cmd;
-        b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-        sc.appendChild(b);
-      });
-      sc.style.display = "block";
-    }
-
-    // ========== Client-Side Cooldown & Message Sending ==========
-    function canSendMessage() {
-      const nowTime = Date.now();
-      if (nowTime - lastMessageTime < 500) {
-        showNotice("Please wait 0.5 seconds between messages.");
-        return false;
-      }
-      lastMessageTime = nowTime;
-      return true;
-    }
-    function sendMessage() {
-      if (!currentChat || currentType === "help") return;
-      if (!canSendMessage()) return;
-      const inp = document.getElementById("msgInput");
-      const txt = inp.value.trim();
-      if (!txt) return;
-      document.getElementById("slashAutocomplete").style.display = "none";
-      if (txt.startsWith("/")) {
-        processSlashCommand(txt);
-        inp.value = "";
-        return;
-      }
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-      db.ref(path).push({
-        sender: myId,
-        text: txt,
-        timestamp: Date.now(),
-        reaction: "",
-        readBy: { [myId]: Date.now() }
-      });
-      inp.value = "";
-      setTimeout(() => { autoScroll(); }, 50);
-      sendTyping();
-    }
-    function processSlashCommand(cmd) {
-      const parts = cmd.split(" ");
-      const slash = parts[0].toLowerCase();
-      if (slash === "/roll") {
-        const sides = parseInt(parts[1], 10) || 6;
-        const r = Math.floor(Math.random() * sides) + 1;
-        sendSystemMessage("🎲 Rolled a " + sides + "-sided die: " + r);
-      } else if (slash === "/ping") {
-        const t0 = Date.now();
-        db.ref("pingTest").set({ time: t0 }, () => {
-          const dt = Date.now() - t0;
-          sendSystemMessage("Ping: " + dt + "ms");
-        });
-      } else if (slash === "/8ball") {
-        const q = cmd.slice(7).trim();
-        if (!q) { showNotice("Usage: /8ball [question]"); return; }
-        const answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
-        const pick = answers[Math.floor(Math.random() * answers.length)];
-        sendSystemMessage("8ball: " + pick);
-      } else if (slash === "/roast") {
-        const roasts = [
-          "Your code has more bugs than a beehive.",
-          "You're slower than dial‑up internet.",
-          "At least your chat is entertaining."
-        ];
-        const pick = roasts[Math.floor(Math.random() * roasts.length)];
-        sendSystemMessage("Roast: " + pick);
-      } else if (slash === "/tod") {
-        if (parts[1] === "truth") {
-          const truths = [
-            "What's your biggest fear?",
-            "Have you ever lied to your best friend?",
-            "What's your most embarrassing moment?"
-          ];
-          const pick = truths[Math.floor(Math.random() * truths.length)];
-          sendSystemMessage("Truth: " + pick);
-        } else if (parts[1] === "dare") {
-          const dares = [
-            "Dance like a robot for 15 seconds.",
-            "Talk in a baby voice for 3 messages.",
-            "Pretend you're an alien for 10 seconds."
-          ];
-          const pick = dares[Math.floor(Math.random() * dares.length)];
-          sendSystemMessage("Dare: " + pick);
-        } else { showNotice("Usage: /tod truth or /tod dare"); }
-      } else if (slash === "/title") {
-        const text = parts.slice(1).join(" ");
-        if (!text) { showNotice("Usage: /title [text]"); return; }
-        sendSystemMessage("<< " + text + " >>");
-      } else if (slash === "/cf" || slash === "/coin") {
-        let guess = "";
-        if (slash === "/cf") guess = parts[1] || "";
-        else if (parts[1] === "flip") guess = parts[2] || "";
-        guess = guess.toLowerCase();
-        if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
-        const side = Math.random() < 0.5 ? "heads" : "tails";
-        sendSystemMessage("Coinflip: " + side + " => you chose " + guess + " => " + (side === guess ? "You win!" : "You lose."));
-      } else if (slash === "/ship") {
-        const n = parts[1] || "";
-        if (!n) { showNotice("Usage: /ship [name]"); return; }
-        const merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
-        sendSystemMessage("Ship: " + displayName + " + " + n + " => " + merged + " 💘");
-      } else if (slash === "/rps") {
-        sendSystemMessage("[RPS] " + displayName + " played rock (placeholder)");
-      } else if (slash === "/guessnumber") {
-        sendSystemMessage("[GuessNumber] Waiting for opponent (placeholder)");
-      } else if (slash === "/vote") {
-        const rest = cmd.slice(slash.length).trim();
-        const parts = rest.split("|").map(x => x.trim());
-        if (parts.length < 2) { showNotice("Usage: /vote question|opt1|opt2"); return; }
-        let out = "Vote: " + parts[0] + "\n";
-        parts.slice(1).forEach(o => { out += "- " + o + "\n"; });
-        sendSystemMessage(out);
-      } else {
-        showNotice("Unknown slash command: " + cmd);
-      }
-    }
-    function sendSystemMessage(text) {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-      db.ref(path).push({
-        sender: "_system",
-        text: text,
-        timestamp: Date.now(),
-        reaction: "",
-        readBy: { [myId]: Date.now() }
-      });
-    }
-
-    // ========== Friend Request & Chat Watchers ==========
-    function loadRequests() {
-      db.ref("users/" + myId + "/requests").on("value", snap => {
-        const data = snap.val() || {};
-        const tab = document.getElementById("requestsTab");
-        tab.innerHTML = "";
-        Object.keys(data).forEach(from => {
-          const div = document.createElement("div");
-          div.className = "requestItem";
-          div.textContent = `${from} wants to chat. `;
-          const accept = document.createElement("button");
-          accept.textContent = "✔";
-          accept.style.background = "green";
-          accept.onclick = () => {
-            if (blocked[from]) { showNotice("Unblock them first!"); return; }
-            db.ref("displayNames/" + from).once("value", snap => {
-              const dev = snap.val();
-              if (!dev) { showNotice("User not found!"); return; }
-              const cid = [myId, dev].sort().join("_");
-              db.ref("privateChats/" + cid).once("value", snap2 => {
-                if (!snap2.exists()) {
-                  db.ref("privateChats/" + cid).set({
-                    members: { [myId]: true, [dev]: true },
-                    createdAt: Date.now()
-                  });
-                }
-              });
-              db.ref("users/" + myId + "/chats/" + cid).set({ name: from, type: "private", last: Date.now() });
-              db.ref("users/" + myId + "/requests/" + from).remove();
-              db.ref("users/" + myId + "/friends/" + from).set(true);
-              db.ref("users/" + dev + "/friends/" + displayName).set(true);
-              db.ref("users/" + dev + "/accepted/" + displayName).set(true);
-              db.ref("privateChats/" + cid + "/messages").push({
-                sender: "_system",
-                text: `${from} accepted your friend request!`,
-                timestamp: Date.now(),
-                reaction: "",
-                readBy: { [dev]: Date.now() }
-              });
-              openChat(cid, from, "private");
-            });
-          };
-          div.appendChild(accept);
-          const deny = document.createElement("button");
-          deny.textContent = "✘";
-          deny.style.background = "red";
-          deny.onclick = () => { db.ref("users/" + myId + "/requests/" + from).remove(); };
-          div.appendChild(deny);
-          tab.appendChild(div);
-        });
-      });
-      db.ref("users/" + myId + "/requestsSent").on("value", snap => {
-        const st = document.getElementById("requestsSentTab");
-        st.innerHTML = "<strong>Requests Sent:</strong><br/>";
-        const out = snap.val() || {};
-        Object.keys(out).forEach(n => {
-          const div = document.createElement("div");
-          div.className = "requestItem";
-          div.textContent = `(Pending) ${n} `;
-          const btn = document.createElement("button");
-          btn.textContent = "Cancel";
-          btn.onclick = () => {
-            db.ref("users/" + myId + "/requestsSent/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap => {
-              const dev = snap.val();
-              if (dev) { db.ref("users/" + dev + "/requests/" + displayName).remove(); }
-            });
-          };
-          div.appendChild(btn);
-          st.appendChild(div);
-        });
-      });
-      db.ref("users/" + myId + "/accepted").on("child_added", snap => {
-        const who = snap.key;
-        showNotice(`${who} accepted your friend request!`);
-        db.ref("users/" + myId + "/requestsSent/" + who).remove();
-        db.ref("displayNames/" + who).once("value", snap => {
-          const dev = snap.val();
-          if (!dev) return;
-          const cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).once("value", snap2 => {
-            if (!snap2.exists()) {
-              db.ref("privateChats/" + cid).set({
-                members: { [myId]: true, [dev]: true },
-                createdAt: Date.now()
-              });
-            }
-          });
-          db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
-        });
-        setTimeout(() => { db.ref("users/" + myId + "/accepted/" + who).remove(); }, 3000);
-      });
-    }
-    function loadBlocked() {
-      db.ref("users/" + myId + "/blocked").on("value", snap => { blocked = snap.val() || {}; });
-    }
-    function loadFriends() {
-      db.ref("users/" + myId + "/friends").on("value", snap => { friends = snap.val() || {}; });
-    }
-    function initChatWatchers() {
-      db.ref("users/" + myId + "/chats").on("value", snap => {
-        const chats = snap.val() || {};
-        attachAllChatWatchers(chats);
-        debouncedUpdateChatListUI(chats);
-      });
-    }
-    function attachAllChatWatchers(chats) {
-      Object.keys(chats).forEach(cid => {
-        if (cid === "help_chat") return;
-        const info = chats[cid];
-        const path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-        db.ref(path).off("child_added", handleMsg);
-        db.ref(path).on("child_added", handleMsg);
-        function handleMsg(snap) {
-          if (cid === currentChat) return;
-          chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-          if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
-          debouncedUpdateChatListUI(chats);
-          debouncedUpdateTitle();
-        }
-      });
-    }
-    function updateChatListUI(chats) {
-      const arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-      const cl = document.getElementById("chatList");
-      cl.innerHTML = "";
-      arr.forEach(([cid, info]) => {
-        const div = document.createElement("div");
-        div.className = "chatItem";
-        if (cid === currentChat) div.classList.add("active");
-        let nm = info.name || cid;
-        if (info.type === "private" && blocked[nm]) nm += " [Blocked]";
-        if (info.type === "help") nm = "Help (info)";
-        div.textContent = nm;
-        const right = document.createElement("div");
-        right.style.display = "flex";
-        right.style.alignItems = "center";
-        if (chatUnread[cid]) {
-          const badge = document.createElement("span");
-          badge.className = "chatBadge";
-          badge.textContent = "+" + chatUnread[cid];
-          right.appendChild(badge);
-        }
-        if (info.type !== "help") {
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "🗑";
-          delBtn.onclick = ev => {
-            ev.stopPropagation();
-            confirmDeleteChat(cid, info);
-          };
-          right.appendChild(delBtn);
-        }
-        div.appendChild(right);
-        div.onclick = () => {
-          if (info.type === "help") { /* Help chat not available */ }
-          else { openChat(cid, nm, info.type); }
-        };
-        cl.appendChild(div);
-      });
-    }
-    function confirmDeleteChat(cid, info) {
-      if (info.type === "group") {
-        db.ref("groupChats/" + cid + "/createdBy").once("value", snap => {
-          const own = snap.val();
-          if (own !== myId) {
-            showConfirm("Leave group " + info.name + "?").then(ok => {
-              if (ok) {
-                db.ref("groupChats/" + cid + "/members/" + myId).remove();
-                db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Left group chat successfully.");
-              }
-            });
-          } else {
-            showConfirm("Delete group " + info.name + "?").then(ok => {
-              if (ok) {
-                db.ref("groupChats/" + cid).remove();
-                db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Group chat deleted for all members!");
-              }
-            });
-          }
-        });
-      } else {
-        showConfirm("Remove private chat with " + info.name + "?").then(ok => {
-          if (ok) {
-            db.ref("users/" + myId + "/chats/" + cid).remove();
-            showNotice("Private chat removed from your side.");
-          }
-        });
-      }
-    }
-    function openChat(cid, name, type) {
-      currentChat = cid;
-      currentType = type;
-      chatUnread[cid] = 0;
-      debouncedUpdateTitle();
-      if (type === "group") {
-        document.getElementById("chatTitle").innerHTML = `<div id='groupTitle'>${name}</div><div>You: ${displayName}</div>`;
-      } else {
-        document.getElementById("chatTitle").textContent = name;
-      }
-      const gm = document.getElementById("groupMembers");
-      gm.style.display = (type === "group") ? "block" : "none";
-      const inp = document.getElementById("msgInput");
-      inp.disabled = (type === "help");
-      const area = document.getElementById("messages");
-      area.innerHTML = "";
-      document.getElementById("loadMoreBtn").style.display = "none";
-      if (messagesRef) {
-        if (childAddedRef) { messagesRef.off("child_added", childAddedRef); }
-        if (childChangedRef) { messagesRef.off("child_changed", childChangedRef); }
-      }
-      const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-      messagesRef = db.ref(path);
-      messagesRef.orderByChild("timestamp").limitToLast(100).once("value", snap => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-        oldestStamp = arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, true); });
-        if (arr.length >= 100) {
-          hasMoreOld = true;
-          document.getElementById("loadMoreBtn").style.display = "block";
-        } else { hasMoreOld = false; }
-        childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
-          const v = snap.val();
-          createBubble(snap.key, v, true);
-          autoScroll();
-          markMsgRead(snap.key, v);
-        });
-        childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
-        autoScroll();
-        Object.entries(data).forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
-      });
-      if (type === "group") {
-        db.ref("groupChats/" + cid + "/members").on("value", snap => {
-          const members = Object.keys(snap.val() || {});
-          gm.textContent = "Members: " + members.join(", ");
-        });
-      }
-      attachTypingListener();
-    }
-    function markMsgRead(mId, mVal) {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
-      db.ref(path).set(Date.now());
-    }
-    function loadOlderMessages() {
-      if (!currentChat || !hasMoreOld) return;
-      const btn = document.getElementById("loadMoreBtn");
-      btn.disabled = true;
-      messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-        if (arr.length < 1) {
-          showNotice("No older messages found!");
-          hasMoreOld = false;
-          btn.style.display = "none";
-          btn.disabled = false;
-          return;
-        }
-        oldestStamp = arr[0][1].timestamp;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, false); });
-        if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
-        arr.forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
-        btn.disabled = false;
-      });
-    }
-    function createBubble(mId, val, toEnd) {
-      const area = document.getElementById("messages");
-      if (document.getElementById("msg_" + mId)) return;
-      const bubble = document.createElement("div");
-      bubble.id = "msg_" + mId;
-      bubble.className = "msg";
-      if (val.sender === myId) bubble.classList.add("to");
-      else if (val.sender === "_system") bubble.classList.add("console");
-      else bubble.classList.add("from");
-      const p = document.createElement("p");
-      p.textContent = val.text || "";
-      bubble.appendChild(p);
-      const rt = document.createElement("span");
-      rt.className = "reactionTag";
-      if (val.reaction) rt.textContent = val.reaction;
-      bubble.appendChild(rt);
-      const rBar = document.createElement("div");
-      rBar.className = "reactionBar";
-      ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.onclick = ev => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
-        rBar.appendChild(span);
-      });
-      bubble.appendChild(rBar);
-      bubble.addEventListener("dblclick", () => {
-        rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
-      });
-      bubble.addEventListener("contextmenu", ev => {
-        ev.preventDefault();
-        if (currentType === "group") {
-          db.ref("groupChats/" + currentChat + "/createdBy").once("value", snap => {
-            if (snap.val() === myId) {
-              showConfirm("Remove this message?").then(ok => {
-                if (ok) {
-                  db.ref("groupChats/" + currentChat + "/messages/" + mId).remove();
-                  const el = document.getElementById("msg_" + mId);
-                  if (el) el.remove();
-                }
-              });
-            }
-          });
-        }
-      });
-      const ts = document.createElement("div");
-      ts.className = "timestamp";
-      const t = val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-      ts.textContent = t;
-      bubble.appendChild(ts);
-      if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
-      setTimeout(() => { autoScroll(); }, 50);
-    }
-    function updateBubble(mId, val) {
-      const b = document.getElementById("msg_" + mId);
-      if (!b) return;
-      const rt = b.querySelector(".reactionTag");
-      if (rt) rt.textContent = val.reaction || "";
-    }
-    function applyReaction(mId, emoji) {
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-      db.ref(path).set(emoji);
-    }
-
-    // ========== Typing & Emoji ==========
-    function attachTypingListener() {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-      db.ref(path).off();
-      db.ref(path).on("value", snap => {
-        const val = snap.val();
-        const t = document.getElementById("typingIndicator");
-        if (currentChat && val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
-        else { t.style.display = "none"; }
-      });
-    }
-    function sendTyping() {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-      db.ref(path).set(displayName);
-      setTimeout(() => db.ref(path).set(""), 2000);
-    }
-
-    // ========== Slash Commands & Autocomplete ==========
-    function slashAutoInput(e) {
-      const val = e.target.value;
-      const sc = document.getElementById("slashAutocomplete");
-      if (!val.startsWith("/")) { sc.style.display = "none"; return; }
-      sc.innerHTML = "";
-      const rect = e.target.getBoundingClientRect();
-      sc.style.left = rect.left + "px";
-      sc.style.top = rect.top - 115 + "px";
-      const hits = slashCmds.filter(c => c.startsWith(val));
-      if (!hits.length) { sc.style.display = "none"; return; }
-      hits.slice(0, 8).forEach(cmd => {
-        const b = document.createElement("button");
-        b.textContent = cmd;
-        b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
-        sc.appendChild(b);
-      });
-      sc.style.display = "block";
-    }
-
-    // ========== Client-Side Cooldown & Message Sending ==========
-    function canSendMessage() {
-      const nowTime = Date.now();
-      if (nowTime - lastMessageTime < 500) {
-        showNotice("Please wait 0.5 seconds between messages.");
-        return false;
-      }
-      lastMessageTime = nowTime;
-      return true;
-    }
-    function sendMessage() {
-      if (!currentChat || currentType === "help") return;
-      if (!canSendMessage()) return;
-      const inp = document.getElementById("msgInput");
-      const txt = inp.value.trim();
-      if (!txt) return;
-      document.getElementById("slashAutocomplete").style.display = "none";
-      if (txt.startsWith("/")) {
-        processSlashCommand(txt);
-        inp.value = "";
-        return;
-      }
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-      db.ref(path).push({
-        sender: myId,
-        text: txt,
-        timestamp: Date.now(),
-        reaction: "",
-        readBy: { [myId]: Date.now() }
-      });
-      inp.value = "";
-      setTimeout(() => { autoScroll(); }, 50);
-      sendTyping();
-    }
-    function processSlashCommand(cmd) {
-      const parts = cmd.split(" ");
-      const slash = parts[0].toLowerCase();
-      if (slash === "/roll") {
-        const sides = parseInt(parts[1], 10) || 6;
-        const r = Math.floor(Math.random() * sides) + 1;
-        sendSystemMessage("🎲 Rolled a " + sides + "-sided die: " + r);
-      } else if (slash === "/ping") {
-        const t0 = Date.now();
-        db.ref("pingTest").set({ time: t0 }, () => {
-          const dt = Date.now() - t0;
-          sendSystemMessage("Ping: " + dt + "ms");
-        });
-      } else if (slash === "/8ball") {
-        const q = cmd.slice(7).trim();
-        if (!q) { showNotice("Usage: /8ball [question]"); return; }
-        const answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
-        const pick = answers[Math.floor(Math.random() * answers.length)];
-        sendSystemMessage("8ball: " + pick);
-      } else if (slash === "/roast") {
-        const roasts = [
-          "Your code has more bugs than a beehive.",
-          "You're slower than dial‑up internet.",
-          "At least your chat is entertaining."
-        ];
-        const pick = roasts[Math.floor(Math.random() * roasts.length)];
-        sendSystemMessage("Roast: " + pick);
-      } else if (slash === "/tod") {
-        if (parts[1] === "truth") {
-          const truths = [
-            "What's your biggest fear?",
-            "Have you ever lied to your best friend?",
-            "What's your most embarrassing moment?"
-          ];
-          const pick = truths[Math.floor(Math.random() * truths.length)];
-          sendSystemMessage("Truth: " + pick);
-        } else if (parts[1] === "dare") {
-          const dares = [
-            "Dance like a robot for 15 seconds.",
-            "Talk in a baby voice for 3 messages.",
-            "Pretend you're an alien for 10 seconds."
-          ];
-          const pick = dares[Math.floor(Math.random() * dares.length)];
-          sendSystemMessage("Dare: " + pick);
-        } else { showNotice("Usage: /tod truth or /tod dare"); }
-      } else if (slash === "/title") {
-        const text = parts.slice(1).join(" ");
-        if (!text) { showNotice("Usage: /title [text]"); return; }
-        sendSystemMessage("<< " + text + " >>");
-      } else if (slash === "/cf" || slash === "/coin") {
-        let guess = "";
-        if (slash === "/cf") guess = parts[1] || "";
-        else if (parts[1] === "flip") guess = parts[2] || "";
-        guess = guess.toLowerCase();
-        if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
-        const side = Math.random() < 0.5 ? "heads" : "tails";
-        sendSystemMessage("Coinflip: " + side + " => you chose " + guess + " => " + (side === guess ? "You win!" : "You lose."));
-      } else if (slash === "/ship") {
-        const n = parts[1] || "";
-        if (!n) { showNotice("Usage: /ship [name]"); return; }
-        const merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
-        sendSystemMessage("Ship: " + displayName + " + " + n + " => " + merged + " 💘");
-      } else if (slash === "/rps") {
-        sendSystemMessage("[RPS] " + displayName + " played rock (placeholder)");
-      } else if (slash === "/guessnumber") {
-        sendSystemMessage("[GuessNumber] Waiting for opponent (placeholder)");
-      } else if (slash === "/vote") {
-        const rest = cmd.slice(slash.length).trim();
-        const parts = rest.split("|").map(x => x.trim());
-        if (parts.length < 2) { showNotice("Usage: /vote question|opt1|opt2"); return; }
-        let out = "Vote: " + parts[0] + "\n";
-        parts.slice(1).forEach(o => { out += "- " + o + "\n"; });
-        sendSystemMessage(out);
-      } else {
-        showNotice("Unknown slash command: " + cmd);
-      }
-    }
-    function sendSystemMessage(text) {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
-      db.ref(path).push({
-        sender: "_system",
-        text: text,
-        timestamp: Date.now(),
-        reaction: "",
-        readBy: { [myId]: Date.now() }
-      });
-    }
-
-    // ========== Friend Request & Chat Watchers ==========
-    function loadRequests() {
-      db.ref("users/" + myId + "/requests").on("value", snap => {
-        const data = snap.val() || {};
-        const tab = document.getElementById("requestsTab");
-        tab.innerHTML = "";
-        Object.keys(data).forEach(from => {
-          const div = document.createElement("div");
-          div.className = "requestItem";
-          div.textContent = `${from} wants to chat. `;
-          const accept = document.createElement("button");
-          accept.textContent = "✔";
-          accept.style.background = "green";
-          accept.onclick = () => {
-            if (blocked[from]) { showNotice("Unblock them first!"); return; }
-            db.ref("displayNames/" + from).once("value", snap => {
-              const dev = snap.val();
-              if (!dev) { showNotice("User not found!"); return; }
-              const cid = [myId, dev].sort().join("_");
-              db.ref("privateChats/" + cid).once("value", snap2 => {
-                if (!snap2.exists()) {
-                  db.ref("privateChats/" + cid).set({
-                    members: { [myId]: true, [dev]: true },
-                    createdAt: Date.now()
-                  });
-                }
-              });
-              db.ref("users/" + myId + "/chats/" + cid).set({ name: from, type: "private", last: Date.now() });
-              db.ref("users/" + myId + "/requests/" + from).remove();
-              db.ref("users/" + myId + "/friends/" + from).set(true);
-              db.ref("users/" + dev + "/friends/" + displayName).set(true);
-              db.ref("users/" + dev + "/accepted/" + displayName).set(true);
-              db.ref("privateChats/" + cid + "/messages").push({
-                sender: "_system",
-                text: `${from} accepted your friend request!`,
-                timestamp: Date.now(),
-                reaction: "",
-                readBy: { [dev]: Date.now() }
-              });
-              openChat(cid, from, "private");
-            });
-          };
-          div.appendChild(accept);
-          const deny = document.createElement("button");
-          deny.textContent = "✘";
-          deny.style.background = "red";
-          deny.onclick = () => { db.ref("users/" + myId + "/requests/" + from).remove(); };
-          div.appendChild(deny);
-          tab.appendChild(div);
-        });
-      });
-      db.ref("users/" + myId + "/requestsSent").on("value", snap => {
-        const st = document.getElementById("requestsSentTab");
-        st.innerHTML = "<strong>Requests Sent:</strong><br/>";
-        const out = snap.val() || {};
-        Object.keys(out).forEach(n => {
-          const div = document.createElement("div");
-          div.className = "requestItem";
-          div.textContent = `(Pending) ${n} `;
-          const btn = document.createElement("button");
-          btn.textContent = "Cancel";
-          btn.onclick = () => {
-            db.ref("users/" + myId + "/requestsSent/" + n).remove();
-            db.ref("displayNames/" + n).once("value", snap => {
-              const dev = snap.val();
-              if (dev) { db.ref("users/" + dev + "/requests/" + displayName).remove(); }
-            });
-          };
-          div.appendChild(btn);
-          st.appendChild(div);
-        });
-      });
-      db.ref("users/" + myId + "/accepted").on("child_added", snap => {
-        const who = snap.key;
-        showNotice(`${who} accepted your friend request!`);
-        db.ref("users/" + myId + "/requestsSent/" + who).remove();
-        db.ref("displayNames/" + who).once("value", snap => {
-          const dev = snap.val();
-          if (!dev) return;
-          const cid = [myId, dev].sort().join("_");
-          db.ref("privateChats/" + cid).once("value", snap2 => {
-            if (!snap2.exists()) {
-              db.ref("privateChats/" + cid).set({
-                members: { [myId]: true, [dev]: true },
-                createdAt: Date.now()
-              });
-            }
-          });
-          db.ref("users/" + myId + "/chats/" + cid).set({ name: who, type: "private", last: Date.now() });
-        });
-        setTimeout(() => { db.ref("users/" + myId + "/accepted/" + who).remove(); }, 3000);
-      });
-    }
-    function loadBlocked() {
-      db.ref("users/" + myId + "/blocked").on("value", snap => { blocked = snap.val() || {}; });
-    }
-    function loadFriends() {
-      db.ref("users/" + myId + "/friends").on("value", snap => { friends = snap.val() || {}; });
-    }
-    function initChatWatchers() {
-      db.ref("users/" + myId + "/chats").on("value", snap => {
-        const chats = snap.val() || {};
-        attachAllChatWatchers(chats);
-        debouncedUpdateChatListUI(chats);
-      });
-    }
-    function attachAllChatWatchers(chats) {
-      Object.keys(chats).forEach(cid => {
-        if (cid === "help_chat") return;
-        const info = chats[cid];
-        const path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-        db.ref(path).off("child_added", handleMsg);
-        db.ref(path).on("child_added", handleMsg);
-        function handleMsg(snap) {
-          if (cid === currentChat) return;
-          chatUnread[cid] = (chatUnread[cid] || 0) + 1;
-          if (chats[cid]) { chats[cid].last = snap.val().timestamp; }
-          debouncedUpdateChatListUI(chats);
-          debouncedUpdateTitle();
-        }
-      });
-    }
-    function updateChatListUI(chats) {
-      const arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
-      const cl = document.getElementById("chatList");
-      cl.innerHTML = "";
-      arr.forEach(([cid, info]) => {
-        const div = document.createElement("div");
-        div.className = "chatItem";
-        if (cid === currentChat) div.classList.add("active");
-        let nm = info.name || cid;
-        if (info.type === "private" && blocked[nm]) nm += " [Blocked]";
-        if (info.type === "help") nm = "Help (info)";
-        div.textContent = nm;
-        const right = document.createElement("div");
-        right.style.display = "flex";
-        right.style.alignItems = "center";
-        if (chatUnread[cid]) {
-          const badge = document.createElement("span");
-          badge.className = "chatBadge";
-          badge.textContent = "+" + chatUnread[cid];
-          right.appendChild(badge);
-        }
-        if (info.type !== "help") {
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "🗑";
-          delBtn.onclick = ev => {
-            ev.stopPropagation();
-            confirmDeleteChat(cid, info);
-          };
-          right.appendChild(delBtn);
-        }
-        div.appendChild(right);
-        div.onclick = () => {
-          if (info.type === "help") { /* Help chat not available */ }
-          else { openChat(cid, nm, info.type); }
-        };
-        cl.appendChild(div);
-      });
-    }
-    function confirmDeleteChat(cid, info) {
-      if (info.type === "group") {
-        db.ref("groupChats/" + cid + "/createdBy").once("value", snap => {
-          const own = snap.val();
-          if (own !== myId) {
-            showConfirm("Leave group " + info.name + "?").then(ok => {
-              if (ok) {
-                db.ref("groupChats/" + cid + "/members/" + myId).remove();
-                db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Left group chat successfully.");
-              }
-            });
-          } else {
-            showConfirm("Delete group " + info.name + "?").then(ok => {
-              if (ok) {
-                db.ref("groupChats/" + cid).remove();
-                db.ref("users/" + myId + "/chats/" + cid).remove();
-                showNotice("Group chat deleted for all members!");
-              }
-            });
-          }
-        });
-      } else {
-        showConfirm("Remove private chat with " + info.name + "?").then(ok => {
-          if (ok) {
-            db.ref("users/" + myId + "/chats/" + cid).remove();
-            showNotice("Private chat removed from your side.");
-          }
-        });
-      }
-    }
-    function openChat(cid, name, type) {
-      currentChat = cid;
-      currentType = type;
-      chatUnread[cid] = 0;
-      debouncedUpdateTitle();
-      if (type === "group") {
-        document.getElementById("chatTitle").innerHTML = `<div id='groupTitle'>${name}</div><div>You: ${displayName}</div>`;
-      } else {
-        document.getElementById("chatTitle").textContent = name;
-      }
-      const gm = document.getElementById("groupMembers");
-      gm.style.display = (type === "group") ? "block" : "none";
-      const inp = document.getElementById("msgInput");
-      inp.disabled = (type === "help");
-      const area = document.getElementById("messages");
-      area.innerHTML = "";
-      document.getElementById("loadMoreBtn").style.display = "none";
-      if (messagesRef) {
-        if (childAddedRef) { messagesRef.off("child_added", childAddedRef); }
-        if (childChangedRef) { messagesRef.off("child_changed", childChangedRef); }
-      }
-      const path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
-      messagesRef = db.ref(path);
-      messagesRef.orderByChild("timestamp").limitToLast(100).once("value", snap => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-        oldestStamp = arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, true); });
-        if (arr.length >= 100) {
-          hasMoreOld = true;
-          document.getElementById("loadMoreBtn").style.display = "block";
-        } else { hasMoreOld = false; }
-        childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
-          const v = snap.val();
-          createBubble(snap.key, v, true);
-          autoScroll();
-          markMsgRead(snap.key, v);
-        });
-        childChangedRef = messagesRef.on("child_changed", snap => { updateBubble(snap.key, snap.val()); });
-        autoScroll();
-        Object.entries(data).forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
-      });
-      if (type === "group") {
-        db.ref("groupChats/" + cid + "/members").on("value", snap => {
-          const members = Object.keys(snap.val() || {});
-          gm.textContent = "Members: " + members.join(", ");
-        });
-      }
-      attachTypingListener();
-    }
-    function markMsgRead(mId, mVal) {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
-      db.ref(path).set(Date.now());
-    }
-    function loadOlderMessages() {
-      if (!currentChat || !hasMoreOld) return;
-      const btn = document.getElementById("loadMoreBtn");
-      btn.disabled = true;
-      messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
-        if (arr.length < 1) {
-          showNotice("No older messages found.");
-          hasMoreOld = false;
-          btn.style.display = "none";
-          btn.disabled = false;
-          return;
-        }
-        oldestStamp = arr[0][1].timestamp;
-        arr.forEach(([mId, mVal]) => { createBubble(mId, mVal, false); });
-        if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
-        arr.forEach(([mId, mVal]) => { markMsgRead(mId, mVal); });
-        btn.disabled = false;
-      });
-    }
-    function createBubble(mId, val, toEnd) {
-      const area = document.getElementById("messages");
-      if (document.getElementById("msg_" + mId)) return;
-      const bubble = document.createElement("div");
-      bubble.id = "msg_" + mId;
-      bubble.className = "msg";
-      if (val.sender === myId) bubble.classList.add("to");
-      else if (val.sender === "_system") bubble.classList.add("console");
-      else bubble.classList.add("from");
-      const p = document.createElement("p");
-      p.textContent = val.text || "";
-      bubble.appendChild(p);
-      const rt = document.createElement("span");
-      rt.className = "reactionTag";
-      if (val.reaction) rt.textContent = val.reaction;
-      bubble.appendChild(rt);
-      const rBar = document.createElement("div");
-      rBar.className = "reactionBar";
-      ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.onclick = ev => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
-        rBar.appendChild(span);
-      });
-      bubble.appendChild(rBar);
-      bubble.addEventListener("dblclick", () => {
-        rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
-      });
-      bubble.addEventListener("contextmenu", ev => {
-        ev.preventDefault();
-        if (currentType === "group") {
-          db.ref("groupChats/" + currentChat + "/createdBy").once("value", snap => {
-            if (snap.val() === myId) {
-              showConfirm("Remove this message?").then(ok => {
-                if (ok) {
-                  db.ref("groupChats/" + currentChat + "/messages/" + mId).remove();
-                  const el = document.getElementById("msg_" + mId);
-                  if (el) el.remove();
-                }
-              });
-            }
-          });
-        }
-      });
-      const ts = document.createElement("div");
-      ts.className = "timestamp";
-      const t = val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-      ts.textContent = t;
-      bubble.appendChild(ts);
-      if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
-      setTimeout(() => { autoScroll(); }, 50);
-    }
-    function updateBubble(mId, val) {
-      const b = document.getElementById("msg_" + mId);
-      if (!b) return;
-      const rt = b.querySelector(".reactionTag");
-      if (rt) rt.textContent = val.reaction || "";
-    }
-    function applyReaction(mId, emoji) {
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
-      db.ref(path).set(emoji);
-    }
-
-    // ========== Typing & Emoji ==========
-    function attachTypingListener() {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-      db.ref(path).off();
-      db.ref(path).on("value", snap => {
-        const val = snap.val();
-        const t = document.getElementById("typingIndicator");
-        if (currentChat && val && val !== displayName) { t.style.display = "block"; t.textContent = val + " is typing..."; }
-        else { t.style.display = "none"; }
-      });
-    }
-    function sendTyping() {
-      if (!currentChat || currentType === "help") return;
-      const path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
-      db.ref(path).set(displayName);
-      setTimeout(() => db.ref(path).set(""), 2000);
-    }
-
-    // ========== End of Code ==========
+    // ========= End of Code =========
     console.log("All code loaded. All bugs fixed and UI polished.");
   </script>
   
-  <!-- ========== Notification Container ========== -->
+  <!-- ========= Notification Container ========= -->
   <div id="notificationContainer"></div>
   
-  <!-- ========== Login UI ========== -->
+  <!-- ========= Login UI ========= -->
   <div id="login" style="display:flex;">
     <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
       <h2>Static Live Chat</h2>
       <label>Display Name (unique):</label><br/>
       <input id="username" placeholder="Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
-      <label>Password (optional, for friend requests):</label><br/>
+      <label>Password (optional):</label><br/>
       <div style="display:flex;">
         <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
         <button onclick="toggleLoginPass()">👁️</button>
@@ -3172,7 +1601,7 @@
     </div>
   </div>
   
-  <!-- ========== Main App UI ========== -->
+  <!-- ========= Main App UI ========= -->
   <div id="app" style="display:none;">
     <div id="sidebar">
       <button onclick="openFriendsPanel()">Friends</button>
@@ -3207,7 +1636,7 @@
     </div>
   </div>
   
-  <!-- ========== Static Menu ========== -->
+  <!-- ========= Static Menu ========= -->
   <div id="staticMenu">
     <a href="https://sites.google.com/view/staticquasar931" target="_blank" class="staticLink">More Unblocked Games by Static</a>
   </div>

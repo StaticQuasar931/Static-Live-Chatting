@@ -22,7 +22,7 @@
         --chat-item-bg: #333;
         --font-size-msg: 16px;
         --max-bubble-width: 65%;
-        /* Thinner vertical padding; smooth side curves (flat top/bottom) */
+        /* Thinner vertical padding; rounded sides (flat top/bottom) */
         --bubble-padding-vertical: 6px;
         --bubble-padding-horizontal: 12px;
         --bubble-border-radius: 20px 20px 6px 6px;
@@ -101,11 +101,7 @@
         border-radius: 6px;
         border: none;
       }
-      button {
-        background: var(--accent);
-        color: #fff;
-        cursor: pointer;
-      }
+      button { background: var(--accent); color: #fff; cursor: pointer; }
       /* ========= Main Layout ========= */
       #app {
         display: flex;
@@ -418,7 +414,7 @@
             <div class="modalContent">
               <h3>Confirm</h3>
               <p>${msg}</p>
-              <input id="confirmInput" placeholder="Press Enter for Yes" style="margin:10px 0;"/>
+              <input id="confirmInput" placeholder="Press Enter for Yes" style="margin:10px 0;" />
               <button id="yesBtn" style="background:green;">Yes</button>
               <button id="noBtn" style="background:red;">No</button>
             </div>
@@ -440,7 +436,6 @@
             document.body.removeChild(mo);
             resolve(false);
           };
-          // Close modal when clicking outside
           mo.addEventListener("click", ev => { if (ev.target === mo) { document.body.removeChild(mo); resolve(false); } });
         });
       }
@@ -480,7 +475,7 @@
       /* ========= Auto-Scroll ========= */
       function autoScroll() {
         const area = document.getElementById("messages");
-        // Auto-scroll only if near the bottom (within 50px)
+        // Auto-scroll only if near bottom (within 50px)
         if (area.scrollTop + area.clientHeight >= area.scrollHeight - 50)
           area.scrollTop = area.scrollHeight;
       }
@@ -508,7 +503,12 @@
       function setupHelpChat() {
         db.ref(`users/${myId}/chats/help_chat`).once("value", snap => {
           if (!snap.exists())
-            db.ref(`users/${myId}/chats/help_chat`).set({ name: "Help (info)", type: "help", last: Date.now() });
+            db.ref(`users/${myId}/chats/help_chat`).set({
+              name: "Help (info)",
+              type: "help",
+              last: Date.now(),
+              info: "Commands: /tod truth|dare, /title [text], /roast, /roll [sides], etc."
+            });
         });
       }
 
@@ -621,7 +621,8 @@
         db.ref(`users/${myId}/blocked`).once("value", snap => {
           let list = snap.val() || {};
           container.innerHTML = "";
-          if (!Object.keys(list).length) container.textContent = "No blocked users.";
+          if (!Object.keys(list).length)
+            container.textContent = "No blocked users.";
           else {
             Object.keys(list).forEach(u => {
               let d = document.createElement("div");
@@ -694,7 +695,7 @@
               if (snap2.exists()) { showNotice("Request already pending."); return; }
               db.ref(`users/${dev}/requests/${displayName}`).set({ requested: true });
               db.ref(`users/${myId}/requestsSent/${n}`).set(true);
-              db.ref(`privateChats/${[myId, dev].sort().join("_")}`).set({});
+              db.ref(`privateChats/${[myId, dev].sort().join("_")}`).set({ members: { [myId]: true, [dev]: true }, createdAt: Date.now() });
               showNotice("Request sent to " + n);
               document.body.removeChild(mo);
             });
@@ -1601,8 +1602,533 @@
         });
       }
 
+      /* ========= Bubble Creation ========= */
+      function createBubble(mId, val, toEnd) {
+        let area = document.getElementById("messages");
+        if (document.getElementById("msg_" + mId)) return;
+        let bubble = document.createElement("div");
+        bubble.id = "msg_" + mId;
+        bubble.className = "msg";
+        if (val.sender === myId) bubble.classList.add("to");
+        else if (val.sender === "_system") bubble.classList.add("console");
+        else bubble.classList.add("from");
+        let p = document.createElement("p");
+        p.textContent = val.text || "";
+        bubble.appendChild(p);
+        let rt = document.createElement("span");
+        rt.className = "reactionTag";
+        if (val.reaction) rt.textContent = val.reaction;
+        bubble.appendChild(rt);
+        let rBar = document.createElement("div");
+        rBar.className = "reactionBar";
+        ["❤️", "👍", "👎", "😂", "😮", "😢"].forEach(emoji => {
+          let s = document.createElement("span");
+          s.textContent = emoji;
+          s.onclick = ev => { ev.stopPropagation(); applyReaction(mId, emoji); rBar.style.display = "none"; };
+          rBar.appendChild(s);
+        });
+        bubble.appendChild(rBar);
+        bubble.addEventListener("dblclick", () => {
+          rBar.style.display = (rBar.style.display === "flex") ? "none" : "flex";
+        });
+        bubble.addEventListener("contextmenu", ev => {
+          ev.preventDefault();
+          if (currentType === "group") {
+            db.ref(`groupChats/${currentChat}/createdBy`).once("value", snap => {
+              if (snap.val() === myId) {
+                showConfirm("Remove this message?").then(ok => {
+                  if (ok) {
+                    db.ref(`groupChats/${currentChat}/messages/${mId}`).remove();
+                    let el = document.getElementById("msg_" + mId);
+                    if (el) el.remove();
+                  }
+                });
+              }
+            });
+          }
+        });
+        let ts = document.createElement("div");
+        ts.className = "timestamp";
+        let t = val.timestamp ? new Date(val.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+        ts.textContent = t;
+        bubble.appendChild(ts);
+        if (toEnd) area.appendChild(bubble); else area.prepend(bubble);
+        setTimeout(() => { autoScroll(); }, 50);
+      }
+      function updateBubble(mId, val) {
+        let b = document.getElementById("msg_" + mId);
+        if (!b) return;
+        let rt = b.querySelector(".reactionTag");
+        if (rt) rt.textContent = val.reaction || "";
+      }
+      function applyReaction(mId, emoji) {
+        let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/reaction";
+        db.ref(path).set(emoji);
+      }
+
+      /* ========= Typing & Emoji ========= */
+      function attachTypingListener() {
+        if (!currentChat || currentType === "help") return;
+        let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
+        db.ref(path).off();
+        db.ref(path).on("value", snap => {
+          let val = snap.val();
+          let t = document.getElementById("typingIndicator");
+          if (currentChat && val && val !== displayName) {
+            t.style.display = "block";
+            t.textContent = val + " is typing...";
+          } else t.style.display = "none";
+        });
+      }
+      function sendTyping() {
+        if (!currentChat || currentType === "help") return;
+        let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/typing";
+        db.ref(path).set(displayName);
+        setTimeout(() => db.ref(path).set(""), 2000);
+      }
+      function toggleEmojiPicker() {
+        let ep = document.getElementById("emojiPicker");
+        ep.style.display = (ep.style.display === "flex") ? "none" : "flex";
+        if (ep.style.display === "flex") {
+          ep.innerHTML = "";
+          let emojiSet = [..."😀😃😄😁😆😅😂🤣😉😊😎😍😘😗😙😚😋😜😝😛🤑🤨🧐🤓😳😏😒😞😔😟😕🙁☹️😣😖😫😩😢😭😤😠😡🤬😶😐😑🙄😯😧😮😲🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫"];
+          emojiSet.forEach(em => {
+            let s = document.createElement("span");
+            s.textContent = em;
+            s.onclick = () => {
+              let inp = document.getElementById("msgInput");
+              inp.value += em;
+              ep.style.display = "none";
+            };
+            ep.appendChild(s);
+          });
+        }
+      }
+
+      /* ========= Slash Autocomplete ========= */
+      function slashAutoInput(e) {
+        let val = e.target.value;
+        let sc = document.getElementById("slashAutocomplete");
+        if (!val.startsWith("/")) { sc.style.display = "none"; return; }
+        sc.innerHTML = "";
+        let rect = e.target.getBoundingClientRect();
+        sc.style.left = rect.left + "px";
+        sc.style.top = rect.top - 115 + "px";
+        let hits = slashCmds.filter(c => c.startsWith(val));
+        if (!hits.length) { sc.style.display = "none"; return; }
+        hits.slice(0, 8).forEach(cmd => {
+          let b = document.createElement("button");
+          b.textContent = cmd;
+          b.onclick = () => { e.target.value = cmd + " "; sc.style.display = "none"; };
+          sc.appendChild(b);
+        });
+        sc.style.display = "block";
+      }
+
+      /* ========= Cooldown & Sending ========= */
+      function canSendMessage() {
+        let now = Date.now();
+        if (now - lastMessageTime < 500) {
+          showNotice("Wait 0.5 seconds between messages.");
+          return false;
+        }
+        lastMessageTime = now;
+        return true;
+      }
+      function sendMessage() {
+        if (!currentChat || currentType === "help") return;
+        if (!canSendMessage()) return;
+        let inp = document.getElementById("msgInput");
+        let txt = inp.value.trim();
+        if (!txt) return;
+        document.getElementById("slashAutocomplete").style.display = "none";
+        if (txt.startsWith("/")) {
+          processSlashCommand(txt);
+          inp.value = "";
+          return;
+        }
+        let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+        db.ref(path).push({
+          sender: myId,
+          text: txt,
+          timestamp: Date.now(),
+          reaction: "",
+          readBy: { [myId]: Date.now() }
+        });
+        inp.value = "";
+        setTimeout(() => { autoScroll(); }, 50);
+        sendTyping();
+      }
+      function processSlashCommand(cmd) {
+        let parts = cmd.split(" ");
+        let slash = parts[0].toLowerCase();
+        if (slash === "/roll") {
+          let sides = parseInt(parts[1], 10) || 6;
+          let r = Math.floor(Math.random() * sides) + 1;
+          sendSystemMessage(`🎲 Rolled a ${sides}-sided die: ${r}`);
+        } else if (slash === "/ping") {
+          let t0 = Date.now();
+          db.ref("pingTest").set({ time: t0 }, () => {
+            let dt = Date.now() - t0;
+            sendSystemMessage(`Ping: ${dt}ms`);
+          });
+        } else if (slash === "/8ball") {
+          let q = cmd.slice(7).trim();
+          if (!q) { showNotice("Usage: /8ball [question]"); return; }
+          let answers = ["Yes", "No", "Maybe", "Ask again later", "Definitely", "Certainly not"];
+          let pick = answers[Math.floor(Math.random() * answers.length)];
+          sendSystemMessage(`8ball: ${pick}`);
+        } else if (slash === "/roast") {
+          let roasts = [
+            "Your code is so buggy, even the insects complain.",
+            "You’re slower than dial‑up on a rainy day.",
+            "Your chat could use some caffeine—it’s a snooze fest!"
+          ];
+          let pick = roasts[Math.floor(Math.random() * roasts.length)];
+          sendSystemMessage(`Roast: ${pick}`);
+        } else if (slash === "/tod") {
+          if (parts[1] === "truth") {
+            let truths = ["What's your biggest fear?", "Have you ever lied to your best friend?", "What's your most embarrassing moment?"];
+            let pick = truths[Math.floor(Math.random() * truths.length)];
+            sendSystemMessage(`Truth: ${pick}`);
+          } else if (parts[1] === "dare") {
+            let dares = ["Dance like a robot for 15 seconds.", "Talk in a baby voice for 3 messages.", "Pretend you're an alien for 10 seconds."];
+            let pick = dares[Math.floor(Math.random() * dares.length)];
+            sendSystemMessage(`Dare: ${pick}`);
+          } else showNotice("Usage: /tod truth or /tod dare");
+        } else if (slash === "/title") {
+          let text = parts.slice(1).join(" ");
+          if (!text) { showNotice("Usage: /title [text]"); return; }
+          sendSystemMessage(`<< ${text} >>`);
+        } else if (slash === "/cf" || slash === "/coin") {
+          let guess = "";
+          if (slash === "/cf") guess = parts[1] || "";
+          else if (parts[1] === "flip") guess = parts[2] || "";
+          guess = guess.toLowerCase();
+          if (guess !== "heads" && guess !== "tails") { showNotice("Usage: /cf heads or /coin flip tails"); return; }
+          let side = Math.random() < 0.5 ? "heads" : "tails";
+          sendSystemMessage(`Coinflip: ${side} => you chose ${guess} => ${side === guess ? "You win!" : "You lose."}`);
+        } else if (slash === "/ship") {
+          let n = parts[1] || "";
+          if (!n) { showNotice("Usage: /ship [name]"); return; }
+          let merged = displayName.slice(0, Math.floor(displayName.length / 2)) + n.slice(Math.floor(n.length / 2));
+          sendSystemMessage(`Ship: ${displayName} + ${n} => ${merged} 💘`);
+        } else if (slash === "/rps") {
+          sendSystemMessage(`[RPS] ${displayName} played rock (placeholder)`);
+        } else if (slash === "/guessnumber") {
+          sendSystemMessage(`[GuessNumber] Waiting for opponent (placeholder)`);
+        } else if (slash === "/vote") {
+          let rest = cmd.slice(slash.length).trim();
+          let ps = rest.split("|").map(x => x.trim());
+          if (ps.length < 2) { showNotice("Usage: /vote question|opt1|opt2"); return; }
+          let out = `Vote: ${ps[0]}\n`;
+          ps.slice(1).forEach(o => { out += "- " + o + "\n"; });
+          sendSystemMessage(out);
+        } else {
+          showNotice("Unknown slash command: " + cmd);
+        }
+      }
+      function sendSystemMessage(txt) {
+        if (!currentChat || currentType === "help") return;
+        let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages";
+        db.ref(path).push({
+          sender: "_system",
+          text: txt,
+          timestamp: Date.now(),
+          reaction: "",
+          readBy: { [myId]: Date.now() }
+        });
+      }
+
+      /* ========= Friend Requests & Watchers ========= */
+      function loadRequests() {
+        db.ref(`users/${myId}/requests`).on("value", snap => {
+          let data = snap.val() || {};
+          let tab = document.getElementById("requestsTab");
+          tab.innerHTML = "";
+          Object.keys(data).forEach(from => {
+            let di = document.createElement("div");
+            di.className = "requestItem";
+            di.textContent = `${from} wants to chat. `;
+            let accept = document.createElement("button");
+            accept.textContent = "✔";
+            accept.style.background = "green";
+            accept.onclick = () => {
+              if (blocked[from]) { showNotice("Unblock them first!"); return; }
+              db.ref(`displayNames/${from}`).once("value", snap => {
+                let dev = snap.val();
+                if (!dev) { showNotice("User not found!"); return; }
+                let cid = [myId, dev].sort().join("_");
+                db.ref(`privateChats/${cid}`).once("value", snap2 => {
+                  if (!snap2.exists())
+                    db.ref(`privateChats/${cid}`).set({ members: { [myId]: true, [dev]: true }, createdAt: Date.now() });
+                });
+                db.ref(`users/${myId}/chats/${cid}`).set({ name: from, type: "private", last: Date.now() });
+                db.ref(`users/${myId}/requests/${from}`).remove();
+                db.ref(`users/${myId}/friends/${from}`).set(true);
+                db.ref(`users/${dev}/friends/${displayName}`).set(true);
+                db.ref(`users/${dev}/accepted/${displayName}`).set(true);
+                db.ref(`privateChats/${cid}/messages`).push({
+                  sender: "_system",
+                  text: `${from} accepted your friend request!`,
+                  timestamp: Date.now(),
+                  reaction: "",
+                  readBy: { [dev]: Date.now() }
+                });
+                openChat(cid, from, "private");
+              });
+            };
+            di.appendChild(accept);
+            let deny = document.createElement("button");
+            deny.textContent = "✘";
+            deny.style.background = "red";
+            deny.onclick = () => { db.ref(`users/${myId}/requests/${from}`).remove(); };
+            di.appendChild(deny);
+            tab.appendChild(di);
+          });
+        });
+        db.ref(`users/${myId}/requestsSent`).on("value", snap => {
+          let st = document.getElementById("requestsSentTab");
+          st.innerHTML = "<strong>Requests Sent:</strong><br/>";
+          let out = snap.val() || {};
+          Object.keys(out).forEach(n => {
+            let dv = document.createElement("div");
+            dv.className = "requestItem";
+            dv.textContent = `(Pending) ${n} `;
+            let btn = document.createElement("button");
+            btn.textContent = "Cancel";
+            btn.onclick = () => {
+              db.ref(`users/${myId}/requestsSent/${n}`).remove();
+              db.ref(`displayNames/${n}`).once("value", snap => {
+                let dev = snap.val();
+                if (dev) { db.ref(`users/${dev}/requests/${displayName}`).remove(); }
+              });
+            };
+            dv.appendChild(btn);
+            st.appendChild(dv);
+          });
+        });
+        db.ref(`users/${myId}/accepted`).on("child_added", snap => {
+          let who = snap.key;
+          showNotice(`${who} accepted your friend request!`);
+          db.ref(`users/${myId}/requestsSent/${who}`).remove();
+          db.ref(`displayNames/${who}`).once("value", snap => {
+            let dev = snap.val();
+            if (!dev) return;
+            let cid = [myId, dev].sort().join("_");
+            db.ref(`privateChats/${cid}`).once("value", snap2 => {
+              if (!snap2.exists())
+                db.ref(`privateChats/${cid}`).set({ members: { [myId]: true, [dev]: true }, createdAt: Date.now() });
+            });
+            db.ref(`users/${myId}/chats/${cid}`).set({ name: who, type: "private", last: Date.now() });
+          });
+          setTimeout(() => { db.ref(`users/${myId}/accepted/${who}`).remove(); }, 3000);
+        });
+      }
+      function loadBlocked() {
+        db.ref(`users/${myId}/blocked`).on("value", snap => { blocked = snap.val() || {}; });
+      }
+      function loadFriends() {
+        db.ref(`users/${myId}/friends`).on("value", snap => { friends = snap.val() || {}; });
+      }
+
+      /* ========= Chat Watchers ========= */
+      function initChatWatchers() {
+        db.ref(`users/${myId}/chats`).on("value", snap => {
+          let data = snap.val() || {};
+          attachAllChatWatchers(data);
+          debouncedUpdateChatListUI(data);
+        });
+      }
+      function attachAllChatWatchers(chats) {
+        Object.keys(chats).forEach(cid => {
+          if (cid === "help_chat") return;
+          let info = chats[cid];
+          let path = (info.type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
+          db.ref(path).off("child_added", handleMsg);
+          db.ref(path).on("child_added", handleMsg);
+          function handleMsg(snap) {
+            if (cid === currentChat) return;
+            chatUnread[cid] = (chatUnread[cid] || 0) + 1;
+            if (chats[cid]) chats[cid].last = snap.val().timestamp;
+            debouncedUpdateChatListUI(chats);
+            debouncedUpdateTitle();
+            if (currentChat !== cid) { notifAudio.play().catch(() => {}); }
+          }
+        });
+      }
+      function updateChatListUI(chats) {
+        let arr = Object.entries(chats).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
+        let cl = document.getElementById("chatList");
+        cl.innerHTML = "";
+        arr.forEach(([cid, info]) => {
+          let dv = document.createElement("div");
+          dv.className = "chatItem";
+          if (cid === currentChat) dv.classList.add("active");
+          let nm = info.name || cid;
+          if (info.type === "private" && blocked[nm]) nm += " [Blocked]";
+          if (info.type === "help") nm = "Help (info)";
+          dv.textContent = nm;
+          let row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.alignItems = "center";
+          if (chatUnread[cid]) {
+            let badge = document.createElement("span");
+            badge.className = "chatBadge";
+            badge.textContent = "+" + chatUnread[cid];
+            row.appendChild(badge);
+          }
+          if (info.type !== "help") {
+            let delBtn = document.createElement("button");
+            delBtn.textContent = "🗑";
+            delBtn.onclick = ev => { ev.stopPropagation(); confirmDeleteChat(cid, info); };
+            row.appendChild(delBtn);
+          }
+          dv.appendChild(row);
+          dv.onclick = () => openChat(cid, nm, info.type);
+          cl.appendChild(dv);
+        });
+        debouncedUpdateTitle();
+      }
+      function confirmDeleteChat(cid, info) {
+        if (info.type === "group") {
+          db.ref(`groupChats/${cid}/createdBy`).once("value", snap => {
+            let own = snap.val();
+            if (own !== myId) {
+              showConfirm(`Leave group ${info.name}?`).then(ok => {
+                if (ok) {
+                  db.ref(`groupChats/${cid}/members/${myId}`).remove();
+                  db.ref(`users/${myId}/chats/${cid}`).remove();
+                  showNotice("Left group chat.");
+                }
+              });
+            } else {
+              showConfirm(`Delete group ${info.name}?`).then(ok => {
+                if (ok) {
+                  db.ref(`groupChats/${cid}`).remove();
+                  db.ref(`users/${myId}/chats/${cid}`).remove();
+                  showNotice("Group deleted for all.");
+                }
+              });
+            }
+          });
+        } else {
+          showConfirm(`Remove private chat with ${info.name}?`).then(ok => {
+            if (ok) {
+              db.ref(`users/${myId}/chats/${cid}`).remove();
+              showNotice("Chat removed from your side.");
+            }
+          });
+        }
+      }
+      function openChat(cid, name, type) {
+        currentChat = cid;
+        currentType = type;
+        chatUnread[cid] = 0;
+        debouncedUpdateTitle();
+        localStorage.setItem("unread_" + cid, 0);
+        if (type === "group")
+          document.getElementById("chatTitle").innerHTML = `<div id="groupTitle">${name}</div><div>You: ${displayName}</div>`;
+        else if (type === "help")
+          document.getElementById("chatTitle").textContent = "Help & Info";
+        else
+          document.getElementById("chatTitle").textContent = name;
+        let gm = document.getElementById("groupMembers");
+        gm.style.display = type === "group" ? "block" : "none";
+        let inp = document.getElementById("msgInput");
+        inp.disabled = type === "help";
+        let area = document.getElementById("messages");
+        area.innerHTML = "";
+        document.getElementById("loadMoreBtn").style.display = "none";
+        if (messagesRef) {
+          if (childAddedRef) messagesRef.off("child_added", childAddedRef);
+          if (childChangedRef) messagesRef.off("child_changed", childChangedRef);
+        }
+        let path = (type === "group" ? "groupChats" : "privateChats") + "/" + cid + "/messages";
+        messagesRef = db.ref(path);
+        messagesRef.orderByChild("timestamp").limitToLast(100).once("value", snap => {
+          let data = snap.val() || {};
+          let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+          oldestStamp = arr.length > 0 ? arr[0][1].timestamp : Number.MAX_SAFE_INTEGER;
+          arr.forEach(([mId, mVal]) => createBubble(mId, mVal, true));
+          if (arr.length >= 100) {
+            hasMoreOld = true;
+            document.getElementById("loadMoreBtn").style.display = "block";
+          } else { hasMoreOld = false; }
+          childAddedRef = messagesRef.orderByChild("timestamp").startAt(Date.now()).on("child_added", snap => {
+            let v = snap.val();
+            createBubble(snap.key, v, true);
+            autoScroll();
+            markMsgRead(snap.key, v);
+          });
+          childChangedRef = messagesRef.on("child_changed", snap => updateBubble(snap.key, snap.val()));
+          autoScroll();
+          Object.entries(data).forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+        });
+        if (type === "group") {
+          db.ref(`groupChats/${cid}/members`).on("value", snap => {
+            let raw = snap.val() || {};
+            let owner = raw.owner || null;
+            let others = Object.keys(raw).filter(uid => uid !== owner);
+            if (owner) {
+              db.ref(`users/${owner}/displayName`).once("value").then(snap => {
+                let ownerName = snap.val() || owner;
+                let list = `<span style='color:gold;font-weight:bold;'>${ownerName} (Owner)</span>`;
+                Promise.all(
+                  others.map(uid =>
+                    db.ref(`users/${uid}/displayName`).once("value").then(s => s.val() || uid)
+                  )
+                ).then(names => {
+                  names.sort();
+                  names.forEach(n => { list += " • " + n; });
+                  gm.innerHTML = list;
+                });
+              });
+            } else {
+              Promise.all(
+                Object.keys(raw).map(uid =>
+                  db.ref(`users/${uid}/displayName`).once("value").then(s => s.val() || uid)
+                )
+              ).then(names => {
+                names.sort();
+                gm.innerHTML = names.join(" • ");
+              });
+            }
+          });
+        }
+        attachTypingListener();
+      }
+      function markMsgRead(mId, mVal) {
+        if (!currentChat || currentType === "help") return;
+        let path = (currentType === "group" ? "groupChats" : "privateChats") + "/" + currentChat + "/messages/" + mId + "/readBy/" + myId;
+        db.ref(path).set(Date.now());
+      }
+
+      /* ========= Load Older Messages Button ========= */
+      function loadOlderMessages() {
+        if (!currentChat || !hasMoreOld) return;
+        let btn = document.getElementById("loadMoreBtn");
+        btn.disabled = true;
+        messagesRef.orderByChild("timestamp").endAt(oldestStamp - 1).limitToLast(50).once("value", snap => {
+          let data = snap.val() || {};
+          let arr = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+          if (arr.length < 1) {
+            showNotice("No older messages found.");
+            hasMoreOld = false;
+            btn.style.display = "none";
+            btn.disabled = false;
+            return;
+          }
+          oldestStamp = arr[0][1].timestamp;
+          arr.forEach(([mId, mVal]) => createBubble(mId, mVal, false));
+          if (arr.length < 50) { hasMoreOld = false; btn.style.display = "none"; }
+          arr.forEach(([mId, mVal]) => markMsgRead(mId, mVal));
+          btn.disabled = false;
+        });
+      }
+
       /* ========= End of Code ========= */
-      console.log("All code loaded. UI polished and all bugs fixed.");
+      console.log("All code loaded. UI polished and bugs fixed.");
     </script>
 
     <!-- ===== Notification Container ===== -->
@@ -1615,10 +2141,10 @@
       <div style="background:var(--chat-bg); padding:20px; border-radius:10px; position:relative;">
         <h2>Static Live Chat</h2>
         <label>Display Name (unique):</label><br/>
-        <input id="username" placeholder="Name" onkeypress="if(event.key==='Enter')doLogin()"/><br/>
+        <input id="username" placeholder="Name" onkeypress="if(event.key==='Enter')doLogin()" /><br/>
         <label>Password (optional):</label><br/>
         <div style="display:flex;">
-          <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()"/>
+          <input id="password" type="password" style="flex:1;" onkeypress="if(event.key==='Enter')doLogin()" />
           <button onclick="toggleLoginPass()">👁️</button>
         </div>
         <button onclick="doLogin()">Log In</button>
@@ -1634,7 +2160,7 @@
         <h3>Friend Requests</h3>
         <div id="requestsTab"></div>
         <div id="requestsSentTab" style="margin-top:8px; color:#ccc;"></div>
-        <hr/>
+        <hr />
         <h3>Chats</h3>
         <div id="chatList"></div>
       </div>
@@ -1651,7 +2177,7 @@
         <div id="messages"></div>
         <div id="typingIndicator" style="display:none;"></div>
         <div id="inputArea">
-          <input id="msgInput" placeholder="Type '/' for commands" oninput="slashAutoInput(event)" onkeypress="if(event.key==='Enter'){ sendMessage(); sendTyping(); }"/>
+          <input id="msgInput" placeholder="Type '/' for commands" oninput="slashAutoInput(event)" onkeypress="if(event.key==='Enter'){ sendMessage(); sendTyping(); }" />
           <button onclick="toggleEmojiPicker()">😀</button>
           <button onclick="sendMessage()">Send</button>
         </div>
